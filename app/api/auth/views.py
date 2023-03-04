@@ -1,328 +1,187 @@
-"""
-@author: Kuro
-"""
-from enum import Enum
+from fastapi import APIRouter, Depends, Request
 
-import logging
-from datetime import datetime, timedelta
+from typing import Union, Any
 
-import pyotp
-from pydantic import BaseModel
+from fastapi import APIRouter, Depends, Request
 
-import settings
-from app.api.admin.models import Admin
-from app.api.agent.models import Agent
-from app.api.auth.schema import (
-    UserClaim,
-    OTPLoginStartResponse,
-    OTPLoginStart,
-    LoginStartResponse,
-    OTPLoginVerify,
-)
-from app.api.credit.models import Balance
+# import app.shared.auth.auth0_handler as auth0
+from app.api.admin.schema import Response
+from app.api.auth import schema
 from app.api.user import schema as user_schema
 from app.api.user.models import User
-from app.api.user.schema import (
-    AdminLogin,
-    UserLogin,
-    AgentLogin,
-    AdminUserCreate,
-    GeneratePassword,
-    GeneratePasswordResponse,
-    NewPassword,
-)
-from app.shared.auth.auth_handler import sign_jwt, TokenResponse
-from app.shared.auth.password_handler import get_password_hash
-from typing import Union
-from app.shared.auth.password_generator import generate_password
-from app.shared.auth.token_handler import generate_confirmation_token, confirm_token
-from app.shared.email.mailgun import send_password_email
-from app.shared.twilio.sms import send_sms
-from fastapi import APIRouter
-from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.twilio.templates.sms_templates import OTPStartMessage
+from app.api.user.schema import UserResponse
+from app.shared.auth.auth_handler import AuthController
+from app.shared.auth.password_handler import get_password_hash, authenticate_user
+from app.shared.bases.base_model import ModelType
+from app.shared.middleware.auth import JWTBearer
+from app.shared.helper.logger import StandardizedLogger
 
-logger = logging.getLogger("auth")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
+logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/auth",
     tags=["auth"],
 )
-totp = pyotp.TOTP(settings.Config.otp_base, interval=60)
 
 
-@router.post("/signup", response_model=TokenResponse)
-async def create_user(context: AdminUserCreate) -> TokenResponse:
+@router.post("/signup", response_model=UserResponse)
+async def create_user(
+        user: user_schema.AdminUserCreate,
+) -> Union[Union[dict[str, Any], Response, None, str], Any]:
     """
-    > Create a user and return a JWT if successful
+    The create_user function creates a new user in the database.
+    It takes in a UserCreate object and returns an error if it cannot create the user.
+    Otherwise, it returns the newly created user's id.
 
-    :param context: AdminUserCreate - This is the request body that is passed in
-    :type context: AdminUserCreate
-    :return: A TokenResponse
+    Phone number will accept any form as long as it starts with a +1.
+    Birthday has to be in format year-month-day.
+    Username cannot contain special characters.
+
+    :param user:schema.UserCreate: Used to Pass in the user object.
+    :return: A dictionary with a key "error" if the creation fails.
     """
-    context_data = context.dict(exclude_unset=True)
-    password_authentication = get_password_hash(context.password)
-    context_data["password"] = password_authentication
-    user_response = User.create(**context_data)
-    if not user_response:
-        return TokenResponse(success=False, error="Object not created")
-    Balance.create(ownerId=user_response.id, balance=0)
-    return sign_jwt(UserClaim(id=user_response.id, phone=context.phone))
+    return_data = User.create_user(**user.dict(exclude_unset=True))
+    # if return_data.get('error'):
+    if return_data.error:
+        return return_data
+    user: ModelType = return_data.get('response')
+    return AuthController.sign_jwt(user.phone, skip_verification=True)
+
+
+@router.post(
+    "/refresh_token",
+    dependencies=[Depends(JWTBearer())],
+)
+async def refresh_token(request: Request):
+    """
+    The refresh_token function is used to generate a new access token from the refresh token.
+    The function takes in the request object and returns an updated access token.
+
+    :param request:Request: Used to Get the request object from the asgi server.
+    :return: A token that is signed with the refresh_token key.
+
+    """
+    bearer = JWTBearer().__call__(request)
+    jwt_refresh = AuthController.sign_jwt(str(bearer), refresh=True, claim_check=True)
+    if bearer == jwt_refresh:
+        access_token = AuthController.sign_jwt(jwt_refresh)
+        access_token.update({"success": True})
+        return access_token
+    return {"success": False, "error": 4}
+
+
+@router.post(
+    "/refresh_admin_token",
+    dependencies=[Depends(JWTBearer(admin=True))],
+    response_model=schema.RefreshTokenResponse,
+)
+def refresh_token_admin(request: Request):
+    """
+    The refresh_token_admin function is used to refresh the token of an admin user.
+    It takes a request object as its only parameter and returns a dictionary with two keys:
+    'access_token' and 'refresh_token'. The access token is for the current session, while the
+    refresh token is for future sessions.
+
+    :param request:Request: Used to Get the refresh token from the request.
+    :return: A dictionary containing the following keys:.
+    """
+    return AuthController.sign_jwt(request.user.id, admin=True)
 
 
 def jwt_login(
-    context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
-) -> TokenResponse:
+        user: Union[
+            user_schema.AdminLogin,
+            user_schema.UserLogin
+        ],
+        admin: bool
+):
     """
-    Takes a context object, which is either an AdminLogin, UserLogin or AgentLogin,
-    and returns a signed JWT if the password is correct, otherwise it returns a
-    BaseResponse with an error message
+    > It takes a user object and a boolean value, and returns a JWT token if the user is authenticated, otherwise it returns an error message
 
-    :param context: Union[AdminLogin, UserLogin, AgentLogin]
-    :type context: Union[AdminLogin, UserLogin, AgentLogin]
-    :param admin: Boolean, if True, the user is an admin, defaults to False (optional)
-    :param agent: bool = False, defaults to False (optional)
-    :return: A signed JWT token
+    :param user: User - This is the user object that you want to login
+    :type user: User
+    :param admin: bool - If the user is an admin or not
+    :type admin: bool
+    :return: A dictionary with a key of error and a value of "Wrong login details" and a key of success and a value of False.
     """
-    logger.info(f"Attempting to login {context.email}")
-    model = admin and Admin or agent and Agent or User
-    logger.info(f"Model selected is {model}")
-    claim: UserClaim = model.user_claims(**context.dict())
-    logger.info(f"Claim is {claim}")
-    if not claim:
-        logger.info("No claim found")
-        return TokenResponse(success=False, error="Wrong login details")
-    try:
-        claim.admin = admin
-        claim.agent = agent
-    except Exception as e:
-        model.session.rollback()
-        logger.error(str(e))
-    signed_jwt: TokenResponse = sign_jwt(claim)
-    logger.info(f"Signed JWT is {signed_jwt.response.access_token}")
-    return signed_jwt
-
-
-@router.post("/login/agent", response_model=TokenResponse)
-async def agent_login(context: AgentLogin) -> TokenResponse:
-    """
-    This function logs in an agent and returns a token response using JWT authentication.
-
-    :param context: The `context` parameter in the `agent_login` function is an instance of the
-    `AgentLogin` class. It likely contains information about the agent trying to log in,
-    such as their name and password
-    :type context: AgentLogin
-    :return: The function `agent_login` is returning a
-    `TokenResponse` object. The `TokenResponse` object
-    is the result of calling the `jwt_login` function with the
-    `context` argument
-    and the `agent` parameter set to `True`.
-    """
-    return jwt_login(context, agent=True)
-
-
-@router.post("/login/admin", response_model=TokenResponse)
-async def admin_login(context: AdminLogin) -> TokenResponse:
-    """
-    This function logs in an agent and returns a dictionary with a JWT token.
-
-    :param context: The context parameter is an instance of the
-    AgentLogin schema class, which is used to pass in the user object. This object contains
-     information about the user who
-    is attempting to log in, such as their email and password
-    :type context: AgentLogin
-    :return: a dictionary with a JWT token.
-    """
-    return jwt_login(context, admin=True)
-
-
-@router.post("/login/user", response_model=TokenResponse)
-async def email_login(context: UserLogin) -> TokenResponse:
-    """
-    Takes a user login object, and returns a token response
-    :param context: UserLogin
-    :return: A token response
-    """
-    return jwt_login(context)
-
-
-@router.post("/generate_password", response_model=GeneratePasswordResponse)
-async def generate_random_password(context: GeneratePassword):
-    """
-    This function generates a new password for a user, hashes it, updates the user's
-    password in the database, sends an email with the new password, and returns a response
-    indicating success or failure.
-
-    :param context: The context parameter is an instance of the GeneratePassword class,
-    which likely contains id for the user for whom the password is being generated,
-    :type context: GeneratePassword
-    :return: The function `generate_password` returns either a `GeneratePasswordResponse`
-    object with a `success` flag set to `True`, a `response` field containing a `NewPassword`
-    object with the newly generated password, and no error message, or a `BaseResponse`
-    object with a `success` flag set to `False` and an error message.
-    """
-    new_password = generate_password()
-    hash_password = get_password_hash(new_password)
-    if user := User.update_user(id=context.id, password=hash_password):
-        # send_password_email(user.email, User.username, new_password)
-        return GeneratePasswordResponse(
-            success=True, response=NewPassword(password=new_password)
-        )
-    return BaseResponse(success=False, error="Email Not Sent")
-
-
-class AttemptedLogin:
-    """
-    This class is used to keep track of the number of times a user has attempted to log in
-    follows singleton pattern
-    """
-
-    _instance = None
-    phone_number = None
-    verify_attempts = 0
-    send_attempts = 0
-    last_attempt = datetime.now() - timedelta(minutes=1)
-
-    def __init__(self, phone_number: str):
-        self.phone_number = phone_number
-        self.verify_attempts = self.verify_attempts
-        self.send_attempts = self.send_attempts
-        self.last_attempt = self.last_attempt
-
-    def __new__(cls, *args, **kwargs):
-        if cls.phone_number != kwargs.get("phone_number"):
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
-class OTPError:
-    _instance = None
-    time_left = ""
-    NotVerified = "OTP not verified"
-    Expired = "OTP expired"
-    Invalid = "Invalid OTP"
-    MaxAttempts = "Phone disabled for maximum attempts reached"
-    NotSent = "OTP not sent"
-    NotStarted = "OTP not started"
-    UserDisabled = "User is disabled please contact the admin"
-    UserNotFound = "User not found"
-    TooManyRequests = f""
-    DeactivatingUser = f""
-
-    def __init__(self, time_left: timedelta = None, phone_number: str = None):
-        self.time_left = time_left
-        self.TooManyRequests = (
-            f"Too many requests please try again in {time_left} seconds"
-        )
-        self.DeactivatingUser = (
-            f"Deactivating user {phone_number} for too many failed attempts"
-        )
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-        return cls._instance
-
-
-@router.post("/login/otp/start", response_model=OTPLoginStartResponse)
-async def start_otp_login(context: OTPLoginStart):
-    """
-    This function initiates the OTP login process by generating an OTP, storing it in the database,
-    and sending it to the user's email address.
-
-    :param context: The context parameter is an instance of the OTPLoginStart class, which
-    likely contains the user's email address
-    :type context: OTPLoginStart
-    :return: The function `start_otp_login` returns a `OTPLoginStartResponse` object with a
-    `success` flag set to `True` and no error message.
-    """
-    phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
-    disabled_list = [phone[0] for phone in phone_list if phone[0]]
-    if context.phoneNumber in disabled_list:
-        return BaseResponse(success=False, error=OTPError.UserDisabled)
-    otp_logins = AttemptedLogin(phone_number=context.phoneNumber)
-    if (
-        otp_logins.send_attempts >= 3
-        and otp_logins.last_attempt + timedelta(settings.Config.otp_reset_time)
-        < datetime.now()
-    ):
-        otp_logins.send_attempts = 0
-
-    delta = otp_logins.last_attempt + timedelta(minutes=1)
-    if delta > datetime.now() or otp_logins.send_attempts >= 3:
-        error = OTPError(
-            time_left=delta - datetime.now()
-            if otp_logins.send_attempts < 3
-            else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()
-        )
-        return BaseResponse(success=False, error=error.TooManyRequests)
-    otp = totp.now()
-    otp_response = OTPStartMessage(otp=otp)
-    sms_sent = send_sms(context.phoneNumber, otp_response.message)
-    otp_logins.send_attempts += 1
-    otp_logins.last_attempt = datetime.now()
-    if not sms_sent:
-        return BaseResponse(success=False, error=OTPError.NotSent)
-    otp_non_debug = "OTP sent to your phone number"
-    otp_debug = f"DEBUG: {otp_response.message}"
-    response = LoginStartResponse(
-        message=otp_debug,
-        phone_number=context.phoneNumber,
+    password_authentication = authenticate_user(
+        email=user.email,
+        password=user.password,
+        admin=admin
     )
-    logger.info(response.message)
-    return OTPLoginStartResponse(success=True, response=response)
+
+    if not password_authentication:
+        return {"error": "Wrong login details", "success": False}
+
+    response = AuthController.sign_jwt(
+        claim_id=password_authentication.id,
+        admin=True
+    )
+
+    User.update_user(
+        email=user.email,
+        access_token=response.access_token,
+        id_token=response.id_token
+    )
+    return response
 
 
-@router.post("/login/otp/verify", response_model=TokenResponse)
-async def verify_otp_login(context: OTPLoginVerify):
+@router.post("/admin_login", response_model=user_schema.UserResponse)
+async def admin_login(user: user_schema.AdminLogin) -> UserResponse:
     """
-    This function verifies an OTP and returns a JWT token if the OTP is correct.
+    The admin_login function takes a user object and returns a JWT token.
+    The function uses the Auth0 email_token method to generate an access token for the admin user.
 
-    :param context: The context parameter is an instance of the OTPLoginVerify class,
-    which likely contains the user's email address and the OTP they entered
-    :type context: OTPLoginVerify
-    :return: The function `verify_otp_login` returns either a `OTPLoginVerifyResponse`
-    object with a `success` flag set to `True`, a `response` field containing a
-    `TokenResponse` object with a JWT token, and no error message, or a `BaseResponse`
-    object with a `success` flag set to `False` and an error message.
+    :param user:schema.AdminLogin: Used to Pass in the user object.
+    :return: A dictionary with a jwt token.
     """
-    logger.info(f"Verifying OTP for {context.phoneNumber} with code {context.code}")
-    otp_logins = AttemptedLogin(phone_number=context.phoneNumber)
-    phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
-    disabled_list = [phone[0] for phone in phone_list if phone[0]]
+    return jwt_login(user, admin=True)
 
-    if context.phoneNumber in disabled_list:
-        return BaseResponse(success=False, error=OTPError.UserDisabled)
-    if totp.verify(context.code):
-        otp_logins.verify_attempts = 0
-        logger.info("OTP verified, looking up user")
-        if user := User.read(phoneNumber=context.phoneNumber):
-            logger.info(f"User {user.id} found, generating JWT")
-            response: TokenResponse = sign_jwt(
-                UserClaim(
-                    id=user.id,
-                    phone=user.phone,
-                    phoneNumber=user.phoneNumber,
-                    username=user.username,
-                )
-            )
-            User.update(id=user.id, accessToken=response.response.access_token)
-            return response
-        return BaseResponse(success=False, error=OTPError.UserNotFound)
 
-    otp_logins.verify_attempts += 1
-    if otp_logins.verify_attempts == 3:
-        if user := User.read(phoneNumber=context.phoneNumber):
-            error = OTPError(phone_number=context.phoneNumber)
-            logger.info(error.DeactivatingUser)
-            user.active = False
-            user.session.commit()
-            otp_logins.verify_attempts = 0
-            return BaseResponse(success=False, error=error.DeactivatingUser)
+@router.post("/login/email", response_model=schema.OTPLoginResponse)
+async def email_login(user: user_schema.UserLogin) -> UserResponse:
+    """
+    The otp_login_email function is used to log in a user with an email and password.
+    It takes the user's email and password as input, authenticates them using Auth0,
+    and returns the JWT token for that user.
 
-    if otp_logins.verify_attempts >= 3:
-        return BaseResponse(success=False, error=OTPError.UserDisabled)
+    :param user:schema.EmailLogin: Used to Pass the email and password to the auth0.
+    :return: A BaseResponse containing JWT token or error
 
-    return BaseResponse(success=False, error=OTPError.NotVerified)
+    """
+    return jwt_login(user=user, admin=False)
+
+
+@router.post("/verify/recovery", response_model=schema.Response)
+async def recover_verify(user: schema.Recovery) -> dict:
+    """
+    The recover_verify function is used to verify the user's email address.
+    It takes a user object and returns a dictionary with two keys: success,
+    which is True if the verification was successful, and response, which
+    contains an error message if there was one.
+
+    :param user:schema.Recovery: Used to Pass the email address of the user that is requesting a password reset.
+    :return: A dictionary with the key "success" and if it is true, a response message.
+
+    """
+    response = auth0.email_token(user)
+    error = response.get("error")
+    if not error:
+        password = get_password_hash(user.password)
+        User.update_user(email=user.email, password=password)
+        return {"success": True, "response": "password updated"}
+    return {"success": False, "error": "user not updated"}
+
+
+@router.post("/delete_self", response_model=Response)
+async def delete_self(request: Request):
+    """
+    The delete_self function will delete the user's account.
+
+    :param request:Request: Used to Get the user who is currently logged in.
+    :return: A boolean value.
+
+    """
+    owner = request.user
+    success = User.remove_user(id=owner.id)
+    return {"success": success}

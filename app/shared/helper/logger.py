@@ -1,15 +1,12 @@
-"""
-@author: Kuro
-"""
 import logging
 from settings import Config as settings
 
 config = {
-    "debug": settings.debug_log,
-    "info": settings.info_log,
-    "warning": settings.warning_log,
-    "error": settings.error_log,
-    "critical": settings.critical_log,
+    'debug': settings.debug_log,
+    'info': settings.info_log,
+    'warning': settings.warning_log,
+    'error': settings.error_log,
+    'critical': settings.critical_log
 }
 
 
@@ -40,7 +37,7 @@ class StandardizedLogger:
         :param message: The message to log
         :param user_id: The user_id of the user who is making the request
         """
-        extra = {"user_id": user_id} if user_id else {}
+        extra = {'user_id': user_id} if user_id else {}
         self.logger.log(level, message, extra=extra)
 
     def debug(self, message, user_id=None):

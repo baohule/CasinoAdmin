@@ -6,26 +6,17 @@ from alembic import context
 import os
 import sys
 from dotenv import load_dotenv
-
-from app import logger
 from app.endpoints.urls import APIPrefix
 from app.shared.bases.base_model import Base
+from app.shared.helper.logger import StandardizedLogger
 
-# from app.shared.helper.logger import StandardizedLogger
-
-# logger = StandardizedLogger(__name__)
+logger = StandardizedLogger(__name__)
 
 for route in APIPrefix.include:
     try:
-        exec(f"from app.api.{route}.models import ModelMixin as Base")
-    except ImportError as e:
-        logger.error(f"Route {route} has no tables defined")
-games = ["fish"]
-for route in games:
-    try:
-        exec(f"from app.games.{route}.models import ModelMixin as Base")
-    except ImportError as e:
-        logger.error(f"Route {route} has no tables defined")
+        exec(f'from app.api.{route}.models import ModelMixin as Base')
+    except ImportError:
+        logger.error(f'Route {route} has no tables defined')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))

@@ -1,106 +1,53 @@
-"""
-@author: Kuro
-"""
 import contextlib
-import logging
+import importlib
 import math
+import os
+import sys
 import uuid
 from datetime import datetime, timedelta
-from enum import Enum
 from operator import or_
-from random import randint, choice
+from random import randint, random, choice
 from types import SimpleNamespace
 from typing import Type, Union, Tuple, List, Any, Generic
 from typing import TypeVar
-
+from sqlalchemy.ext.declarative import DeclarativeMeta
 import pytz
 from faker import Faker
 from fastapi.exceptions import HTTPException
+from regex import regex
+
+from app import db
 from pydantic import BaseModel
-from sqlalchemy import (
-    and_,
-    create_engine,
-    MetaData,
-    DateTime,
-    Float,
-    String,
-    Integer,
-    Boolean,
-    Interval,
-)
+from sqlalchemy import func, and_, create_engine, MetaData, Text, Table, inspect, DateTime, Float, String, Integer, ForeignKey, Unicode, TIMESTAMP, BigInteger, Numeric, DECIMAL, \
+    SmallInteger, UnicodeText, Time, Date, Boolean, ARRAY, Interval
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
-from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import registry, sessionmaker
-from sqlalchemy_mixins import AllFeaturesMixin
+from sqlalchemy.orm import registry, Query, sessionmaker
+from sqlalchemy.testing.plugin.plugin_base import logging
 from sqlalchemy_mixins.activerecord import ActiveRecordMixin
 from sqlalchemy_mixins.inspection import InspectionMixin
 from sqlalchemy_mixins.smartquery import SmartQueryMixin
 from starlette.requests import Request
+from typing_extensions import T
 
-from app.api.auth.schema import UserClaim
 from app.endpoints.urls import APIPrefix
-from app.shared.auth.password_handler import verify_password
 from app.shared.exception.exceptions import PredicateConditionException
-from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.schemas.page_schema import PagedResponse
 from settings import Config
-from settings import base_dir
+from app.shared.helper.logger import StandardizedLogger
 
-logging.basicConfig(
-    filename=f"{base_dir}/logs/base_models.log",
-    level=logging.DEBUG,
-    format="%(asctime)s %(levelname)s %(name)s %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
-    filemode="a",
-    force=True,
-)
-logger = logging.getLogger("base_model")
-logger.addHandler(logging.StreamHandler())
-logger.setLevel(logging.DEBUG)
-
-
+logger = StandardizedLogger(__name__)
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()
 Base = mapper_registry.generate_base(
     cls=(DeclarativeBase, ActiveRecordMixin, SmartQueryMixin, InspectionMixin)
 )
-ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
-T = TypeVar("T")
-
-class UserTypeEnum(Enum):
-    """
-    The UserTypeEnum is used to define the different types of users that can be created.
-    """
-
-    admin = "admin"
-    agent = "agent"
-    user = "user"
+ModelType = TypeVar("ModelType", bound=Base)
 
 
-
-### wrute ne a quick func wrapper
-
-# func wrapper
-def func_wrapper(func):
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception as e:
-            logger.error(e)
-            raise HTTPException(status_code=500, detail=str(e))
-
-    return wrapper
-
-
-@func_wrapper
-def some_thing():
-    pass
-
-
-class ModelMixin(AllFeaturesMixin):
+@mapper_registry.mapped
+class ModelMixin(Base):
     """
     Generic Mixin Model to provide helper functions that all Model classes need
     """
@@ -108,33 +55,23 @@ class ModelMixin(AllFeaturesMixin):
     __abstract__ = True
 
     @classmethod
-    def get_or_create(cls: ModelType, *_, **kwargs) -> Generic[T]:
+    def get_or_create(cls: ModelType, *_, **kwargs) -> ModelType:
         """
-        The get_or_create function is a helper function that will
-        either get an object or create it if it doesn't exist.
-        For example, let's say we have a model called User with two
-        fields: name and email.
-        We want to be able to easily create new users based on their
-        name and email address, but we also
-        want our API endpoints (and other parts of our code) to check
-        whether a user already exists before creating them.
+        The get_or_create function is a helper function that will either get an object or create it if it doesn't exist.
+        For example, let's say we have a model called User with two fields: username and email.
+        We want to be able to easily create new users based on their username and email address, but we also
+        want our API endpoints (and other parts of our code) to check whether a user already exists before creating them.
 
-        :param cls:ModelType: Used to Specify the model class that will
-         be used to create or retrieve an instance.
+        :param cls:ModelType: Used to Specify the model class that will be used to create or retrieve an instance.
         :param *_: Used to Ignore the first positional argument.
         :param **kwargs: Used to Pass in all the fields of the model.
         :return: A tuple containing the object and a boolean value indicating whether it was created.
         """
-        try:
-            if not cls.find(kwargs.get("id")):
-                _object = cls(**kwargs)
-                cls.session.add(_object)
-                cls.session.commit()
-                return _object
-        except Exception as e:
-            cls.session.rollback()
-            logger.error(e)
-            return
+        if not cls.find(kwargs.get("id")):
+            _object = cls(**kwargs)
+            cls.session.add(_object)
+            cls.session.commit()
+            return _object
 
     @classmethod
     def map_to_model(cls, model: Type[BaseModel], db_response: Union[Row, List[Row]]):
@@ -190,7 +127,10 @@ class ModelMixin(AllFeaturesMixin):
         """
         timestamp = datetime.now(pytz.utc)
         new_kwargs = dict(kwargs)
-        new_kwargs["createdAt"] = timestamp
+        new_kwargs["created_at"] = timestamp
+        if not new_kwargs.get("id"):
+            item_id = uuid.uuid4()
+            new_kwargs["id"] = item_id
         return new_kwargs
 
     @classmethod
@@ -210,22 +150,38 @@ class ModelMixin(AllFeaturesMixin):
         return {k: v for k, v in kwargs.items() if k in constraints}
 
     @classmethod
+    def get_filters(cls, context: BaseModel = None, kwargs: dict = None):
+        """
+        The get_filters function is a helper function that takes in the context and kwargs
+        and returns a dictionary of filters. The get_filters function is used by all the
+        endpoints to filter their results.
+
+        :param context:BaseModel=None: Used to Pass the context of the request.
+        :param kwargs:dict=None: Used to Pass in any additional keyword arguments that are passed into the function.
+        :return: A dictionary of filters.
+        """
+        filters = kwargs
+        if isinstance(context, BaseModel):
+            filters["context"] = context.dict(exclude_unset=True)
+        return filters
+
+    @classmethod
     def get_owner_context(
-        cls, request: Request, context: BaseModel
+            cls, request: Request, context: BaseModel
     ) -> Tuple[UUID, dict]:
         """
         The get_owner_context function accepts a request and context object as arguments.
-        It returns the ownerId of the user making the request, and a dictionary containing
+        It returns the owner_id of the user making the request, and a dictionary containing
         the values from the context object that are not None or empty strings.
 
         :param request:Request: Used to Get the user id of the current logged-in user.
         :param context:BaseModel: Used to Get the fields of the model that are not none or empty strings.
-        :return: The ownerId of the user making the request, and a dictionary containing.
+        :return: The owner_id of the user making the request, and a dictionary containing.
         """
-        ownerId: int = request.user.id
+        owner_id: UUID = request.user.id
         context_dict = context.dict(exclude_unset=True)
-        context_dict["ownerId"] = ownerId
-        return ownerId, context_dict
+        context_dict["owner_id"] = owner_id
+        return owner_id, context_dict
 
     @classmethod
     def get_kwarg_dependencies(cls, kwargs):
@@ -243,9 +199,7 @@ class ModelMixin(AllFeaturesMixin):
         return {k: v for k, v in kwargs.items() if v and "_id" in k}
 
     @staticmethod
-    def check_many_conditions(
-        _or_: Union[list, dict] = None, _and_: list = Union[list, dict]
-    ):
+    def check_many_conditions(_or_: Union[list, dict] = None, _and_: list = Union[list, dict]):
         """
         The check_many_conditions function checks to see if the conditions are met.
         It takes two arguments, _or_ and _and_. If both arguments are lists, it checks to see if
@@ -274,21 +228,24 @@ class ModelMixin(AllFeaturesMixin):
     @staticmethod
     def get_constraints(kwargs, constraints: List[str]):
         """
-        It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
+           It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
 
-        :param kwargs: The keyword arguments passed to the function
-        :param constraints: A list of strings that represent the constraints that you want to be able to pass in
-        :type constraints: List[str]
-        :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
-        """
-        return {k: v or None for k, v in kwargs.items() if k in constraints}
+           :param kwargs: The keyword arguments passed to the function
+           :param constraints: A list of strings that represent the constraints that you want to be able to pass in
+           :type constraints: List[str]
+           :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
+           """
+        return SimpleNamespace(
+            **{k: v or None for k, v in kwargs.items() if k in constraints}
+        )
 
     @classmethod
     def build_response(
-        cls: ModelType = None,
-        object_data: Any = None,
-        error: str = None,
-    ) -> BaseResponse:
+            cls: ModelType = None,
+            object_data: Any = None,
+            error: str = None,
+            overload: dict = None,
+    ) -> dict:
         """
         The build_response function takes a list of database objects and returns a dictionary with the following structure:
 
@@ -300,199 +257,24 @@ class ModelMixin(AllFeaturesMixin):
         :param cls: Used to Access variables that belongs to the class.
         :return: A dictionary with a key of success and the data.
         """
+        if overload:
+            return dict(success=True, error=None, response=None, **overload)
 
-        if cls and error is None and object_data:
-            return BaseResponse(success=True, response=object_data)
-        return BaseResponse(
-            success=False,
-            error=error
-            or f"unable to perform crud operation on {cls.__name__ or 'object'}",
-        )
-
-    @classmethod
-    def user_claims(cls, *_, **kwargs) -> UserClaim:
-        """
-        > This function takes a user_id and returns a UserClaim object
-
-        :param user_email:  The user's email address
-        :param cls: The class of the model that we're using
-        :return: A UserClaim object with the user's id and email.
-        """
-        password = kwargs.get("password")
-        filters = cls.get_constraints(kwargs, ["email", "phone"])
-        user_lookup: ModelType = cls.read(**filters)
-        if user_lookup and verify_password(password, user_lookup.password):
-            keys = dict(id=user_lookup.id, username=user_lookup.username)
-            keys[
-                filters.get("email") and "email" or filters.get("phone") and "phone"
-            ] = (
-                filters.get("email")
-                and user_lookup.email
-                or filters.get("phone")
-                and user_lookup.phone
-            )
-            return UserClaim()
-
-    @classmethod
-    def create(cls, *_, **kwargs) -> ModelType:
-        """
-        It takes a class, and a dictionary of arguments, and creates a new
-        object of that class with the arguments
-
-        :param cls: The class that the method is being called on
-        :return: The id of the new object
-        """
-        object_data = cls.rebuild(kwargs)
-        new_object = cls(**object_data)
-        try:
-            if cls.where(**object_data).first():
-                return
-            cls.session.add(new_object)
-            cls.session.commit()
-            return new_object
-        except Exception as e:
-            logger.info(e)
-            cls.session.rollback()
-            return
-
-    @classmethod
-    def update(cls, *_, **kwargs) -> ModelType:
-        """
-        > Update an object in the database and return a response object
-
-        :param cls: The class that inherits from BaseModel
-        :return: The updated object.
-        """
-        filters = {
-            k: v
-            for k, v in kwargs.items()
-            if k
-            in [
-                "id",
-                "ownerId",
-                "agentId",
-                "adminId",
-                "userId",
-                "createdByAdminId",
-                "createdByAgentId",
-            ]
+        if cls:
+            return {
+                "success": True,
+                "response": object_data or cls,
+            }
+        return {
+            "success": False,
+            "error": error
+                     or f"unable to perform crud operation on {object_data or 'object'}",
         }
-        for key in filters:
-            kwargs.pop(key)
-        kwargs["updatedAt"] = datetime.now(pytz.utc)
-        try:
-            updated_data = cls.where(**filters)
-            updated_data.update(kwargs)
-            cls.session.commit()
-            return updated_data
-        except Exception as e:
-            logger.error(e)
-            cls.session.rollback()
-            return
 
-    @classmethod
-    def remove(cls, *_, **kwargs) -> BaseResponse:
-        """
-        > This function deletes an object from the database
 
-        :param cls: The class of the model that is being used
-        :return: The id of the deleted object.
-        """
-        object_id = kwargs.get("id")
-        try:
-            delete = cls.where(id=object_id).delete()
-            return delete
-        except Exception as e:
-            logger.error(e)
-            cls.session.rollback()
-            return
 
-    @classmethod
-    def list_all(cls, page: int, num_items: int) -> PagedResponse:
-        """
-        > This function returns a list of all users in the database, paginated by the page and number of items per page
 
-        :param cls: The class that the method is being called on
-        :param page: The page number to return
-        :type page: int
-        :param num_items: The number of items to return per page
-        :type num_items: int
-        :return: A PagedBaseResponse object.
-        """
-        try:
-            objects = cls.where()
-            return paginate(objects, page, num_items)
-        except Exception as e:
-            logger.error(e)
-            cls.session.rollback()
-            return
 
-    @classmethod
-    def read(cls, **kwargs) -> Generic[T]:
-        """
-        > It takes a class and a dictionary of keyword arguments, and returns an
-        instance of that class with the data from the database
-
-        :param cls: The class that is calling the method
-        :return: The first row of the table that matches the query.
-        """
-        return cls.where(**kwargs).first()
-
-    @classmethod
-    def read_all(cls, **kwargs) -> ModelType:
-        """
-        > It takes a class and a dictionary of keyword arguments, and returns an
-        instance of that class with the data from the database
-
-        :param cls: The class that is calling the method
-        :return: The first row of the table that matches the query.
-        """
-
-        try:
-            return cls.where(**kwargs).all()
-        except IntegrityError as e:
-            logger.error(e)
-            cls.session.rollback()
-            return
-
-    @classmethod
-    def search(cls, *_, **kwargs) -> list:
-        """
-        The admin_search_users function allows an admin user to search for users by various criteria.
-        The function accepts a dictionary of key-value pairs as input, and returns a list of dictionaries
-        of matching users. The keys in the input dictionary can be any field in the User model, and each value
-        can be either a single string or an iterable containing strings.
-
-        note: the filter will search by phone OR email if provided, and if not,
-        ALL criteria so pass explicit fields to search by.
-
-        :param *_: Used to Catch any additional arguments that are passed in, but not used by the function.
-        :param **kwargs: Used to Allow the caller to pass in a dictionary of key/value pairs that
-        will be used as filters for the query.
-        :return: A list of users that match the filters in kwargs.
-        """
-        try:
-            if email := kwargs.get("email"):
-                if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
-                    return results
-            if username := kwargs.get("name"):
-                if (
-                    results := cls.where()
-                    .filter(cls.username.ilike(f"%{username}%"))
-                    .all()
-                ):
-                    return results
-            if firstName := kwargs.get("firstName"):
-                if (
-                    results := cls.where()
-                    .filter(cls.firstName.ilike(f"%{firstName}%"))
-                    .all()
-                ):
-                    return results
-        except Exception as e:
-            logger.error(e)
-            cls.session.rollback()
-            return
 
 
 class DataSeeder:
@@ -500,17 +282,14 @@ class DataSeeder:
     This class is used to seed the database with data
     """
 
-    def __init__(self, number_of_records: int = 10, exclude_list: list = None) -> None:
-        self.number_of_records = number_of_records
+    def __init__(self, number_of_users: int = 10) -> None:
+        self.number_of_users = number_of_users
         engine = create_engine(f"postgresql+psycopg2://{Config.postgres_connection}")
         Session = sessionmaker(bind=engine)
         self.session = Session()
         self.fake = Faker()
         self.metadata = MetaData(bind=engine)
         self.metadata.reflect()
-        self.mapped = {}
-        # exclude models from generation
-        self.exclude_list = exclude_list
 
     @staticmethod
     def snake_to_pascal_case(name: str) -> str:
@@ -521,90 +300,33 @@ class DataSeeder:
         :type name: str
         :return: A string with the first letter of each word capitalized.
         """
-        return "".join(word.capitalize() for word in name.split("_"))
+        return ''.join(word.capitalize() for word in name.split('_'))
 
     @staticmethod
     def save_model(model, row_data):
         """
-        It takes a model and a dictionary of data, and saves the data to the database if it does not violate any constraints
+        It takes a model and a dictionary of data, and saves the data to the database
 
         :param model: The model to save the data to
         :param row_data: A dictionary of the row data
         """
-        try:
-            model.get_or_create(model, **row_data)
-            # commit changes to the database
-            model.session.commit()
-        except IntegrityError:
-            # handle unique constraint violation by rolling back the transaction
-            model.session.rollback()
+        model.get_or_create(model, **row_data)
 
-    def get_model_class(self, table_name: str) -> ModelType:
+    @staticmethod
+    def get_model_class(table_name: str):
         """
-        It imports the module `app.api.{route}.models`
-        and returns the class `{table_name}` from that module
+        It imports the module `app.api.{route}.models` and returns the class `{table_name}` from that module
 
         :param table_name: The name of the table you want to get the model class for
         :type table_name: str
         :return: The model class for the table name.
         """
-
         for route in APIPrefix.include:
             with contextlib.suppress(ImportError, AttributeError):
                 module = __import__(f"app.api.{route}.models", fromlist=[table_name])
-                # class_name = DataSeeder.snake_to_pascal_case(table_name)
-                return getattr(module, table_name)
+                return getattr(module, DataSeeder.snake_to_pascal_case(table_name))
 
-    def get_model_metadata(self):
-        # import metadata for all routes to build the registry
-        for route in APIPrefix.include:
-            with contextlib.suppress(ImportError):
-                if route != "auth":
-                    exec(f"from app.api.{route}.models import ModelMixin as Base")
-
-        # loop through models in registry
-        for table in sorted(
-            Base.metadata.sorted_tables, key=lambda t: t.name, reverse=True
-        ):
-            if (
-                table.name not in self.metadata.tables
-            ):  # or table.name in self.exclude_list:
-                continue
-
-            if model := self.get_model_class(table.name):
-                model.name = model.__name__
-                yield model, table
-
-    def get_data_type_mapper(self) -> SimpleNamespace:
-        """
-        returns a list of objects that have a type and fake_type attribute
-
-        :param table: The table name
-        :return: A list of objects with the type and fake_type attributes.
-        """
-        return SimpleNamespace(
-            type_maps=[
-                SimpleNamespace(
-                    type=DateTime,
-                    fake_type=self.fake.date_time_between(
-                        start_date="-30y", end_date="now"
-                    ),
-                ),
-                SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
-                SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
-                SimpleNamespace(type=Float, fake_type=self.fake.pyfloat(positive=True)),
-                SimpleNamespace(
-                    type=Interval, fake_type=timedelta(seconds=randint(0, 86400))
-                ),
-                SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
-                SimpleNamespace(
-                    type=String,
-                    fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}",
-                ),
-            ]
-        )
-
-    def get_table_data(self, table, column) -> List[ModelType]:
+    def get_table_data(self, table, column):
         """
         It returns a list of all the values in a given column of a given table
 
@@ -612,23 +334,34 @@ class DataSeeder:
         :param column: The column name to get data from
         :return: A list of all the values in the column of the table.
         """
-        return self.session.query(getattr(self.get_model_class(table), column)).all()
+        return self.session.query(
+            getattr(self.get_model_class(table), column)
+        ).all()
 
-    def generate_fake_row_data(self, table: MetaData) -> dict:
+    def generate_fake_row_data(self, table):
         """
-        Loop through all table columns, check data types for all columns in a
-        table and generate fake data, ensure pk is unique, loop through table
-        relationships, link fk to existing record, or make one first then build relationship
+        It generates a dictionary of fake data for a given table, and if the table has a foreign key, it will generate a fake row for that table and use the primary key of that row as
+        the foreign key value
 
-        :param table: The table object that we're generating data for
-        :return: A dictionary of column names and fake data.
+        :param table: The table object from the database metadata
+        :return: A dictionary of column names and values.
         """
 
         # loop through all table columns
         row_data = {}
         for column in table.columns:
+            # build a namespace for easy type access
+            data_type_mapper = SimpleNamespace(type_maps=[
+                SimpleNamespace(type=DateTime, fake_type=self.fake.date_time_between(start_date="-30y", end_date="now")),
+                SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
+                SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
+                SimpleNamespace(type=Float, fake_type=self.fake.pyfloat(positive=True)),
+                SimpleNamespace(type=Interval, fake_type=timedelta(seconds=randint(0, 86400))),
+                SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
+                SimpleNamespace(type=String, fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}")
+            ])
+
             # Check data types for all columns in a table and generate fake data
-            data_type_mapper = self.get_data_type_mapper()
             for data_type in data_type_mapper.type_maps:
                 if isinstance(column.type, data_type.type):
                     row_data[column.name] = data_type.fake_type
@@ -636,14 +369,11 @@ class DataSeeder:
             # ensure pk is unique
             if column.primary_key and isinstance(column.type, UUID):
                 row_data[column.name] = str(uuid.uuid4())
-            if column.primary_key and isinstance(column.type, int):
-                row_data[column.name] = self.fake.random_int() * self.fake.random_int()
 
             # loop through table relationships
             for fk in column.foreign_keys:
                 fk_table = fk.column.table
                 fk_column = fk.column
-
                 # link fk to existing record, or make one first then build relationship
                 if fk_records := self.get_table_data(fk_table.name, fk_column.name):
                     row_data[column.name] = choice(fk_records)[0]
@@ -655,19 +385,36 @@ class DataSeeder:
 
     def generate(self):
         """
-        For each model in the registry, generate a number
-        of fake records equal to the number of records specified by
-        the user, and save them to the database.
+        It loops through all the tables in the database, and for each table,
+        it loops through the number of users specified in the config file,
+        and for each user, it generates a row of data for that table,
+        and then adds that row to the database
         """
+        # import metadata for all routes to build the registry
+        for route in APIPrefix.include:
+            with contextlib.suppress(ImportError):
+                exec(f"from app.api.{route}.models import ModelMixin as Base")
 
         # loop through models in registry
-        for model, table in list(self.get_model_metadata()):
-            if table.name in self.exclude_list:
+        for table in reversed(Base.metadata.sorted_tables):
+            if table.name not in self.metadata.tables:
                 continue
-            for _ in range(self.number_of_records):
+
+            # convert sqlalchemy table name to model class name
+            model = self.get_model_class(table.name)
+            model.name = model.__name__
+
+            # generate n records for each table
+            for _ in range(self.number_of_users):
                 row_data = self.generate_fake_row_data(table)
+
+                # discover all models from declared routes
+                for route in APIPrefix.include:
+                    with contextlib.suppress(ImportError):
+                        exec(f"from app.api.{route}.models import {model.name}")
+
                 self.save_model(model, row_data)
-            print(model, f"{self.number_of_records} records added to db")
+                print(model.name, "data added to db")
 
 
 class Page(Generic[T]):
@@ -675,11 +422,9 @@ class Page(Generic[T]):
     Pagination class to allow for paging of database data
     """
 
-    def __init__(self, items: list, page: int = 1, page_size: int = 10, total: int = 0):
+    def __init__(self, items, page, page_size, total):
         self.items = items
-        self.dict_items = [
-            isinstance(_item, Row) and _item._asdict() or _item for _item in items
-        ]
+        self.dict_items = [item._asdict() for item in items]
         self.page = page
         self.page_size = page_size
         self.total = total
@@ -722,7 +467,7 @@ class Page(Generic[T]):
         """
 
 
-def paginate(cls, page: int, page_size: int):
+def paginate(query: Query, page: int, page_size: int) -> Page[Row]:
     """
     The paginate function takes a query, the page number and page size as arguments.
     It then returns a tuple of the items on that page and the total number of items.
@@ -736,6 +481,6 @@ def paginate(cls, page: int, page_size: int):
         raise HTTPException(400, detail="page needs to be >= 1")
     if page_size <= 0:
         raise HTTPException(400, detail="page_size needs to be >= 1")
-    items: list[Row] = cls.where().limit(page_size).offset((page - 1) * page_size).all()
-    total_items = cls.count()
-    return Page(items, page, page_size, total_items)
+    items: list[Row] = query.limit(page_size).offset((page - 1) * page_size).all()
+    total = query.select(func.count(1)).first()
+    return Page(items, page, page_size, total)
