@@ -1,26 +1,39 @@
+import contextlib
+import importlib
 import math
+import os
+import sys
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from operator import or_
+from random import randint, random, choice
 from types import SimpleNamespace
 from typing import Type, Union, Tuple, List, Any, Generic
 from typing import TypeVar
-
+from sqlalchemy.ext.declarative import DeclarativeMeta
 import pytz
+from faker import Faker
 from fastapi.exceptions import HTTPException
+from regex import regex
+
+from app import db
 from pydantic import BaseModel
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, create_engine, MetaData, Text, Table, inspect, DateTime, Float, String, Integer, ForeignKey, Unicode, TIMESTAMP, BigInteger, Numeric, DECIMAL, \
+    SmallInteger, UnicodeText, Time, Date, Boolean, ARRAY, Interval
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import registry, Query
+from sqlalchemy.orm import registry, Query, sessionmaker
+from sqlalchemy.testing.plugin.plugin_base import logging
 from sqlalchemy_mixins.activerecord import ActiveRecordMixin
 from sqlalchemy_mixins.inspection import InspectionMixin
 from sqlalchemy_mixins.smartquery import SmartQueryMixin
 from starlette.requests import Request
 from typing_extensions import T
 
+from app.endpoints.urls import APIPrefix
 from app.shared.exception.exceptions import PredicateConditionException
+from settings import Config
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()
@@ -51,7 +64,11 @@ class ModelMixin(Base):
         :param **kwargs: Used to Pass in all the fields of the model.
         :return: A tuple containing the object and a boolean value indicating whether it was created.
         """
-        return cls.find(kwargs.get("id")) or cls.create(**kwargs)
+        if not cls.find(kwargs.get("id")):
+            _object = cls(**kwargs)
+            cls.session.add(_object)
+            cls.session.commit()
+            return _object
 
     @classmethod
     def map_to_model(cls, model: Type[BaseModel], db_response: Union[Row, List[Row]]):
@@ -208,13 +225,13 @@ class ModelMixin(Base):
     @staticmethod
     def get_constraints(kwargs, constraints: List[str]):
         """
-        It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
+           It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
 
-        :param kwargs: The keyword arguments passed to the function
-        :param constraints: A list of strings that represent the constraints that you want to be able to pass in
-        :type constraints: List[str]
-        :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
-        """
+           :param kwargs: The keyword arguments passed to the function
+           :param constraints: A list of strings that represent the constraints that you want to be able to pass in
+           :type constraints: List[str]
+           :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
+           """
         return SimpleNamespace(
             **{k: v or None for k, v in kwargs.items() if k in constraints}
         )
@@ -250,6 +267,131 @@ class ModelMixin(Base):
             "error": error
                      or f"unable to perform crud operation on {object_data or 'object'}",
         }
+
+
+def snake_to_pascal_case(name: str) -> str:
+    return ''.join(word.capitalize() for word in name.split('_'))
+
+
+fake = Faker()
+
+
+class DataSeeder:
+    """
+    This class is used to seed the database with data
+    """
+
+    def __init__(self, number_of_users: int = 10) -> None:
+        self.number_of_users = number_of_users
+        engine = create_engine(f"postgresql+psycopg2://{Config.postgres_connection}")
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+        self.fake = Faker()
+        self.metadata = MetaData(bind=engine)
+        self.metadata.reflect()
+
+    @staticmethod
+    def save_model(model, row_data):
+        """
+        It takes a model and a dictionary of data, and saves the data to the database
+
+        :param model: The model to save the data to
+        :param row_data: A dictionary of the row data
+        """
+        model.get_or_create(model, **row_data)
+
+    @staticmethod
+    def get_model_class(table_name: str):
+        """
+        It imports the module `app.api.{route}.models` and returns the class `{table_name}` from that module
+
+        :param table_name: The name of the table you want to get the model class for
+        :type table_name: str
+        :return: The model class for the table name.
+        """
+        for route in APIPrefix.include:
+            with contextlib.suppress(ImportError, AttributeError):
+                module = __import__(f"app.api.{route}.models", fromlist=[table_name])
+                return getattr(module, snake_to_pascal_case(table_name))
+
+    def get_table_data(self, table, column):
+        """
+        It returns a list of all the values in a given column of a given table
+
+        :param table: The name of the table you want to query
+        :param column: The column name to get data from
+        :return: A list of all the values in the column of the table.
+        """
+        return self.session.query(
+            getattr(self.get_model_class(table), column)
+        ).all()
+
+    def generate_fake_row_data(self, table):
+        """
+        It generates a dictionary of fake data for a given table, and if the table has a foreign key, it will generate a fake row for that table and use the primary key of that row as
+        the foreign key value
+
+        :param table: The table object from the database metadata
+        :return: A dictionary of column names and values.
+        """
+
+        # loop through all table columns
+        row_data = {}
+        for column in table.columns:
+            # build a namespace for easy type access
+            data_type_mapper = SimpleNamespace(type_maps=[
+                SimpleNamespace(type=DateTime, fake_type=fake.date_time_between(start_date="-30y", end_date="now")),
+                SimpleNamespace(type=Boolean, fake_type=fake.boolean()),
+                SimpleNamespace(type=Integer, fake_type=fake.random_int()),
+                SimpleNamespace(type=Float, fake_type=fake.pyfloat(positive=True)),
+                SimpleNamespace(type=Interval, fake_type=timedelta(seconds=randint(0, 86400))),
+                SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
+                SimpleNamespace(type=String, fake_type=f"{' '.join([fake.word() for _ in range(8)])}")
+            ])
+
+            # Check data types for all columns in a table and generate fake data
+            for data_type in data_type_mapper.type_maps:
+                if isinstance(column.type, data_type.type):
+                    row_data[column.name] = data_type.fake_type
+
+            # ensure pk is unique
+            if column.primary_key and isinstance(column.type, UUID):
+                row_data[column.name] = str(uuid.uuid4())
+
+            # loop through table relationships
+            for fk in column.foreign_keys:
+                fk_table = fk.column.table
+                fk_column = fk.column
+                if fk_records := self.get_table_data(fk_table.name, fk_column.name):
+                    row_data[column.name] = choice(fk_records)[0]
+                else:
+                    new_data = self.generate_fake_row_data(fk_table)
+                    self.save_model(self.get_model_class(fk_table.name), new_data)
+
+        return row_data
+
+    def generate(self):
+        """
+        It loops through all the tables in the database, and for each table, it loops through the number of users specified in the config file, and for each user, it generates a row of
+        data for that table, and then adds that row to the database
+        """
+        for route in APIPrefix.include:
+            with contextlib.suppress(ImportError):
+                exec(f"from app.api.{route}.models import ModelMixin as Base")
+        for table in reversed(Base.metadata.sorted_tables):
+            if table.name not in self.metadata.tables:
+                continue
+
+            model = self.get_model_class(table.name).__name__
+
+            for _ in range(self.number_of_users):
+                row_data = self.generate_fake_row_data(table)
+
+                for route in APIPrefix.include:
+                    with contextlib.suppress(ImportError):
+                        exec(f"from app.api.{route}.models import {model}")
+                getattr(eval(model)(), "get_or_create")(eval(model), **row_data)
+                print(model, "data added to db")
 
 
 class Page(Generic[T]):

@@ -4,8 +4,9 @@ from typing import Optional, Generator, Union
 
 import pytz
 from fastapi_sqlalchemy import db
-from sqlalchemy import Column, String, Date, Boolean, DateTime, Text, and_, or_
+from sqlalchemy import Column, String, Date, Boolean, DateTime, Text, and_, or_, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.util import counter
 
 from app.api.admin.models import AdminUser, AdminRole
@@ -26,6 +27,7 @@ class User(ModelMixin):
     id: Column = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email: Column = Column(String(80), unique=True, nullable=True)
     username: Column = Column(String(80), unique=True, nullable=True)
+    password: Column = Column(String(256), unique=False, nullable=True)
     name: Column = Column(Text, nullable=False)
     access_token: Column = Column(Text, nullable=True)
     id_token: Column = Column(Text, nullable=True)
@@ -34,6 +36,14 @@ class User(ModelMixin):
     updated_at = Column(DateTime, nullable=True)
     qa_bypass = Column(Boolean, default=False)
     error: Optional[str] = None
+    created_by_id = Column(
+        UUID(as_uuid=True), ForeignKey(AdminUser.id, ondelete="CASCADE"), index=True
+    )
+    created_by = relationship(
+        "AdminUser",
+        foreign_keys="User.created_by_id",
+        backref=backref("admin", single_parent=True),
+    )
 
     @classmethod
     def get(cls, *_, **kwargs):
@@ -216,31 +226,3 @@ class User(ModelMixin):
             payload["admin_role"] = admin_role
         return payload
 
-
-def seed_search_db():
-    """
-    Seed the ms db with users from our current database
-    """
-    with db():
-        count = counter()
-
-        def user_iterator(user_list: list) -> Generator:
-            """
-            The user_iterator function iterates over a list of users and yields each user.
-            The user result is transformed into a dictionary containing the UUID as a string.
-
-            :param user_list: Used to Iterate through the users list.
-            :return: A generator object.
-            """
-            for user in user_list:
-                count(1)
-                yield dict(id=str(user.id), username=user.username, name=user.name)
-
-        users = (
-            User.where(id__ne=None)
-                .select(User.id, User.username, User.name)
-                .yield_per(10000)
-                .all()
-        )
-        seed_users(list(user_iterator(users)))
-        print(f"Seeded {count} users into the meilisearch database!")

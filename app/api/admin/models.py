@@ -111,7 +111,7 @@ class AdminUser(ModelMixin):
     password = Column(Text)
     name: Column = Column(Text)
     role_id = Column(
-        UUID(as_uuid=True), ForeignKey(AdminRole.id, ondelete="CASCADE", use_alter=True), index=True
+        UUID(as_uuid=True), ForeignKey(AdminRole.id, ondelete="CASCADE"), index=True
     )
     active = Column(Boolean, default=True)
     token = Column(Text)

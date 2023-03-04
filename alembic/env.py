@@ -1,35 +1,21 @@
+import logging
 from logging.config import fileConfig
-from sqlalchemy import engine_from_config
+from typing import Optional, Type
+
+from sqlalchemy import engine_from_config, MetaData
 from sqlalchemy import pool
 from alembic import context
 import os
 import sys
 from dotenv import load_dotenv
+from app.endpoints.urls import APIPrefix
+from app.shared.bases.base_model import Base
 
-from app.type_tables.asset_type.models import Base
-from app.type_tables.property_type.models import Base
-from app.type_tables.round_type.models import Base
-from app.type_tables.topic_type.models import Base
-from app.api.user.models import Base
-from app.api.post.models import Base
-from app.api.review.models import Base
-from app.api.files.models import Base
-from app.api.like.models import Base
-from app.api.strategy.models import Base
-from app.api.follow.models import Base
-from app.api.update.models import Base
-from app.api.reaction.models import Base
-from app.api.portfolio.models import Base
-from app.api.question.models import Base
-from app.api.comment.models import Base
-from app.api.investment.models import Base
-from app.api.interest.models import Base
-from app.api.profile.models import Base
-from app.api.admin.models import Base
-from app.api.history.models import Base
-from app.api.allocation.models import Base
-from app.api.topic.models import Base
-
+for route in APIPrefix.include:
+    try:
+        exec(f'from app.api.{route}.models import ModelMixin as Base')
+    except ImportError:
+        logging.error(f'Route {route} has no tables defined')
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(BASE_DIR, ".env"))
