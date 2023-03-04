@@ -34,6 +34,9 @@ from typing_extensions import T
 from app.endpoints.urls import APIPrefix
 from app.shared.exception.exceptions import PredicateConditionException
 from settings import Config
+from app.shared.helper.logger import StandardizedLogger
+
+logger = StandardizedLogger(__name__)
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()
@@ -269,11 +272,9 @@ class ModelMixin(Base):
         }
 
 
-def snake_to_pascal_case(name: str) -> str:
-    return ''.join(word.capitalize() for word in name.split('_'))
 
 
-fake = Faker()
+
 
 
 class DataSeeder:
@@ -289,6 +290,17 @@ class DataSeeder:
         self.fake = Faker()
         self.metadata = MetaData(bind=engine)
         self.metadata.reflect()
+
+    @staticmethod
+    def snake_to_pascal_case(name: str) -> str:
+        """
+        It takes a string in snake case and returns a string in Pascal case
+
+        :param name: The name of the class to be generated
+        :type name: str
+        :return: A string with the first letter of each word capitalized.
+        """
+        return ''.join(word.capitalize() for word in name.split('_'))
 
     @staticmethod
     def save_model(model, row_data):
@@ -312,7 +324,7 @@ class DataSeeder:
         for route in APIPrefix.include:
             with contextlib.suppress(ImportError, AttributeError):
                 module = __import__(f"app.api.{route}.models", fromlist=[table_name])
-                return getattr(module, snake_to_pascal_case(table_name))
+                return getattr(module, DataSeeder.snake_to_pascal_case(table_name))
 
     def get_table_data(self, table, column):
         """
@@ -340,13 +352,13 @@ class DataSeeder:
         for column in table.columns:
             # build a namespace for easy type access
             data_type_mapper = SimpleNamespace(type_maps=[
-                SimpleNamespace(type=DateTime, fake_type=fake.date_time_between(start_date="-30y", end_date="now")),
-                SimpleNamespace(type=Boolean, fake_type=fake.boolean()),
-                SimpleNamespace(type=Integer, fake_type=fake.random_int()),
-                SimpleNamespace(type=Float, fake_type=fake.pyfloat(positive=True)),
+                SimpleNamespace(type=DateTime, fake_type=self.fake.date_time_between(start_date="-30y", end_date="now")),
+                SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
+                SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
+                SimpleNamespace(type=Float, fake_type=self.fake.pyfloat(positive=True)),
                 SimpleNamespace(type=Interval, fake_type=timedelta(seconds=randint(0, 86400))),
                 SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
-                SimpleNamespace(type=String, fake_type=f"{' '.join([fake.word() for _ in range(8)])}")
+                SimpleNamespace(type=String, fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}")
             ])
 
             # Check data types for all columns in a table and generate fake data
@@ -362,6 +374,7 @@ class DataSeeder:
             for fk in column.foreign_keys:
                 fk_table = fk.column.table
                 fk_column = fk.column
+                # link fk to existing record, or make one first then build relationship
                 if fk_records := self.get_table_data(fk_table.name, fk_column.name):
                     row_data[column.name] = choice(fk_records)[0]
                 else:
@@ -372,26 +385,36 @@ class DataSeeder:
 
     def generate(self):
         """
-        It loops through all the tables in the database, and for each table, it loops through the number of users specified in the config file, and for each user, it generates a row of
-        data for that table, and then adds that row to the database
+        It loops through all the tables in the database, and for each table,
+        it loops through the number of users specified in the config file,
+        and for each user, it generates a row of data for that table,
+        and then adds that row to the database
         """
+        # import metadata for all routes to build the registry
         for route in APIPrefix.include:
             with contextlib.suppress(ImportError):
                 exec(f"from app.api.{route}.models import ModelMixin as Base")
+
+        # loop through models in registry
         for table in reversed(Base.metadata.sorted_tables):
             if table.name not in self.metadata.tables:
                 continue
 
-            model = self.get_model_class(table.name).__name__
+            # convert sqlalchemy table name to model class name
+            model = self.get_model_class(table.name)
+            model.name = model.__name__
 
+            # generate n records for each table
             for _ in range(self.number_of_users):
                 row_data = self.generate_fake_row_data(table)
 
+                # discover all models from declared routes
                 for route in APIPrefix.include:
                     with contextlib.suppress(ImportError):
-                        exec(f"from app.api.{route}.models import {model}")
-                getattr(eval(model)(), "get_or_create")(eval(model), **row_data)
-                print(model, "data added to db")
+                        exec(f"from app.api.{route}.models import {model.name}")
+
+                self.save_model(model, row_data)
+                print(model.name, "data added to db")
 
 
 class Page(Generic[T]):

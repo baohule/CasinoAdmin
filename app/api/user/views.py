@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, Request
-from fastapi_sqlalchemy import db
-
-from app.api.admin.models import AdminUser
 from app.api.user import schema
 from app.api.user.models import User
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
+from app.shared.helper.logger import StandardizedLogger
+
+logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/user",
@@ -20,6 +20,7 @@ async def post_user_data(context: schema.GetUser):
     The post_user_data function is used to create a new user in the database.
     It takes a context argument, which is an instance of schema.GetUser.
 
+    :param request:
     :param context:schema.GetUser: Used to Pass the user data to the function.
     :return: A GetUserResponse object.
     """

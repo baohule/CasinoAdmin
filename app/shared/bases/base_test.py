@@ -30,16 +30,6 @@ def mock_post(url, data):
     return response
 
 
-def mock_paged_post_data(context, page, size, order):
-    return GetPagedPost(
-        **{
-            "context": context,
-            "params": {"page": page, "size": size},
-            "sorting": "asc" if order == "asc" else "desc",
-        }
-    )
-
-
 def readout(response):
     print("\n----------------RESPONSE READOUT----------------")
     print("status_code: ", response.status_code)

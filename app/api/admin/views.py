@@ -7,8 +7,10 @@ from app.shared.middleware.auth import JWTBearer
 from app.api.user.schema import AdminUserCreate
 import app.api.admin.schema as schema
 from app.api.admin.models import AdminUser, AdminRole
-from fastapi.logger import logger
 from fastapi.exceptions import HTTPException
+from app.shared.helper.logger import StandardizedLogger
+
+logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/admin",

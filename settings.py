@@ -34,25 +34,9 @@ class Config:
     meilisearch_url: str = os.getenv("MEILISEARCH_URL", "")
     meili_admin_key: str = os.getenv("MEILI_ADMIN_KEY", "")
     meili_query_key: str = os.getenv("MEILI_QUERY_KEY", "")
+    debug_log = os.getenv("DEBUG_LOG", "")
+    info_log = os.getenv("INFO_LOG", "")
+    warning_log = os.getenv("WARNING_LOG", "")
+    error_log = os.getenv("ERROR_LOG", "")
+    critical_log = os.getenv("CRITICAL_LOG", "")
 
-    log_config = {
-        "version": 1,
-        "disable_existing_loggers": False,
-        "formatters": {
-            "default": {
-                "()": "uvicorn.logging.DefaultFormatter",
-                "fmt": "%(levelprefix)s %(asctime)s %(message)s",
-                "datefmt": "%Y-%m-%d %H:%M:%S",
-            },
-        },
-        "handlers": {
-            "default": {
-                "formatter": "default",
-                "class": "logging.StreamHandler",
-                "stream": "ext://sys.stderr",
-            },
-        },
-        "loggers": {
-            "app": {"handlers": ["default"], "level": "DEBUG"},
-        },
-    }
