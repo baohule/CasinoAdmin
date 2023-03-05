@@ -22,7 +22,7 @@ def add_routes():
     :return: The app object is being returned.
     """
     for route in APIPrefix.include:
-        exec(f'from app.api.{route}.views import router as {route}')
-        exec(f'app.include_router({route})')
+        exec(f"from app.api.{route}.views import router as {route}")
+        exec(f"app.include_router({route})")
     use_route_names_as_operation_ids(app)
     return app

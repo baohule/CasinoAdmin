@@ -2,6 +2,7 @@ from fastapi.testclient import TestClient
 
 from app import app
 from app.api.admin.schema import BaseUser
+
 # from app.api.post.schema import GetPagedPost
 from app.api.auth.views import AuthController
 from app.endpoints.routes import add_routes

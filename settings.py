@@ -39,4 +39,3 @@ class Config:
     warning_log = os.getenv("WARNING_LOG", "")
     error_log = os.getenv("ERROR_LOG", "")
     critical_log = os.getenv("CRITICAL_LOG", "")
-

@@ -4,7 +4,17 @@ from typing import Optional, Generator, Union
 
 import pytz
 from fastapi_sqlalchemy import db
-from sqlalchemy import Column, String, Date, Boolean, DateTime, Text, and_, or_, ForeignKey
+from sqlalchemy import (
+    Column,
+    String,
+    Date,
+    Boolean,
+    DateTime,
+    Text,
+    and_,
+    or_,
+    ForeignKey,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.util import counter
@@ -19,6 +29,7 @@ from app.api.user import schema
 from app.shared.helper.logger import StandardizedLogger
 
 logger = StandardizedLogger(__name__)
+
 
 class User(ModelMixin):
     """
@@ -93,13 +104,10 @@ class User(ModelMixin):
         :return: A list of user objects.
 
         """
-        users = (
-            db.session.query(
-                User.id,
-                User.username,
-                User.name,
-            )
-
+        users = db.session.query(
+            User.id,
+            User.username,
+            User.name,
         )
         user_pages = paginate(users, page, items)
         response = user_pages.as_dict()
@@ -139,8 +147,10 @@ class User(ModelMixin):
             User.username == base_data.username,
             User.email == base_data.email,
         ]
-        predicate = {'id_': "x"}
-        user = cls.where(cls.filter_expr(or_=[or_(*constraints), and_(*constraints)])).create(**user_data)
+        predicate = {"id_": "x"}
+        user = cls.where(
+            cls.filter_expr(or_=[or_(*constraints), and_(*constraints)])
+        ).create(**user_data)
         return SafeException(**cls.build_response(user))
 
     @classmethod
@@ -227,4 +237,3 @@ class User(ModelMixin):
             payload["admin"] = admin
             payload["admin_role"] = admin_role
         return payload
-

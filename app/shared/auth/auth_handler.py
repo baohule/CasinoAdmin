@@ -40,12 +40,12 @@ class AuthController(ModelMixin):
 
     @classmethod
     def sign_jwt(
-            cls: ModelType,
-            claim_id: str,
-            admin=False,
-            refresh=False,
-            claim_check=False,
-            skip_verification=False,
+        cls: ModelType,
+        claim_id: str,
+        admin=False,
+        refresh=False,
+        claim_check=False,
+        skip_verification=False,
     ):
         """
         It signs a JWT token.

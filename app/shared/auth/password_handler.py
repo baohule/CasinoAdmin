@@ -49,8 +49,5 @@ def authenticate_user(email: str, password: str, admin=False) -> User:
     """
     model = AdminUser if admin else User
     return model.where(
-        email=email,
-        password=get_password_hash(password),
-        admin=admin
+        email=email, password=get_password_hash(password), admin=admin
     ).first()
-

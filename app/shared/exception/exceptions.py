@@ -3,6 +3,7 @@ class PredicateConditionException(Exception):
     """
     Raising an exception for invalid predicate condition
     """
+
     doc = """
     There must be an explicit left hand condition for the predicate dictionary, I.E:\n
        {

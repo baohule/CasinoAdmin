@@ -145,5 +145,6 @@ class CLaimAuthPayload(CamelModel):
     """
     This class is used to claim a user's account
     """
+
     user_id: UUID
     user_email: str

@@ -34,7 +34,7 @@ class AdminRole(ModelMixin):
 
     @classmethod
     def get_all_roles(
-            cls,
+        cls,
     ) -> dict:
         """
         The get_all_roles function returns a dictionary of all roles in the database.

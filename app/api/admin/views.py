@@ -67,10 +67,6 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
 
     """
-    """
-    Phone number will accept any form as long as it starts with a +1.
-    Birthday has to be in format year-month-day.
-    """
 
     role = request.user.admin_role
 
@@ -127,7 +123,7 @@ async def remove_user(user: schema.RemoveUser, request: Request):
     :param request:Request: Used to Get the user id of the logged-in user.
     :return: A dictionary with the key "success" and a boolean value.
 
- 
+
     """
     role = request.user.admin_role
     if not role or not role.can_alter_user:
