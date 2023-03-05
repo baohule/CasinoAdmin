@@ -57,9 +57,9 @@ from typing_extensions import T
 from app.endpoints.urls import APIPrefix
 from app.shared.exception.exceptions import PredicateConditionException
 from settings import Config
-from app.shared.helper.logger import StandardizedLogger
+# from app.shared.helper.logger import StandardizedLogger
 
-logger = StandardizedLogger(__name__)
+# logger = StandardizedLogger(__name__)
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()

@@ -26,9 +26,9 @@ from app.shared.bases.base_model import paginate
 from app.shared.exception.utils import safe
 from app.shared.schemas.ExceptionSchema import SafeException
 from app.api.user import schema
-from app.shared.helper.logger import StandardizedLogger
+# from app.shared.helper.logger import StandardizedLogger
 
-logger = StandardizedLogger(__name__)
+# logger = StandardizedLogger(__name__)
 
 
 class User(ModelMixin):

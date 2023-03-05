@@ -3,9 +3,9 @@ from app.api.user import schema
 from app.api.user.models import User
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
-from app.shared.helper.logger import StandardizedLogger
+# from app.shared.helper.logger import StandardizedLogger
 
-logger = StandardizedLogger(__name__)
+# logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/user",
