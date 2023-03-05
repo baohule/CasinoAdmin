@@ -13,13 +13,13 @@ import app.shared.search.search as search
 
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from fastapi.logger import logger, logging
-
-sentry_sdk.init(
-    Config.sentry_ingestion_url,
-    traces_sample_rate=1.0,
-    environment=Config.sentry_environment,
-    transport=print
-)
+#
+# sentry_sdk.init(
+#     Config.sentry_ingestion_url,
+#     traces_sample_rate=1.0,
+#     environment=Config.sentry_environment,
+#     transport=print
+# )
 
 
 logger.setLevel(logging.INFO)
