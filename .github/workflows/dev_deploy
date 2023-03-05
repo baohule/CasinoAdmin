@@ -10,7 +10,7 @@ on:
 
 
   # Allows you to run this workflow manually from the Actions tab
-  workflow_dispatch:
+  # workflow_dispatch:
 
 
 env:
@@ -86,4 +86,4 @@ jobs:
             docker stop webapi || true && docker rm webapi || true
             docker rmi ${{ needs.build.outputs.tags }}
             docker pull ${{ needs.build.outputs.tags }}
-            docker run -d -p 8000:8080 --restart always --env-file /apps/CasinoAdmin.env --name webapi ${{ needs.build.outputs.tags }}
+            docker run -d -p 8000:8080 --restart always --env-file /apps/CasinoAdmin/.env --name webapi ${{ needs.build.outputs.tags }}
