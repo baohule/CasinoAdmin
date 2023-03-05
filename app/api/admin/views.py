@@ -8,9 +8,9 @@ from app.api.user.schema import AdminUserCreate
 import app.api.admin.schema as schema
 from app.api.admin.models import AdminUser, AdminRole
 from fastapi.exceptions import HTTPException
-from app.shared.helper.logger import StandardizedLogger
+# from app.shared.helper.logger import StandardizedLogger
 
-logger = StandardizedLogger(__name__)
+# logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/admin",
@@ -218,7 +218,8 @@ async def batch_delete_users(dataset: schema.SearchUsers, request: Request):
     for query in dataset.__root__:
         removed = User.remove_user(id=query.id)
         if not removed:
-            logger.info(f"{query.id} failed")
+            pass
+            # logger.info(f"{query.id} failed")
     return {"success": True}
 
 
@@ -243,7 +244,8 @@ def batch_update_users(dataset: schema.BatchUsers, request: Request):
         data: dict = query.dict()
         updated = User.update_user(**data)
         if not updated:
-            logger.info(f"{query} failed to update")
+            pass
+            # logger.info(f"{query} failed to update")
 
     return {"success": True}
 

@@ -14,9 +14,9 @@ from app.shared.auth.auth_handler import AuthController
 from app.shared.auth.password_handler import get_password_hash, authenticate_user
 from app.shared.bases.base_model import ModelType
 from app.shared.middleware.auth import JWTBearer
-from app.shared.helper.logger import StandardizedLogger
+# from app.shared.helper.logger import StandardizedLogger
 
-logger = StandardizedLogger(__name__)
+# logger = StandardizedLogger(__name__)
 
 router = APIRouter(
     prefix="/api/auth",
