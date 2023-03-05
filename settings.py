@@ -27,7 +27,7 @@ class Config:
     s3_video_bucket: str = os.getenv("S3_VIDEO_BUCKET")
     broker_url: str = os.getenv("BROKER_URL", "")
     celery_database: str = os.getenv("CELERY_DATABASE", "")
-    workers: int = int(os.getenv("WORKERS", 15))
+    workers: int = int(os.getenv("WORKERS", 1))
     reload: bool = os.getenv("RELOAD", False)
     sentry_ingestion_url: str = os.getenv("SENTRY_INGESTION_URL", "")
     sentry_environment: str = os.getenv("SENTRY_ENVIRONMENT", "local")
