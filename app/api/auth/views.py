@@ -26,7 +26,7 @@ router = APIRouter(
 
 @router.post("/signup", response_model=UserResponse)
 async def create_user(
-        user: user_schema.AdminUserCreate,
+    user: user_schema.AdminUserCreate,
 ) -> Union[Union[dict[str, Any], Response, None, str], Any]:
     """
     The create_user function creates a new user in the database.
@@ -44,7 +44,7 @@ async def create_user(
     # if return_data.get('error'):
     if return_data.error:
         return return_data
-    user: ModelType = return_data.get('response')
+    user: ModelType = return_data.get("response")
     return AuthController.sign_jwt(user.phone, skip_verification=True)
 
 
@@ -88,13 +88,7 @@ def refresh_token_admin(request: Request):
     return AuthController.sign_jwt(request.user.id, admin=True)
 
 
-def jwt_login(
-        user: Union[
-            user_schema.AdminLogin,
-            user_schema.UserLogin
-        ],
-        admin: bool
-):
+def jwt_login(user: Union[user_schema.AdminLogin, user_schema.UserLogin], admin: bool):
     """
     > It takes a user object and a boolean value, and returns a JWT token if the user is authenticated, otherwise it returns an error message
 
@@ -105,23 +99,16 @@ def jwt_login(
     :return: A dictionary with a key of error and a value of "Wrong login details" and a key of success and a value of False.
     """
     password_authentication = authenticate_user(
-        email=user.email,
-        password=user.password,
-        admin=admin
+        email=user.email, password=user.password, admin=admin
     )
 
     if not password_authentication:
         return {"error": "Wrong login details", "success": False}
 
-    response = AuthController.sign_jwt(
-        claim_id=password_authentication.id,
-        admin=True
-    )
+    response = AuthController.sign_jwt(claim_id=password_authentication.id, admin=True)
 
     User.update_user(
-        email=user.email,
-        access_token=response.access_token,
-        id_token=response.id_token
+        email=user.email, access_token=response.access_token, id_token=response.id_token
     )
     return response
 

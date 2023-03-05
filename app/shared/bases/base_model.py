@@ -14,12 +14,35 @@ from sqlalchemy.ext.declarative import DeclarativeMeta
 import pytz
 from faker import Faker
 from fastapi.exceptions import HTTPException
-from regex import regex
 
 from app import db
 from pydantic import BaseModel
-from sqlalchemy import func, and_, create_engine, MetaData, Text, Table, inspect, DateTime, Float, String, Integer, ForeignKey, Unicode, TIMESTAMP, BigInteger, Numeric, DECIMAL, \
-    SmallInteger, UnicodeText, Time, Date, Boolean, ARRAY, Interval
+from sqlalchemy import (
+    func,
+    and_,
+    create_engine,
+    MetaData,
+    Text,
+    Table,
+    inspect,
+    DateTime,
+    Float,
+    String,
+    Integer,
+    ForeignKey,
+    Unicode,
+    TIMESTAMP,
+    BigInteger,
+    Numeric,
+    DECIMAL,
+    SmallInteger,
+    UnicodeText,
+    Time,
+    Date,
+    Boolean,
+    ARRAY,
+    Interval,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
 from sqlalchemy.ext.declarative import declarative_base
@@ -167,7 +190,7 @@ class ModelMixin(Base):
 
     @classmethod
     def get_owner_context(
-            cls, request: Request, context: BaseModel
+        cls, request: Request, context: BaseModel
     ) -> Tuple[UUID, dict]:
         """
         The get_owner_context function accepts a request and context object as arguments.
@@ -199,7 +222,9 @@ class ModelMixin(Base):
         return {k: v for k, v in kwargs.items() if v and "_id" in k}
 
     @staticmethod
-    def check_many_conditions(_or_: Union[list, dict] = None, _and_: list = Union[list, dict]):
+    def check_many_conditions(
+        _or_: Union[list, dict] = None, _and_: list = Union[list, dict]
+    ):
         """
         The check_many_conditions function checks to see if the conditions are met.
         It takes two arguments, _or_ and _and_. If both arguments are lists, it checks to see if
@@ -228,23 +253,23 @@ class ModelMixin(Base):
     @staticmethod
     def get_constraints(kwargs, constraints: List[str]):
         """
-           It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
+        It takes a dictionary of keyword arguments and a list of constraints, and returns a SimpleNamespace object with only the keys that are in the constraints list
 
-           :param kwargs: The keyword arguments passed to the function
-           :param constraints: A list of strings that represent the constraints that you want to be able to pass in
-           :type constraints: List[str]
-           :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
-           """
+        :param kwargs: The keyword arguments passed to the function
+        :param constraints: A list of strings that represent the constraints that you want to be able to pass in
+        :type constraints: List[str]
+        :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
+        """
         return SimpleNamespace(
             **{k: v or None for k, v in kwargs.items() if k in constraints}
         )
 
     @classmethod
     def build_response(
-            cls: ModelType = None,
-            object_data: Any = None,
-            error: str = None,
-            overload: dict = None,
+        cls: ModelType = None,
+        object_data: Any = None,
+        error: str = None,
+        overload: dict = None,
     ) -> dict:
         """
         The build_response function takes a list of database objects and returns a dictionary with the following structure:
@@ -268,13 +293,8 @@ class ModelMixin(Base):
         return {
             "success": False,
             "error": error
-                     or f"unable to perform crud operation on {object_data or 'object'}",
+            or f"unable to perform crud operation on {object_data or 'object'}",
         }
-
-
-
-
-
 
 
 class DataSeeder:
@@ -300,7 +320,7 @@ class DataSeeder:
         :type name: str
         :return: A string with the first letter of each word capitalized.
         """
-        return ''.join(word.capitalize() for word in name.split('_'))
+        return "".join(word.capitalize() for word in name.split("_"))
 
     @staticmethod
     def save_model(model, row_data):
@@ -334,9 +354,7 @@ class DataSeeder:
         :param column: The column name to get data from
         :return: A list of all the values in the column of the table.
         """
-        return self.session.query(
-            getattr(self.get_model_class(table), column)
-        ).all()
+        return self.session.query(getattr(self.get_model_class(table), column)).all()
 
     def generate_fake_row_data(self, table):
         """
@@ -351,15 +369,29 @@ class DataSeeder:
         row_data = {}
         for column in table.columns:
             # build a namespace for easy type access
-            data_type_mapper = SimpleNamespace(type_maps=[
-                SimpleNamespace(type=DateTime, fake_type=self.fake.date_time_between(start_date="-30y", end_date="now")),
-                SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
-                SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
-                SimpleNamespace(type=Float, fake_type=self.fake.pyfloat(positive=True)),
-                SimpleNamespace(type=Interval, fake_type=timedelta(seconds=randint(0, 86400))),
-                SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
-                SimpleNamespace(type=String, fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}")
-            ])
+            data_type_mapper = SimpleNamespace(
+                type_maps=[
+                    SimpleNamespace(
+                        type=DateTime,
+                        fake_type=self.fake.date_time_between(
+                            start_date="-30y", end_date="now"
+                        ),
+                    ),
+                    SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
+                    SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
+                    SimpleNamespace(
+                        type=Float, fake_type=self.fake.pyfloat(positive=True)
+                    ),
+                    SimpleNamespace(
+                        type=Interval, fake_type=timedelta(seconds=randint(0, 86400))
+                    ),
+                    SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
+                    SimpleNamespace(
+                        type=String,
+                        fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}",
+                    ),
+                ]
+            )
 
             # Check data types for all columns in a table and generate fake data
             for data_type in data_type_mapper.type_maps:
