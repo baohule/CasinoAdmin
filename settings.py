@@ -6,7 +6,7 @@ load_dotenv()
 
 class Config:
     postgres_connection: str = os.getenv("POSTGRES_CONNECTION", "")
-    fastapi_host: str = os.getenv("FASTAPI_HOST", "127.0.0.1")
+    fastapi_host: str = os.getenv("FASTAPI_HOST", "0.0.0.0")
     fastapi_port: int = int(os.getenv("FASTAPI_PORT", 8000))
     fastapi_key: str = os.getenv("FASTAPI_KEY", "")
     salt: str = os.getenv("SALT", "")
