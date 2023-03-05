@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: ./kompose convert -c -f docker-compose --service-group-mode admin --build local -o helm
+    kompose.version: 1.28.0 (c4137012e)
+  creationTimestamp: null
+  labels:
+    io.kompose.service: app
+  name: app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: ./kompose convert -c -f docker-compose --service-group-mode admin --build local -o helm
+        kompose.version: 1.28.0 (c4137012e)
+      creationTimestamp: null
+      labels:
+        io.kompose.network/casinoadmin-app-network: "true"
+        io.kompose.service: app
+    spec:
+      containers:
+        - env:
+            - name: POSTGRES_DB
+              value: casino_admin
+            - name: POSTGRES_PASSWORD
+              value: "1121"
+            - name: POSTGRES_USER
+              value: postgres
+            - name: REDIS_HOST
+              value: redis
+            - name: REDIS_PORT
+              value: "6379"
+          image: docker.io/kuro112/casinoadmin
+          name: app
+          ports:
+            - containerPort: 8080
+          resources: {}
+          volumeMounts:
+            - mountPath: /app/logs
+              name: logs
+      restartPolicy: Always
+      volumes:
+        - name: logs
+          persistentVolumeClaim:
+            claimName: logs
+status: {}
