@@ -18,7 +18,10 @@ sentry_sdk.init(
     Config.sentry_ingestion_url,
     traces_sample_rate=1.0,
     environment=Config.sentry_environment,
+    transport=print
 )
+
+
 logger.setLevel(logging.INFO)
 app = FastAPI()
 
