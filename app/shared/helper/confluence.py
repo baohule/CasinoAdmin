@@ -5,11 +5,11 @@ from atlassian import Confluence
 from settings import Config as settings
 
 
+
 class PageGroupper:
     """
     This class is used to group pages based on title relevance to body content
     """
-
     def __init__(self):
         self.conf = Confluence(
             url=settings.jira_org,
@@ -18,9 +18,7 @@ class PageGroupper:
         )
         self.space_key = "~6400fa9a0a4a47fb8d21fd26"
         self.nlp = spacy.load("en_core_web_lg")
-        self.all_pages = self.conf.get_all_pages_from_space(
-            self.space_key, expand="body.storage.value"
-        )
+        self.all_pages = self.conf.get_all_pages_from_space(self.space_key, expand='body.storage.value')
 
     # Define function to weigh the similarity of two pieces of text
     def weigh_similarity(self, text1, text2):
@@ -48,12 +46,12 @@ class PageGroupper:
         page_groups = []
         while pages:
             page = pages.pop(0)
-            page_title = page["title"]
-            page_body = page["body"]["storage"]["value"]
+            page_title = page['title']
+            page_body = page['body']['storage']['value']
             group = [page]
             for i, other_page in enumerate(pages):
-                other_page_title = other_page["title"]
-                other_page_body = other_page["body"]["storage"]["value"]
+                other_page_title = other_page['title']
+                other_page_body = other_page['body']['storage']['value']
                 similarity = self.weigh_similarity(page_body, other_page_body)
                 if similarity >= 0.9:
                     group.append(other_page)
@@ -62,7 +60,7 @@ class PageGroupper:
         # Sort each group by title relevance to body content
         for title, group in page_groups:
             weights = [
-                (page["title"], self.weigh_similarity(title, page["title"]))
+                (page['title'], self.weigh_similarity(title, page['title']))
                 for page in group
             ]
             weights.sort(key=operator.itemgetter(1), reverse=True)
@@ -83,32 +81,25 @@ class PageGroupper:
         # Create page groups in Confluence
         for group_title, group_pages in grouped_pages:
             parent_id = next(
-                (page["id"] for page in pages if page["title"] == group_title),
+                (page['id'] for page in pages if page['title'] == group_title),
                 None,
             )
             # Create the new page group
             new_group_data = {
-                "title": f"{group_title} Group",
-                "type": "page",
-                "body": {
-                    "storage": {
-                        "value": f'<ac:link><ri:page ri:content-title="{group_title}" ri:space-key="{self.space_key}"/></ac:link>'
-                    },
-                    "representation": "storage",
-                },
+                'title': f"{group_title} Group",
+                'type': 'page',
+                'body': {'storage': {'value': f'<ac:link><ri:page ri:content-title="{group_title}" ri:space-key="{self.space_key}"/></ac:link>'}, 'representation': 'storage'}
             }
             new_group = self.conf.create_page(space=self.space_key, **new_group_data)
             print(f"Page group {new_group['title']} has been created.")
             # Move the group pages to the new page group
             for page in group_pages:
-                self.conf.move_page(page["id"], new_group["id"])
+                self.conf.move_page(page['id'], new_group['id'])
                 print(f"Page {page['title']} has been moved to {new_group['title']}.")
             # Move the new page group to the parent page
             if parent_id:
-                self.conf.move_page(new_group["id"], parent_id)
-                print(
-                    f"Page group {new_group['title']} has been moved to {group_title}."
-                )
+                self.conf.move_page(new_group['id'], parent_id)
+                print(f"Page group {new_group['title']} has been moved to {group_title}.")
 
 
 PageGroupper().create_page_groups()
