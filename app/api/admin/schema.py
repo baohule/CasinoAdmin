@@ -1,10 +1,11 @@
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 from uuid import UUID
 
 from fastapi_camelcase import CamelModel
 from pydantic import BaseModel, EmailStr
 
 from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.orm_schema import ORMCamelModel
 from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any
 
 
@@ -65,7 +66,7 @@ class BaseUser(CamelModel):
     id: UUID
     email: Optional[str]
     username: Optional[str]
-    phone: Optional[str]
+    password: Optional[str]
     name: Optional[str]
     qa_bypass: Optional[bool]
 
@@ -122,13 +123,23 @@ class BatchUsers(CamelModel):
     __root__: List[UpdateUser]
 
 
-class SetUserRole(CamelModel):
+class AdminRoleCreate(BaseModel):
     """
-    SetUserRole is a model that is used to set a user's role.
+    It's a model that represents the data required to create an Admin Role.
     """
 
-    user_id: UUID
-    role: UUID
+    name: str
+    parameters: Optional[Dict]
+
+
+class AdminSetRole(BaseModel):
+    """
+    It's a model that represents the data required to create an Admin Role.
+    """
+
+    role_id: UUID
+    owner_id: UUID
+    parameters: Optional[Dict]
 
 
 class SetUserRoleResponse(BaseResponse):
@@ -187,11 +198,11 @@ class SearchResults(BaseModel):
     __root__: Dict[int, List[BaseUser]]
 
 
-class Response(BaseModel):
+class Response(ORMCamelModel):
     # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
     success: Optional[str]
     error: Optional[str]
-    response: Optional[str]
+    response: Optional[Optional[Union[str, UUID]]]
 
 
 # It's a model that is used to update a user's name.
@@ -207,3 +218,16 @@ class AdminUserUpdateName(CamelModel):
 class AdminUserUpdateNameResponse(BaseResponse):
     success: bool
     error: Optional[str]
+
+
+class AdminSetPassword(CamelModel):
+    id: UUID
+    password: str
+
+
+class AdminSetPasswordResponse(BaseResponse):
+    success: bool
+    error: Optional[str]
+
+
+
