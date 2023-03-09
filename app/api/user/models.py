@@ -125,11 +125,9 @@ class User(ModelMixin):
         :param items: Used to Limit the number of users returned.
         :return: A list of all the users in the database.
         """
-        users = db.session.query(User)
-        return paginate(users, page, items).as_dict()
+        return paginate(cls, page, items).as_dict()
 
     @classmethod
-    @safe
     def create_user(cls, *_, **kwargs) -> Union[dict, SafeException]:
         """
         The create_user function creates a new user in the database.
@@ -147,11 +145,11 @@ class User(ModelMixin):
             User.username == base_data.username,
             User.email == base_data.email,
         ]
-        predicate = {"id_": "x"}
-        user = cls.where(
-            cls.filter_expr(or_=[or_(*constraints), and_(*constraints)])
-        ).create(**user_data)
-        return SafeException(**cls.build_response(user))
+
+        if cls.where(email=base_data.email).first() or cls.where(username=base_data.username).first():
+            return cls.build_response(error="User already exists")
+        user = cls.save(cls(**user_data))
+        return cls.build_response(user.id)
 
     @classmethod
     def remove_user(cls, *_, **kwargs) -> dict:
@@ -183,12 +181,11 @@ class User(ModelMixin):
         :return: A dictionary containing the user data.
         """
         filters = dict(
-            user_id=kwargs.get("id"),
-            user_name=kwargs.get("name"),
-            user_username=kwargs.get("username"),
+            id=kwargs.get("id"),
+            email=kwargs.get("name"),
         )
-        user = cls.where(**{k: v for k, v in filters.items() if v}).update(**kwargs)
-        return cls.build_response(user.id)
+        user = cls.where(**{k: v for k, v in filters.items() if v}).update(kwargs)
+        return cls.build_response(cls(**kwargs).id)
 
     @classmethod
     def admin_search_users(cls, *_, **kwargs) -> list:

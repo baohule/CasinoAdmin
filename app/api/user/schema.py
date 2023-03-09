@@ -9,38 +9,42 @@ from pydantic import EmailStr, validator
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 
+from typing import Optional
+from pydantic import BaseModel
+
+
+class AdminRoleCreate(CamelModel):
+    """
+    Pydantic model to represent the request payload for creating a new admin role.
+    """
+    name: str
+    parameters: dict
+    bypass_auth: Optional[bool] = False
+
+
+class AdminRoleCreateResponse(ORMCamelModel):
+    """
+    Pydantic model to represent the response payload for creating a new admin role.
+    """
+    success: bool
+    error: Optional[str]
+    role_id: Optional[str]
+
 
 class AdminUserCreate(CamelModel):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    @validator("username", pre=True)
-    def username_validator(value: str, field):
-        """
-        The username_validator function checks to see if the username contains any special characters.
-        If it does, then an exception is raised.
-
-        :param value:str: Used to Specify the value of a field.
-        :param field: Used to Access the field that is being validated.
-        :return: A string.
-
-        """
-        if re.search(r"\W", value):
-            raise ValueError("No special characters allowed in username")
-        return value
-
     email: EmailStr
-    username: str
-    phone: str
+    password: str
     name: str
 
     class Config:
         schema_extra = {
             "example": {
                 "email": "some@example.com",
-                "username": "someguy4",
-                "phone": "+1111-111-1111",
+                "password": "adfgszfgsdgsfghsfg",
                 "name": "some guy",
             },
             "Valid Phone Numbers": [

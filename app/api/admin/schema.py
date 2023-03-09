@@ -1,49 +1,61 @@
-"""
-@author: Kuro
-"""
-from datetime import datetime
 from typing import Optional, List, Dict, Union
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import Schema
-from pydantic import BaseModel, EmailStr, Field
+from fastapi_camelcase import CamelModel
+from pydantic import BaseModel, EmailStr
 
-from app.api.agent.schema import AgentUser, AgentQuota
-from app.api.credit.schema import UserCredit
-from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMSchema
-from app.shared.schemas.page_schema import (
-    GetOptionalContextPages,
-    PagedResponse,
-    Any,
-    Filter,
-)
+from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any
 
 
-class UpdateUser(Schema):
+class UpdateUser(CamelModel):
     """
     It's a model that represents a user that is being updated.
     """
 
-    id: int
+    id: UUID
     password: Optional[str]
     username: Optional[str]
+    phone: Optional[str]
+    name: Optional[str]
+    address_line1: Optional[str]
+    address_line2: Optional[str]
+    city: Optional[str]
+    state: Optional[str]
+    zipcode: Optional[int]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "c1411cf2-ffcb-44dd-8202-8b00fc6dca93",
+                "password": "password12",
+                "username": "someusernam4",
+                "phone": "+14801234567",
+                "name": "some name",
+                "addressLine1": "some address 123 way",
+                "addressLine2": "some other address 123 wey",
+                "city": "Scottsdale",
+                "state": "AZ",
+                "zipcode": "85251",
+            }
+        }
 
 
-class RemoveUser(Schema):
+class RemoveUser(CamelModel):
     """
     It's a model that is used to remove a user from the database.
     """
 
-    id: int
+    id: UUID
 
 
-class GetAgent(Schema):
+class User(CamelModel):
     # It's a user.
     id: UUID
 
 
-class BaseUser(ORMSchema):
+class BaseUser(CamelModel):
     """
     # `BaseUser` is a base class for the `User` class.
     It is used to represent the base fields that are common
@@ -51,53 +63,37 @@ class BaseUser(ORMSchema):
     that needs to be written in the `User` class.
     """
 
-    id: int
-    email: Optional[str]
-    password: Optional[str]
-    creditAccount: Optional[UserCredit]
-
-
-class Admin(ORMSchema):
     id: UUID
     email: Optional[str]
     username: Optional[str]
+    password: Optional[str]
+    name: Optional[str]
+    qa_bypass: Optional[bool]
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "id": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
+                "email": "test@test.com",
+                "phone": "+14801234567",
+                "name": "some name",
+                "username": "newuser27",
+                "qaBypass": True,
+            }
+            # It's a model that is used to represent a user that is being returned from the database.
+        }
 
 
-class BaseUserResponse(ORMSchema):
+class BaseUserResponse(BaseResponse):
     """
     It's a model that is used to return a list of users.
     """
 
-    id: int
+    id: UUID
+    email: Optional[str]
     phone: Optional[str]
     username: Optional[str]
-    firstName: Optional[str]
-    lastName: Optional[str]
-    createdAt: Optional[datetime]
-    updatedAt: Optional[datetime]
-    quota: Optional[AgentQuota] = Field(default=AgentQuota(balance=0))
-    creditAccount: Optional[UserCredit]
-    active: Optional[bool]
-    createdByAdmin: Optional[AgentUser]
-    createdByAgent: Optional[Admin]
-
-
-class AdminPagedResponse(PagedResponse):
-    """
-    The AdminPagedResponse class is a PagedResponse class that is
-    used to return a list of users
-    """
-
-    items: List[AgentUser]
-
-
-class ListAdminUserResponse(PagedBaseResponse):
-    """
-    The ListUserResponse class is a PagedResponse class that is
-    used to return a list of users
-    """
-
-    response: Optional[AdminPagedResponse]
+    name: Optional[str]
 
 
 class ListUserResponse(PagedResponse):
@@ -109,33 +105,16 @@ class ListUserResponse(PagedResponse):
     items: List[BaseUserResponse]
 
 
-class GetUserlistQueryOptions(Schema):
-    """
-    GetUserlistQueryOptions is a model that is used to get a list of users.
-    """
-
-    active: Optional[bool] = Field(Default=True, description="Filter by active status")
-
-
-class OptionalContextPagesFilter(Filter):
-    """
-    OptionalContextPagesFilter is a model that is used to get a list of users.
-    that is used in the `/list` endpoint.
-    """
-
-    filter: Optional[GetUserlistQueryOptions]
-
-
 class GetUserList(GetOptionalContextPages):
     """
-    OptionalContextPages is a model that is used to get a list of users.
+    GetUserList is a model that is used to get a list of users.
     that is used in the `/list` endpoint.
     """
 
-    context: Optional[OptionalContextPagesFilter]
+    __self__: GetOptionalContextPages
 
 
-class BatchUsers(Schema):
+class BatchUsers(CamelModel):
     """
     BatchUsers is a model that is used to update multiple users at once.
     It is used in the `/batch` endpoint.
@@ -149,7 +128,7 @@ class AdminRoleCreate(BaseModel):
     It's a model that represents the data required to create an Admin Role.
     """
 
-    username: str
+    name: str
     parameters: Optional[Dict]
 
 
@@ -159,7 +138,7 @@ class AdminSetRole(BaseModel):
     """
 
     role_id: UUID
-    ownerId: int
+    owner_id: UUID
     parameters: Optional[Dict]
 
 
@@ -173,6 +152,24 @@ class SetUserRoleResponse(BaseResponse):
     error: Optional[str]
 
 
+class SetPerms(CamelModel):
+    """
+    It's a model that is used to set a user's permissions.
+    """
+
+    id: UUID
+    can_list_users: Optional[bool]
+    can_get_user: Optional[bool]
+    can_create_user: Optional[bool]
+    can_create_admin: Optional[bool]
+    can_delete_user: Optional[bool]
+    can_alter_user: Optional[bool]
+    can_search_users: Optional[bool]
+    can_batch_alter_users: Optional[bool]
+    can_set_perms: Optional[bool]
+    bypass_auth: Optional[bool]
+
+
 class SetPermsResponse(BaseResponse):
     """
     SetPermsResponse is a model that is used to return a
@@ -183,58 +180,36 @@ class SetPermsResponse(BaseResponse):
     error: Optional[str]
 
 
-class SearchUser(Schema):
+class SearchUsers(CamelModel):
     """
-    `SearchUser` is a model that is used to search for users.
+    `SearchUsers` is a model that is used to search for users.
     It is used in the `/search` endpoint.
     """
 
-    phone: Optional[str]
-    username: Optional[str]
-    firstName: Optional[str]
-    type: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "pick one: email | username | firstName": "John123@gmail.com | John123 | John",
-                "type": "agent | admin | user",
-            }
-        }
+    users: List[BaseUser]
 
 
-class SearchResults(BaseResponse):
+class SearchResults(BaseModel):
     """
-    `SearchResults` is a model that is used to return a list of users
-    that match a search query.  It is used in the `/search` endpoint.
+    `SearchResults` is a model that is used to return a list of users that match a search query.  It is used in the `/search` endpoint.
 
     """
 
-    response: Optional[List[BaseUserResponse]]
+    __root__: Dict[int, List[BaseUser]]
 
 
-class AgentCreateResponse(BaseResponse):
+class Response(ORMCamelModel):
     # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
-    success: bool
+    success: Optional[str]
     error: Optional[str]
-    response: Optional[AgentUser]
+    response: Optional[Optional[Union[str, UUID]]]
 
 
-class AgentUpdate(Schema):
-    agentId: UUID
-    quota: Optional[int]
-    active: Optional[bool]
+# It's a model that is used to update a user's name.
 
 
-class AgentUpdateResponse(BaseResponse):
-    # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
-    success: bool
-    error: Optional[str]
-    response: Optional[AgentUser]
-
-
-class AdminUserUpdateName(Schema):
-    username: str
+class AdminUserUpdateName(CamelModel):
+    name: str
 
 
 # It's a model that is used to return a response from updating a user's name.  It is used in the `/admin` endpoint.
@@ -245,7 +220,7 @@ class AdminUserUpdateNameResponse(BaseResponse):
     error: Optional[str]
 
 
-class AdminSetPassword(Schema):
+class AdminSetPassword(CamelModel):
     id: UUID
     password: str
 
@@ -253,3 +228,6 @@ class AdminSetPassword(Schema):
 class AdminSetPasswordResponse(BaseResponse):
     success: bool
     error: Optional[str]
+
+
+
