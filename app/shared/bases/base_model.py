@@ -41,7 +41,7 @@ from sqlalchemy import (
     Date,
     Boolean,
     ARRAY,
-    Interval,
+    Interval, select,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
@@ -285,7 +285,7 @@ class ModelMixin(Base):
         if overload:
             return dict(success=True, error=None, response=None, **overload)
 
-        if cls:
+        if cls and error is None:
             return {
                 "success": True,
                 "response": object_data or cls,
@@ -456,7 +456,7 @@ class Page(Generic[T]):
 
     def __init__(self, items, page, page_size, total):
         self.items = items
-        self.dict_items = [item._asdict() for item in items]
+        self.dict_items = [item.as_dict() for item in items]
         self.page = page
         self.page_size = page_size
         self.total = total
@@ -499,7 +499,7 @@ class Page(Generic[T]):
         """
 
 
-def paginate(query: Query, page: int, page_size: int) -> Page[Row]:
+def paginate(cls, page: int, page_size: int, items: List) -> Page[Row]:
     """
     The paginate function takes a query, the page number and page size as arguments.
     It then returns a tuple of the items on that page and the total number of items.
@@ -513,6 +513,6 @@ def paginate(query: Query, page: int, page_size: int) -> Page[Row]:
         raise HTTPException(400, detail="page needs to be >= 1")
     if page_size <= 0:
         raise HTTPException(400, detail="page_size needs to be >= 1")
-    items: list[Row] = query.limit(page_size).offset((page - 1) * page_size).all()
-    total = query.select(func.count(1)).first()
+    items: list[Row] = items or cls.where().limit(page_size).offset((page - 1) * page_size).all()
+    total = cls.session.query(func.count(1)).scalar()
     return Page(items, page, page_size, total)

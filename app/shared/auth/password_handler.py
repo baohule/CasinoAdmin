@@ -48,6 +48,6 @@ def authenticate_user(email: str, password: str, admin=False) -> User:
     :return: A NoneType or a User object
     """
     model = AdminUser if admin else User
-    return model.where(
+    return model.where().filter_by(
         email=email, password=get_password_hash(password), admin=admin
     ).first()

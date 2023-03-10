@@ -58,6 +58,7 @@ class JWTBearer(HTTPBearer, AuthenticationBackend):
         credentials: HTTPAuthorizationCredentials = await super(
             JWTBearer, self
         ).__call__(request)
+
         if credentials:
             if not credentials.scheme == "Bearer":
                 raise HTTPException(

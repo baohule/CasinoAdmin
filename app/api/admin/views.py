@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, Request
 from app.api.user.models import User
+from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
 from app.api.user.schema import AdminUserCreate
 import app.api.admin.schema as schema
@@ -40,18 +41,9 @@ async def create_user(user: AdminUserCreate, request: Request):
 
 
     """
-
-    role = request.user.admin_role
-    if not role or not role.can_create:
-        return {"success": False, "error": NO_ROLE}
-
     user_data = user.dict()
-    create = User.create_user(**user_data)
-    return (
-        {"success": True, "response": f"{user.username} added to database"}
-        if create
-        else {"success": False, "response": "user not created"}
-    )
+    user = User.create_user(**user_data)
+    return user
 
 
 @router.post("/manage/create_admin", response_model=schema.Response)
@@ -67,18 +59,8 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
 
     """
-
-    role = request.user.admin_role
-
-    if not role or not role.can_create:
-        return {"success": False, "error": NO_ROLE}
-
-    created = AdminUser.add_admin(**user.dict())
-    return (
-        {"success": True, "response": f"{user.username} added to database"}
-        if created
-        else {"success": False, "response": "user not created"}
-    )
+    user.password = get_password_hash(user.password)
+    return AdminUser.add_admin(**user.dict())
 
 
 @router.post("/manage/update_user", response_model=schema.Response)
@@ -99,9 +81,6 @@ async def update_user(user: schema.BaseUser, request: Request):
     :return: A dictionary with the success key set to true or false depending on whether it was.
 
     """
-    role = request.user.admin_role
-    if not role or not role.can_alter_user:
-        return {"success": False, "error": NO_ROLE}
 
     data = user.dict(exclude_unset=True)
     update = User.update_user(**data)
@@ -125,10 +104,6 @@ async def remove_user(user: schema.RemoveUser, request: Request):
 
 
     """
-    role = request.user.admin_role
-    if not role or not role.can_alter_user:
-        return {"success": False, "error": NO_ROLE}
-
     remove = User.remove_user(id=user.id)
     return (
         {"success": True, "response": f"user {user.id} removed"}
@@ -137,7 +112,7 @@ async def remove_user(user: schema.RemoveUser, request: Request):
     )
 
 
-@router.post("/list_users", response_model=schema.ListUserResponse)
+@router.post("/list_users", response_model=schema.ListAdminUserResponse)
 async def list_users(context: schema.GetUserList, request: Request):
     """
     The list_users function returns a list of all users in the system.
@@ -148,10 +123,7 @@ async def list_users(context: schema.GetUserList, request: Request):
     :param request:Request: Used to Pass in the current request.
     :return: A list of users.
     """
-    role = request.user.admin_role
-    if not role or not role.can_list_users:
-        return HTTPException(401, detail=NO_PERMS)
-    return User.get_all_users(context.params.page, context.params.size)
+    return AdminUser.list_all_admin_users(context.params.page, context.params.size)
 
 
 @router.post("/get_user", response_model=schema.BaseUserResponse)
@@ -165,10 +137,6 @@ async def get_user(user: schema.User, request: Request):
     :param request:Request: Used to Get the user from the request.
     :return: The user object if the user exists.
     """
-    role = request.user.admin_role
-    if not role or not role.can_list_users:
-        return HTTPException(401, detail=NO_PERMS)
-
     if user := AdminUser.get_admin_by_id(user_id=user.id):
         return user
     return {"success": False}
@@ -188,9 +156,6 @@ async def search_users(dataset: schema.SearchUsers, request: Request):
     :param request:Request: Used to Access the user object.
     :return: A list of users that match the search criteria.
     """
-    role = request.user.admin_role
-    if not role or not role.can_search_users:
-        return HTTPException(401, detail=NO_PERMS)
 
     results = {}
     for index, query in enumerate(dataset.__root__):
@@ -210,11 +175,6 @@ async def batch_delete_users(dataset: schema.SearchUsers, request: Request):
 
      Phone number can be any form as long as it exists in the db.
     """
-
-    role = request.user.admin_role
-    if not role or not role.can_batch_alter_users:
-        return HTTPException(401, detail=NO_PERMS)
-
     for query in dataset.__root__:
         removed = User.remove_user(id=query.id)
         if not removed:
@@ -250,23 +210,28 @@ def batch_update_users(dataset: schema.BatchUsers, request: Request):
     return {"success": True}
 
 
-@router.post("/manage/update_user_role", response_model=schema.SetUserRoleResponse)
-def update_user_role(context: schema.SetUserRole, request: Request):
+@router.post("/manage/create_admin_role", response_model=schema.SetUserRoleResponse)
+def update_user_role(context: schema.AdminRoleCreate, request: Request):
     """
     The update_user_role function updates the role of a user.
 
     :param context:schema.SetUserRole: Used to Specify the user to change.
     :param request:Request: Used to Get the user object.
     :return: A HTTPException with a 401 status code and the message
-    "you do not have permission to perform this action.
-
-
     """
-    role = request.user.admin_role
-    if not role or not role.can_set_perms:
-        return HTTPException(401, detail=NO_PERMS)
+    success = AdminRole.create_role(role_data=context)
+    return {"success": success}
 
-    success = AdminRole.set_user_role(user_id=context.user_id, user_role=context.role)
+@router.post("/manage/set_admin_role", response_model=schema.SetUserRoleResponse)
+def update_user_role(context: schema.AdminSetRole, request: Request):
+    """
+    The update_user_role function updates the role of a user.
+
+    :param context:schema.SetUserRole: Used to Specify the user to change.
+    :param request:Request: Used to Get the user object.
+    :return: A HTTPException with a 401 status code and the message
+    """
+    success = AdminRole.set_admin_role(role_data=context)
     return {"success": success}
 
 
@@ -280,34 +245,6 @@ def update_roles(context: schema.SetPerms, request: Request):
     :param context:schema.SetPerms: Used to Specify the object that is being updated.
     :param request:Request: Used to Get the current user.
     :return: True if the user is an admin and has permission to set permissions.
-
-
     """
-    role = request.user.admin_role
-    if not role or not role.can_set_perms:
-        return HTTPException(401, detail=NO_PERMS)
-
     success = AdminRole.alter_role_perms(**context.dict())
     return {"success": success}
-
-
-@router.post("/set_admin_name", response_model=schema.AdminUserUpdateNameResponse)
-async def set_admin_name(context: schema.AdminUserUpdateName, request: Request):
-    """
-    The set_admin_name function updates the name of an admin user.
-
-    :param context:schema.AdminUserUpdateName: Used to Update the name of an admin user.
-    :param request:Request: Used to Get the user id from the request.
-    :return: A dictionary with a key of "success" and either true or false as the value.
-    """
-    new_name = context.dict()
-    admin_id = request.user.id
-    user = AdminUser.get_admin_by_id(admin_id)
-
-    if not user:
-        return {"success": False, "error": "User not found"}
-
-    new_name["id"] = admin_id
-    if AdminUser.update_admin_user(**new_name):
-        return {"success": True}
-    return {"success": False, "error": "Unable to update record"}
