@@ -158,7 +158,18 @@ class AdminUser(ModelMixin):
         :return: A dictionary of all the admin users in a class.
 
         """
-        return cls.build_response(cls.all())
+        users = cls.session.query(
+            cls.id,
+            cls.email,
+        )
+        user_pages = paginate(users, page, num_items)
+        response = user_pages.as_dict()
+        response["items"] = list(
+            reversed([cls(**x) for x in user_pages.dict_items])
+        )
+        return cls.build_response(response)
+
+
 
     @classmethod
     def get_admins_by_role(cls, role_id: str) -> dict:
@@ -196,7 +207,7 @@ class AdminUser(ModelMixin):
         :return: A dictionary containing the admin's information.
 
         """
-        return cls.where(email=email).first()
+        return cls.build_response(cls.where(email=email).first())
 
     @classmethod
     def get_admin_by_id(cls, user_id: UUID) -> dict:

@@ -40,7 +40,7 @@ class GetCommentPages(CamelModel):
     params: Params
 
 
-class PagedResponse(BaseResponse):
+class PagedResponse(CamelModel):
     items: List[Any]
     page: int
     page_size: int
