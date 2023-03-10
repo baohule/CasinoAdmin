@@ -29,7 +29,7 @@ async def post_user_data(context: schema.GetUser):
 
 @router.get("/get_user", response_model=schema.AdminBaseResponse)
 async def get_user_data(request: Request):
-    """
+    """f
     The get_user_data function returns the user data for a given user.
 
     :param request:Request: Used to Get the user object from the request.

@@ -1,52 +1,46 @@
-"""
-@author: Kuro
-"""
 from fastapi.types import Any
-from app.shared.schemas.orm_schema import Schema
+from fastapi_camelcase import CamelModel
 from typing import List, Optional, Dict
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import ORMSchema, Schema
+from app.shared.schemas.ResponseSchemas import BaseResponse
 
 
-class Params(Schema):
+class Params(CamelModel):
     page: int
     size: int
 
     class Config:
-        schema_extra = {"example": {"page": "1", "size": "10"}}
+        schema_extra = {"example": {"page": "3", "size": "2"}}
 
 
-class Filter(Schema):
-    filter: Optional[Dict[str, UUID]]
+class Filter(CamelModel):
+    filter: str
+
+    class Config:
+        schema_extra = {"example": {"filter": "following"}}
 
 
-class Post(Schema):
+class Post(CamelModel):
     post_id: UUID
 
 
-class GetOptionalContextPages(Schema):
+class GetOptionalContextPages(CamelModel):
     context: Optional[Filter]
     params: Params
 
 
-class GetNoContextPages(Schema):
-    params: Params
-
-
-class GetPages(Schema):
+class GetPages(CamelModel):
     context: Filter
     params: Params
 
 
-class GetCommentPages(Schema):
+class GetCommentPages(CamelModel):
     context: Post
     params: Params
 
 
-class PagedResponse(ORMSchema):
+class PagedResponse(CamelModel):
     items: List[Any]
     page: int
     page_size: int
-    pages: int
-    total: int

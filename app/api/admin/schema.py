@@ -96,13 +96,13 @@ class BaseUserResponse(ORMCamelModel):
     name: Optional[str]
 
 
-class AdminPagedResponse(ORMCamelModel):
+class AdminPagedResponse(PagedResponse):
     """
     The AdminPagedResponse class is a PagedResponse class that is
     used to return a list of users
     """
 
-
+    items: List[BaseUserResponse]
 
 
 
@@ -112,7 +112,7 @@ class ListAdminUserResponse(BaseResponse):
     used to return a list of users
     """
 
-    response: List[BaseUserResponse]
+    response: AdminPagedResponse
 
 class ListUserResponse(PagedResponse):
     """
