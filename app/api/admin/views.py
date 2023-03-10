@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, Request
 from app.api.user.models import User
+from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
 from app.api.user.schema import AdminUserCreate
 import app.api.admin.schema as schema
@@ -58,6 +59,7 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
 
     """
+    user.password = get_password_hash(user.password)
     return AdminUser.add_admin(**user.dict())
 
 
@@ -110,7 +112,7 @@ async def remove_user(user: schema.RemoveUser, request: Request):
     )
 
 
-@router.post("/list_users", response_model=schema.ListUserResponse)
+@router.post("/list_users", response_model=schema.ListAdminUserResponse)
 async def list_users(context: schema.GetUserList, request: Request):
     """
     The list_users function returns a list of all users in the system.
@@ -121,7 +123,7 @@ async def list_users(context: schema.GetUserList, request: Request):
     :param request:Request: Used to Pass in the current request.
     :return: A list of users.
     """
-    return User.get_all_users(context.params.page, context.params.size)
+    return AdminUser.list_all_admin_users(context.params.page, context.params.size)
 
 
 @router.post("/get_user", response_model=schema.BaseUserResponse)

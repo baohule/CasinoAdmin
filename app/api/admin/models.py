@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 import uuid
 
 from app.api.admin.schema import AdminSetRole, AdminRoleCreate
-from app.shared.bases.base_model import ModelMixin
+from app.shared.bases.base_model import ModelMixin, paginate
 from fastapi.logger import logger
 
 
@@ -127,7 +127,9 @@ class AdminUser(ModelMixin):
         admin_data = cls.rebuild(kwargs)
         if cls.where(email=admin_data['email']).first():
             return cls.build_response(error="User already exists")
-        admin = cls.save(cls(**admin_data))
+        admin = cls(**admin_data)
+        cls.session.add(admin)
+        cls.session.commit()
         return cls.build_response(admin.id)
 
     @classmethod
@@ -148,7 +150,7 @@ class AdminUser(ModelMixin):
         return cls.build_response(admin.id)
 
     @classmethod
-    def list_all_admin_users(cls) -> dict:
+    def list_all_admin_users(cls, page, num_items) -> dict:
         """
         The list_all_admin_users function returns a list of all admin users in the database.
 
@@ -194,7 +196,7 @@ class AdminUser(ModelMixin):
         :return: A dictionary containing the admin's information.
 
         """
-        return cls.build_response(cls.where(email=email).first())
+        return cls.where(email=email).first()
 
     @classmethod
     def get_admin_by_id(cls, user_id: UUID) -> dict:

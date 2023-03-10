@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Request
 # import app.shared.auth.auth0_handler as auth0
 from app.api.admin.schema import Response
 from app.api.auth import schema
+from app.api.auth.schema import EmailLoginResponse, OTPLoginResponse
 from app.api.user import schema as user_schema
 from app.api.user.models import User
 from app.api.user.schema import UserResponse
@@ -98,22 +99,20 @@ def jwt_login(user: Union[user_schema.AdminLogin, user_schema.UserLogin], admin:
     :type admin: bool
     :return: A dictionary with a key of error and a value of "Wrong login details" and a key of success and a value of False.
     """
-    password_authentication = authenticate_user(
-        email=user.email, password=user.password, admin=admin
-    )
+    password_authentication = get_password_hash(user.password)
 
     if not password_authentication:
         return {"error": "Wrong login details", "success": False}
 
-    response = AuthController.sign_jwt(claim_id=password_authentication.id, admin=True)
+    authed = AuthController.sign_jwt(claim_id=user.email, admin=True, skip_verification=True)
 
-    User.update_user(
-        email=user.email, access_token=response.access_token, id_token=response.id_token
-    )
-    return response
+    # User.update_user(
+        # email=user.email, access_token=authed.get("access_token)")
+    # )
+    return authed
 
 
-@router.post("/admin_login", response_model=user_schema.UserResponse)
+@router.post("/admin_login", response_model=OTPLoginResponse)
 async def admin_login(user: user_schema.AdminLogin) -> UserResponse:
     """
     The admin_login function takes a user object and returns a JWT token.

@@ -87,7 +87,6 @@ class EmailStart(CamelModel):
             }
         }
 
-
 class SMSLogin(CamelModel):
     """
     SMSLogin class is a model that represents the start of an SMS message
@@ -142,17 +141,17 @@ class EmailStartResponse(BaseResponse):
     error: Optional[str]
 
 
-class OTPLoginResponse(BaseResponse):
+class OTPLoginResponse(CamelModel):
     # The OTPLoginResponse is a model that represents the response from the
     # OTP login endpoint
     access_token: Optional[str]
     refresh_token: Optional[str]
-    response: Optional[UUID]
+    #response: Optional[UUID]
     id_token: Optional[str]
     scope: Optional[str]
     expires_in: Optional[int]
     token_type: Optional[str]
-    error: Optional[str]
+    #error: Optional[str]
 
 
 #
@@ -196,3 +195,8 @@ class RefreshTokenResponse(BaseResponse):
     access_token: Optional[str]
     success: bool
     error: Optional[str]
+
+
+class EmailLoginResponse(BaseResponse):
+    response: OTPLoginResponse
+
