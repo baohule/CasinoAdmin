@@ -86,7 +86,7 @@ class AdminLogin(CamelModel):
 
 class UserResponse(BaseResponse):
     """
-    `UserResponse` is a class that is used to validate the data that is being passed to the `/login` route.
+        `UserResponse` is a class that is used to validate the data that is being passed to the `/login` route.
     """
 
     error: Optional[str]
@@ -145,10 +145,10 @@ class AdminUpdateNameResponse(BaseResponse):
     error: Optional[str]
 
 
-class CLaimAuthPayload(CamelModel):
+class CLaimAuthPayload(ORMCamelModel):
     """
     This class is used to claim a user's account
     """
 
-    user_id: UUID
-    user_email: str
+    id: UUID
+    email: str

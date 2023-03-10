@@ -4,6 +4,7 @@ from datetime import timedelta
 import jwt
 from fastapi.exceptions import HTTPException
 
+from app.api.user.models import User
 from app.shared.auth.token_handler import generate_confirmation_token, confirm_token
 from app.shared.bases.base_model import ModelType, ModelMixin
 from app.shared.middleware.json_encoders import ModelEncoder
@@ -129,7 +130,7 @@ class AuthController(ModelMixin):
             return old_claim
 
         if skip_verification:
-            claim = cls.user_claims(claim_id)
+            claim = User.user_claims(claim_id)
             refresh_token = generate_refresh_token(claim)
             token = generate_main_jwt(refresh_token)
             return cls.token_response(token, refresh_token)

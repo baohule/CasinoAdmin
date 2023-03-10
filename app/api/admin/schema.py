@@ -84,7 +84,7 @@ class BaseUser(CamelModel):
         }
 
 
-class BaseUserResponse(BaseResponse):
+class BaseUserResponse(ORMCamelModel):
     """
     It's a model that is used to return a list of users.
     """
@@ -95,6 +95,24 @@ class BaseUserResponse(BaseResponse):
     username: Optional[str]
     name: Optional[str]
 
+
+class AdminPagedResponse(ORMCamelModel):
+    """
+    The AdminPagedResponse class is a PagedResponse class that is
+    used to return a list of users
+    """
+
+
+
+
+
+class ListAdminUserResponse(BaseResponse):
+    """
+    The ListUserResponse class is a PagedResponse class that is
+    used to return a list of users
+    """
+
+    response: List[BaseUserResponse]
 
 class ListUserResponse(PagedResponse):
     """
