@@ -1,20 +1,20 @@
-from fastapi import APIRouter, Depends, Request
+from typing import Union
 
-from typing import Union, Any
+from fastapi import APIRouter
 
-from fastapi import APIRouter, Depends, Request
-
-# import app.shared.auth.auth0_handler as auth0
-from app.api.admin.schema import Response
-from app.api.auth import schema
-from app.api.auth.schema import EmailLoginResponse, OTPLoginResponse
+from app.api.admin.models import Admin
+from app.api.agent.models import Agent
+from app.api.auth.schema import UserClaim
+from app.api.credit.models import Balance
 from app.api.user import schema as user_schema
 from app.api.user.models import User
-from app.api.user.schema import UserResponse
-from app.shared.auth.auth_handler import AuthController
-from app.shared.auth.password_handler import get_password_hash, authenticate_user
-from app.shared.bases.base_model import ModelType
-from app.shared.middleware.auth import JWTBearer
+from app.api.user.schema import AdminLogin, UserLogin, AgentLogin, AdminUserCreate
+from app.shared.auth.auth_handler import sign_jwt, TokenResponse
+from app.shared.auth.password_handler import get_password_hash
+from typing import Union
+
+from fastapi import APIRouter
+
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
@@ -25,149 +25,66 @@ router = APIRouter(
 )
 
 
-@router.post("/signup", response_model=UserResponse)
-async def create_user(
-    user: user_schema.AdminUserCreate,
-) -> Union[Union[dict[str, Any], Response, None, str], Any]:
+@router.post("/signup", response_model=TokenResponse)
+async def create_user(context: AdminUserCreate) -> TokenResponse:
     """
-    The create_user function creates a new user in the database.
-    It takes in a UserCreate object and returns an error if it cannot create the user.
-    Otherwise, it returns the newly created user's id.
+    > Create a user and return a JWT if successful
 
-    Phone number will accept any form as long as it starts with a +1.
-    Birthday has to be in format year-month-day.
-    Username cannot contain special characters.
-
-    :param user:schema.UserCreate: Used to Pass in the user object.
-    :return: A dictionary with a key "error" if the creation fails.
+    :param context: AdminUserCreate - This is the request body that is passed in
+    :type context: AdminUserCreate
+    :return: A TokenResponse
     """
-    return_data = User.create_user(**user.dict(exclude_unset=True))
-    # if return_data.get('error'):
-    if return_data.error:
-        return return_data
-    user: ModelType = return_data.get("response")
-    return AuthController.sign_jwt(user.phone, skip_verification=True)
+    context_data = context.dict(exclude_unset=True)
+    password_authentication = get_password_hash(context.password)
+    context_data["password"] = password_authentication
+    user_response = User.create(**context_data)
+    if not user_response:
+        return TokenResponse(success=False, error="Object not created")
+    Balance.create(ownerId=user_response.id, balance=0)
+    return sign_jwt(UserClaim(id=user_response.id, email=context.email))
 
 
-@router.post(
-    "/refresh_token",
-    dependencies=[Depends(JWTBearer())],
-)
-async def refresh_token(request: Request):
+def jwt_login(context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False) -> TokenResponse:
     """
-    The refresh_token function is used to generate a new access token from the refresh token.
-    The function takes in the request object and returns an updated access token.
+    Takes a context object, which is either an AdminLogin, UserLogin or AgentLogin,
+    and returns a signed JWT if the password is correct, otherwise it returns a
+    BaseResponse with an error message
 
-    :param request:Request: Used to Get the request object from the asgi server.
-    :return: A token that is signed with the refresh_token key.
-
+    :param context: Union[AdminLogin, UserLogin, AgentLogin]
+    :type context: Union[AdminLogin, UserLogin, AgentLogin]
+    :param admin: Boolean, if True, the user is an admin, defaults to False (optional)
+    :param agent: bool = False, defaults to False (optional)
+    :return: A signed JWT token
     """
-    bearer = JWTBearer().__call__(request)
-    jwt_refresh = AuthController.sign_jwt(str(bearer), refresh=True, claim_check=True)
-    if bearer == jwt_refresh:
-        access_token = AuthController.sign_jwt(jwt_refresh)
-        access_token.update({"success": True})
-        return access_token
-    return {"success": False, "error": 4}
+    model = admin and Admin or agent and Agent or User
+    claim: UserClaim = model.user_claims(**context.dict())
+    if not claim:
+        return TokenResponse(success=False, error="Wrong login details")
+    claim.admin = admin
+    claim.agent = agent
+    signed_jwt: TokenResponse = sign_jwt(claim)
+    return signed_jwt
 
 
-@router.post(
-    "/refresh_admin_token",
-    dependencies=[Depends(JWTBearer(admin=True))],
-    response_model=schema.RefreshTokenResponse,
-)
-def refresh_token_admin(request: Request):
+@router.post("/login/agent", response_model=TokenResponse)
+async def agent_login(context: AgentLogin) -> TokenResponse:
     """
-    The refresh_token_admin function is used to refresh the token of an admin user.
-    It takes a request object as its only parameter and returns a dictionary with two keys:
-    'access_token' and 'refresh_token'. The access token is for the current session, while the
-    refresh token is for future sessions.
+    The agent_login function takes a user object and returns a JWT token.
+    The function uses the Auth0 email_token method to generate an access token for the agent user.
 
-    :param request:Request: Used to Get the refresh token from the request.
-    :return: A dictionary containing the following keys:.
-    """
-    return AuthController.sign_jwt(request.user.id, admin=True)
-
-
-def jwt_login(user: Union[user_schema.AdminLogin, user_schema.UserLogin], admin: bool):
-    """
-    > It takes a user object and a boolean value, and returns a JWT token if the user is authenticated, otherwise it returns an error message
-
-    :param user: User - This is the user object that you want to login
-    :type user: User
-    :param admin: bool - If the user is an admin or not
-    :type admin: bool
-    :return: A dictionary with a key of error and a value of "Wrong login details" and a key of success and a value of False.
-    """
-    password_authentication = get_password_hash(user.password)
-
-    if not password_authentication:
-        return {"error": "Wrong login details", "success": False}
-
-    authed = AuthController.sign_jwt(claim_id=user.email, admin=True, skip_verification=True)
-
-    # User.update_user(
-        # email=user.email, access_token=authed.get("access_token)")
-    # )
-    return authed
-
-
-@router.post("/admin_login", response_model=OTPLoginResponse)
-async def admin_login(user: user_schema.AdminLogin) -> UserResponse:
-    """
-    The admin_login function takes a user object and returns a JWT token.
-    The function uses the Auth0 email_token method to generate an access token for the admin user.
-
-    :param user:schema.AdminLogin: Used to Pass in the user object.
+    :param context:schema.AgentLogin: Used to Pass in the user object.
     :return: A dictionary with a jwt token.
     """
-    return jwt_login(user, admin=True)
+    return jwt_login(context, agent=True)
 
 
-@router.post("/login/email", response_model=schema.OTPLoginResponse)
-async def email_login(user: user_schema.UserLogin) -> UserResponse:
+@router.post("/login/email", response_model=TokenResponse)
+async def email_login(context: UserLogin) -> TokenResponse:
     """
-    The otp_login_email function is used to log in a user with an email and password.
-    It takes the user's email and password as input, authenticates them using Auth0,
-    and returns the JWT token for that user.
-
-    :param user:schema.EmailLogin: Used to Pass the email and password to the auth0.
-    :return: A BaseResponse containing JWT token or error
-
+    Takes a user login object, and returns a token response
+    :param context: UserLogin
+    :return: A token response
     """
-    return jwt_login(user=user, admin=False)
+    return jwt_login(context)
 
 
-@router.post("/verify/recovery", response_model=schema.Response)
-async def recover_verify(user: schema.Recovery) -> dict:
-    """
-    The recover_verify function is used to verify the user's email address.
-    It takes a user object and returns a dictionary with two keys: success,
-    which is True if the verification was successful, and response, which
-    contains an error message if there was one.
-
-    :param user:schema.Recovery: Used to Pass the email address of the user that is requesting a password reset.
-    :return: A dictionary with the key "success" and if it is true, a response message.
-
-    """
-    response = auth0.email_token(user)
-    error = response.get("error")
-    if not error:
-        password = get_password_hash(user.password)
-        User.update_user(email=user.email, password=password)
-        return {"success": True, "response": "password updated"}
-    return {"success": False, "error": "user not updated"}
-
-
-@router.post("/delete_self", response_model=Response)
-async def delete_self(request: Request):
-    """
-    The delete_self function will delete the user's account.
-
-    :param request:Request: Used to Get the user who is currently logged in.
-    :return: A boolean value.
-
-    """
-    owner = request.user
-    success = User.remove_user(id=owner.id)
-    return {"success": success}

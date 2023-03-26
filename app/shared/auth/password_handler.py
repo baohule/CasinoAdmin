@@ -1,9 +1,6 @@
 from typing import Union
 
 from passlib.context import CryptContext
-
-from app.api.admin.models import AdminUser
-from app.api.user.models import User
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -32,22 +29,3 @@ def get_password_hash(password: str) -> str:
     """
     return pwd_context.hash(password)
 
-
-def authenticate_user(email: str, password: str, admin=False) -> User:
-    """
-    "If the user exists and the password is correct, return the user, otherwise return False."
-
-    The first thing we do is check if the user exists. If the user exists, we check if the password is correct. If the password is correct, we return the user. If the password is
-    incorrect, we return False. If the user doesn't exist, we return False
-
-    :param email: The email address of the user
-    :type email: str
-    :param password: The password to be hashed
-    :type password: str
-    :param admin: bool - If True, the user will be authenticated as an admin user, defaults to False (optional)
-    :return: A NoneType or a User object
-    """
-    model = AdminUser if admin else User
-    return model.where().filter_by(
-        email=email, password=get_password_hash(password), admin=admin
-    ).first()

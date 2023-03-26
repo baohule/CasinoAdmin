@@ -15,8 +15,8 @@ from app.shared.bases.base_model import Base
 for route in APIPrefix.include:
     try:
         exec(f"from app.api.{route}.models import ModelMixin as Base")
-    except ImportError:
-        pass
+    except ImportError as e:
+        print(e)
         # logger.error(f"Route {route} has no tables defined")
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

@@ -4,7 +4,6 @@ from fastapi.testclient import TestClient
 from app.api.auth.schema import TokenResponse
 from app import app
 from app.endpoints.routes import add_routes
-
 add_routes()
 
 
@@ -18,16 +17,8 @@ class TestFlow(TestCase):
         self.password = "1121"
         self.new_valid_email = faker.Faker().email()
         self.invalid_email = "test@example"
-        self.valid_user_json = {
-            "email": self.new_valid_email,
-            "password": self.password,
-            "name": "test",
-        }
-        self.invalid_user_json = {
-            "email": self.invalid_email,
-            "password": self.password,
-            "name": "test",
-        }
+        self.valid_user_json = {"email": self.new_valid_email, "password": self.password, "name": "test"}
+        self.invalid_user_json = {"email": self.invalid_email, "password": self.password, "name": "test"}
         self.passed_email = None
 
     def test_create_user_valid_input(self):
@@ -38,6 +29,7 @@ class TestFlow(TestCase):
         assert TokenResponse(**response.json()).success is True
         assert TokenResponse(**response.json()).response.access_token
         self.passed_email = self.valid_user_json.copy()["email"]
+
 
     def test_create_user_invalid_input(self):
         response = client.post("/api/auth/signup", json=self.invalid_user_json)
@@ -54,9 +46,7 @@ class TestFlow(TestCase):
 
 
 def test_jwt_login_invalid_input(mock_jwt_login):
-    mock_jwt_login.return_value = TokenResponse(
-        success=False, error="Wrong login details"
-    )
+    mock_jwt_login.return_value = TokenResponse(success=False, error="Wrong login details")
     response = client.post("/api/auth/login/email", json="invalid_jwt_login_data")
     assert response.status_code == 401
     assert response.json() == TokenResponse(success=False, error="Wrong login details")
@@ -84,10 +74,9 @@ def test_agent_login_valid_input(mock_jwt_login):
     mock_jwt_login.assert_called_once_with(valid_agent_login_data, agent=True)
 
 
+
 def test_agent_login_invalid_input(mock_jwt_login):
-    mock_jwt_login.return_value = TokenResponse(
-        success=False, error="Wrong login details"
-    )
+    mock_jwt_login.return_value = TokenResponse(success=False, error="Wrong login details")
     response = client.post("/api/auth/login/agent", json=invalid_agent_login_data)
     assert response.status_code == 401
     assert response.json() == TokenResponse(success=False, error="Wrong login details")
@@ -107,6 +96,7 @@ invalid_email_login_data = {
 }
 
 
+
 def test_email_login_valid_input(mock_jwt_login):
     mock_jwt_login.return_value = TokenResponse(success=True)
     response = client.post("/api/auth/login/email", json=valid_email_login_data)
@@ -116,9 +106,7 @@ def test_email_login_valid_input(mock_jwt_login):
 
 
 def test_email_login_invalid_input(mock_jwt_login):
-    mock_jwt_login.return_value = TokenResponse(
-        success=False, error="Wrong login details"
-    )
+    mock_jwt_login.return_value = TokenResponse(success=False, error="Wrong login details")
     response = client.post("/api/auth/login/email", json=invalid_email_login_data)
     assert response.status_code == 401
     assert response.json() == TokenResponse(success=False, error="Wrong login details")

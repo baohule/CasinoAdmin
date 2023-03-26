@@ -1,8 +1,3 @@
-"""
-@author: Kuro
-"""
-from app import logging
-
 from fastapi import APIRouter, Depends, Request
 
 from app.api.game.models import GameList
@@ -12,24 +7,18 @@ from app.api.game.schema import (
     UpdateGame,
     CreateGameResponse,
     GetGameResponse,
-    UpdateGameResponse,
-    PagedListAllGamesResponse,
-    ListAllGames,
-    PagedGameItems,
+    UpdateGameResponse, PagedListAllGamesResponse, ListAllGames, PagedGameItems,
 )
 from app.shared.middleware.auth import JWTBearer
 
 router = APIRouter(
-    prefix="/api/game",
+    prefix="/api/Game",
     dependencies=[Depends(JWTBearer())],
-    tags=["game"],
+    tags=["Game"],
 )
 
-logger = logging.getLogger("game")
-logger.addHandler(logging.StreamHandler())
 
-
-@router.post("/manage/create_game", response_model=CreateGameResponse)
+@router.post("/manage/create_Game", response_model=CreateGameResponse)
 async def create_game(context: CreateGame, request: Request) -> CreateGameResponse:
     """
     > Create a new game in the database
@@ -76,24 +65,19 @@ async def update_game(context: UpdateGame, request: Request) -> UpdateGameRespon
     :type request: Request
     :return: The updated game is being returned.
     """
-    _game = context.dict()
+    _game = update_game.dict()
     updated_game = GameList.update(id=_game.get("id"), balance=_game.get("balance"))
     return UpdateGameResponse(success=True, response=updated_game)
 
 
 @router.post("/manage/get_all_games", response_model=PagedListAllGamesResponse)
-def get_all_games(context: ListAllGames, request: Request):
+def get_all_games(context:  ListAllGames, request: Request):
     """
-    This function retrieves a list of all games with pagination.
+    > Get all games in the database
 
-    :param context: The context parameter is of type ListAllGames
-    :type context: ListAllGames
-    :param request: The `request` parameter is an instance of the `Request` class
+    :param request: The incoming request
     :type request: Request
-    :return: a PagedListAllGamesResponse object with a success flag set to True and a
-    response attribute containing a list of games.
+    :return: A list of all games
     """
-    games = GameList.list_all_games(
-        page=context.params.page, num_items=context.params.size
-    )
+    games = GameList.list_all_games(page=context.params.page, num_items=context.params.size)
     return PagedListAllGamesResponse(success=True, response=games)

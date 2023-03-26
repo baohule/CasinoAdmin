@@ -1,44 +1,44 @@
-"""
-@author: Kuro
-"""
 import datetime
 import uuid
-
 import pytz
-from sqlalchemy import Column, Boolean, ForeignKey, DateTime, String
+from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, joinedload, defer, load_only
-
+from sqlalchemy.orm import relationship, backref, joinedload, lazyload
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
-import logging
-
-logger = logging.getLogger("agent_models")
-logger.addHandler(logging.StreamHandler())
+from app.shared.schemas.ResponseSchemas import PagedBaseResponse, BaseResponse
+from app.shared.schemas.page_schema import PagedResponse
 
 
 class Agent(ModelMixin):
-    __tablename__ = "Agent"
-
+    __tablename__ = 'agent'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    email = Column(String(255), nullable=False)
-    password = Column(String(255), nullable=False)
-    username = Column(String(255), nullable=True)
-    firstName = Column(String(255), nullable=True)
-    lastName = Column(String(255), nullable=True)
-    active = Column(Boolean, default=True)
-    createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
+    email = Column(String(255))
+    password = Column(String(255))
+    username = Column(String(255))
+    active = Column(Boolean)
+    token = Column(String(255))
+    createdAt = Column(DateTime)
     updatedAt = Column(DateTime)
-    accessToken = Column(String(255), nullable=True)
+    accessToken = Column(String(255))
+    quota = Column(Integer, default=0)
     adminId = Column(
         UUID(as_uuid=True),
-        ForeignKey("Admin.id", ondelete="CASCADE", link_to_name=True),
-        index=True,
+        ForeignKey(
+            "admin.id",
+            ondelete="CASCADE",
+            link_to_name=True
+        ),
+        index=True
     )
     createdByAdmin = relationship(
         "Admin",
         foreign_keys="Agent.adminId",
-        backref=backref("admin", single_parent=True),
+        backref=backref(
+            "admin",
+            single_parent=True
+        )
     )
+
 
     @classmethod
     def agent_users(cls, agent_id: UUID, page_num: int, num_items: int):
@@ -55,19 +55,25 @@ class Agent(ModelMixin):
         :type num_items: int
         :return: A paginated list of users
         """
-        if user := cls.where(id=agent_id):
-            return paginate(user, page_num, num_items)
+        users = cls.where(id=agent_id).first().users[:num_items]
+        # agent_user = cls.where(id=agent_id).options(
+        #     joinedload(
+        #         "users"
+        #     ).options(
+        #         joinedload(
+        #             "creditAccount",
+        #         ).load_only("balance")
+        #         )
+        #     )
 
-        return  # paginate(users, page_num, num_items)
+        return {"items": users}# paginate(users, page_num, num_items)
 
     @classmethod
     def add_agent(cls, *_, **kwargs) -> ModelType:
         """
         The add_agent function creates a new agent object.
         It takes in the following parameters:
-            * _ - A list of objects that will be ignored by the function.
-            These are usually objects passed into a function automatically,
-            like HTTP request or database connections.
+            * _ - A list of objects that will be ignored by the function. These are usually objects passed into a function automatically, like HTTP request or database connections.
             * kwargs - Keyword arguments corresponding to fields in an agent object.
 
         :param cls: Used to Call the class itself.
@@ -76,18 +82,13 @@ class Agent(ModelMixin):
         :return: The agent instance.
 
         """
-        try:
-            agent_data = cls.rebuild(kwargs)
-            if cls.where(email=agent_data["email"]).first():
-                return
-            agent = cls(**agent_data)
-            cls.session.add(agent)
-            cls.session.commit()
-            return agent
-        except Exception as e:
-            cls.session.rollback()
-            logger.info(e)
+        agent_data = cls.rebuild(kwargs)
+        if cls.where(email=agent_data['email']).first():
             return
+        agent = cls(**agent_data)
+        cls.session.add(agent)
+        cls.session.commit()
+        return agent
 
     @classmethod
     def update_agent(cls, *_, **kwargs) -> ModelType:
@@ -101,18 +102,9 @@ class Agent(ModelMixin):
         :return: A dictionary of the updated agent user.
 
         """
-        try:
-            agent_user_id = kwargs.pop("id")
-            kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
-            if updated := cls.where(id=agent_user_id):
-                updated.update(kwargs)
-                cls.session.commit()
-                return updated
-            return
-        except Exception as e:
-            cls.session.rollback()
-            logger.info(e)
-            return
+        agent_user_id = kwargs.get("id")
+        kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
+        return cls.where(id=agent_user_id).update(**kwargs)
 
     @classmethod
     def remove_agent(cls, *_, **kwargs) -> UUID:
@@ -125,29 +117,27 @@ class Agent(ModelMixin):
         :return: A dictionary of the updated agent user.
 
         """
-        try:
-            agent_user_id = kwargs.get("id")
-            agent = cls.where(id=agent_user_id).delete().save()
-            return agent.id
-        except Exception as e:
-            cls.session.rollback()
-            logger.info(e)
-            return
+        agent_user_id = kwargs.get("id")
+        agent = cls.where(id=agent_user_id).delete()
+        return agent.id
 
     @classmethod
-    def list_all_agents(cls, page: int = 1, num_items: int = 1, **kwargs):
+    def list_all_agents(cls, page, num_items) -> PagedResponse:
         """
         The list_all_agent_users function returns a list of all agent users in the database.
 
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where(**kwargs).options(defer("password"))
-
+        users = cls.session.query(
+            cls.id,
+            cls.email,
+        )
         return paginate(users, page, num_items)
 
     @classmethod
     def get(cls, *_, **kwargs) -> ModelType:
+
         """
         returns an agent user with the given set of kwargs.
 

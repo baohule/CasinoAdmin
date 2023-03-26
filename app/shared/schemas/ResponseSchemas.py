@@ -1,31 +1,21 @@
-"""
-@author: Kuro
-"""
 from typing import Optional, List, Union, Any
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import ORMSchema
+from app.shared.schemas.orm_schema import ORMCamelModel
 from app.shared.schemas.page_schema import PagedResponse
 
 
-class BaseResponse(ORMSchema):
+class BaseResponse(ORMCamelModel):
     """
     Base Response abstraction for standardized returns
     """
 
-    success: bool = False
+    success: bool
     error: Optional[str]
     response: Optional[Optional[Union[str, dict, List[dict], UUID]]]
 
     class Config:
         arbitrary_types_allowed = True
-
-    def dict(self, *args, **kwargs) -> dict[str, Any]:
-        """
-        Override the default dict method to exclude None values in the response
-        """
-        kwargs.pop("exclude_none", None)
-        return super().dict(*args, exclude_none=True, **kwargs)
 
 
 class PagedBaseResponse(BaseResponse):

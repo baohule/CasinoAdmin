@@ -1,64 +1,32 @@
-"""
-@author: Kuro
-"""
 from datetime import datetime
 from typing import Optional, List, Dict, Union
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import Schema
+from fastapi_camelcase import CamelModel
 from pydantic import BaseModel, EmailStr, Field
 
 from app.api.user.schema import User, UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMSchema
-from app.shared.schemas.page_schema import (
-    GetOptionalContextPages,
-    PagedResponse,
-    Any,
-    GetPages,
-    Filter,
-    GetNoContextPages,
-)
+from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any, GetPages, Filter
 
 
-class AgentQuota(ORMSchema):
-    """
-    `AgentQuota` is a class that is used to represent an agent's quota.
-    """
-
-    balance: Optional[int]
-
-
-class AgentUser(ORMSchema):
+class AgentUser(ORMCamelModel):
     """
     `Agent` is a class that is used to represent an agent.
     """
-
     id: Optional[UUID]
-    email: Optional[str]
     username: Optional[str]
-    firstName: Optional[str]
-    lastName: Optional[str]
+    email: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
-    quota: Optional[AgentQuota]
-    active: Optional[bool]
+    creditAccount: Optional[UserCredit]
 
 
-class RemoveUser(Schema):
-    """
-    It's a model that is used to remove a user from the database.
-    """
-
-    id: int
-    email: Optional[str]
-
-
-class GetAgent(Schema):
+class GetAgent(CamelModel):
     """
     `GetAgent` is a class that is used to represent a request
     """
-
     id: UUID
 
 
@@ -66,20 +34,18 @@ class GetAgentResponse(BaseResponse):
     """
     `GetAgentResponse` is a class that is used to represent a response
     """
-
     response: Optional[AgentUser]
 
 
-class UpdateUser(Schema):
+class UpdateUser(CamelModel):
     """
     It's a model that represents a user that is being updated.
     """
 
-    id: int
-    phone: Optional[str]
+    id: UUID
+    password: Optional[str]
+    email: Optional[str]
     username: Optional[str]
-    firstName: Optional[str]
-    lastName: Optional[str]
     active: Optional[bool]
 
 
@@ -87,28 +53,25 @@ class UpdateUserResponse(BaseResponse):
     """
     It's a model that represents a user that is being updated.
     """
-
     response: Optional[User]
 
 
-class RemovedUser(BaseModel):
+class RemoveUser(CamelModel):
     """
-    It's a model that represents a user that is being updated.
+    It's a model that is used to remove a user from the database.
     """
 
-    id: int
+    id: UUID
+
+
+class User(CamelModel):
+    # It's a user.
+    id: Optional[UUID]
+    username: Optional[str]
     email: Optional[str]
 
 
-class RemoveUserResponse(BaseResponse):
-    """
-    It's a model that represents a user that is being updated.
-    """
-
-    response: Optional[RemovedUser]
-
-
-class BaseUser(Schema):
+class BaseUser(CamelModel):
     """
     # `BaseUser` is a base class for the `User` class.
     It is used to represent the base fields that are common
@@ -116,8 +79,8 @@ class BaseUser(Schema):
     that needs to be written in the `User` class.
     """
 
-    id: int
-    phone: Optional[str]
+    id: UUID
+    email: Optional[str]
     username: Optional[str]
     password: Optional[str]
     username: Optional[str]
@@ -128,24 +91,25 @@ class BaseUser(Schema):
             "example": {
                 "id": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
                 "email": "test@test.com",
-                "firstName": "some name",
-                "lastName": "some last name",
+                "phone": "+14801234567",
+                "name": "some name",
                 "username": "newuser27",
+                "qaBypass": True,
             }
             # It's a model that is used to represent a user that is being returned from the database.
         }
 
 
-class BaseUserResponse(ORMSchema):
+class BaseUserResponse(ORMCamelModel):
     """
     It's a model that is used to return a list of users.
     """
 
-    id: int
-    phone: Optional[str]
+    id: UUID
+    email: Optional[str]
     username: Optional[str]
     active: Optional[bool]
-    creditAccount: Optional[UserCredit]
+    credit_account: Optional[UserCredit]
 
 
 class AgentPagedResponse(PagedResponse):
@@ -184,16 +148,7 @@ class GetUserList(GetOptionalContextPages):
     __self__: GetOptionalContextPages
 
 
-class GetAgentList(GetNoContextPages):
-    """
-    GetUserList is a model that is used to get a list of users.
-    that is used in the `/list` endpoint.
-    """
-
-    __self__: GetNoContextPages
-
-
-class BatchUsers(Schema):
+class BatchUsers(CamelModel):
     """
     BatchUsers is a model that is used to update multiple users at once.
     It is used in the `/batch` endpoint.
@@ -217,7 +172,7 @@ class AgentSetRole(BaseModel):
     """
 
     role_id: UUID
-    ownerId: int
+    ownerId: UUID
     parameters: Optional[Dict]
 
 
@@ -231,7 +186,7 @@ class SetUserRoleResponse(BaseResponse):
     error: Optional[str]
 
 
-class SetPerms(Schema):
+class SetPerms(CamelModel):
     """
     It's a model that is used to set a user's permissions.
     """
@@ -259,7 +214,7 @@ class SetPermsResponse(BaseResponse):
     error: Optional[str]
 
 
-class SearchUsers(Schema):
+class SearchUsers(CamelModel):
     """
     `SearchUsers` is a model that is used to search for users.
     It is used in the `/search` endpoint.
@@ -272,7 +227,6 @@ class Agent(BaseModel):
     """
     `Agent` is a model that is used to represent an Agent user that is being returned from the database.
     """
-
     id: Optional[UUID]
     email: EmailStr
     username: Optional[str]
@@ -288,15 +242,13 @@ class CreateUserResponse(BaseResponse):
     """
     `CreateUserResponse` is a model that is used to return a response from the creation of a user
     """
-
     response: Optional[UUID]
 
 
-class Balance(BaseModel):
+class CreditAccount(BaseModel):
     """
     `CreditAccount` is a model that is used to credit an account.
     """
-
     balance: float = Field(default=0.0)
 
 
@@ -304,8 +256,7 @@ class CreateUser(BaseModel):
     """
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
-
-    phone: str
+    email: EmailStr
     password: str
     username: str
 
@@ -314,14 +265,13 @@ class AgentCreateUser(BaseModel):
     """
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
-
-    phone: str = Field(example="19299338861")
+    email: EmailStr
+    password: str
     username: Optional[str]
-    headImage: Optional[str]
-    creditAccount: Optional[Balance]
+    credit_account: Optional[CreditAccount]
 
 
-class CreateAgent(Schema):
+class CreateAgent(CamelModel):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
@@ -340,7 +290,7 @@ class SearchResults(BaseModel):
     __root__: Dict[int, List[BaseUser]]
 
 
-class Response(ORMSchema):
+class Response(ORMCamelModel):
     # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
     success: Optional[str]
     error: Optional[str]
@@ -350,7 +300,7 @@ class Response(ORMSchema):
 # It's a model that is used to update a user's name.
 
 
-class AgentUserUpdateName(Schema):
+class AgentUserUpdateName(CamelModel):
     username: str
 
 
@@ -359,7 +309,7 @@ class AgentUserUpdateNameResponse(BaseResponse):
     error: Optional[str]
 
 
-class AgentSetPassword(Schema):
+class AgentSetPassword(CamelModel):
     id: UUID
     password: str
 
@@ -373,7 +323,6 @@ class AgentCreateUserResponse(BaseResponse):
     """
     `AgentCreateResponse` is a model that is used to return a response from the `/user` route.
     """
-
     response: Optional[User]
 
 
@@ -381,11 +330,10 @@ class AgentCreateResponse(BaseResponse):
     """
     `AgentCreateResponse` is a model that is used to return a response from the `/user` route.
     """
-
     response: Optional[Agent]
 
 
-class GetAgentUsersItems(PagedResponse):
+class GetAgentUsersItems(ORMCamelModel):
     items: List[BaseUserResponse]
 
 
@@ -394,7 +342,7 @@ class GetAgentUsersResponse(PagedBaseResponse):
 
 
 class AgentContext(BaseModel):
-    id: Optional[UUID]
+    agent_id: Optional[UUID]
 
 
 class GetAgentPagedContext(Filter):
