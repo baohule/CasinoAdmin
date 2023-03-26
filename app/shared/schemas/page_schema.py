@@ -3,7 +3,7 @@ from fastapi_camelcase import CamelModel
 from typing import List, Optional, Dict
 from uuid import UUID
 
-from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.orm_schema import ORMCamelModel
 
 
 class Params(CamelModel):
@@ -40,7 +40,7 @@ class GetCommentPages(CamelModel):
     params: Params
 
 
-class PagedResponse(CamelModel):
+class PagedResponse(ORMCamelModel):
     items: List[Any]
     page: int
     page_size: int

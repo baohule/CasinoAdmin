@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from typing import Optional, Generator, Union
+from typing import Optional, Generator, Union, Dict
 
 import pytz
 from fastapi_sqlalchemy import db
@@ -16,12 +16,13 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.engine import Row
+from sqlalchemy.orm import relationship, backref, joinedload, selectinload
 from sqlalchemy.util import counter
 
-from app.api.admin.models import AdminUser, AdminRole
 from app.api.admin.schema import BaseUser
-from app.shared.bases.base_model import ModelMixin, ModelType
+from app.api.user.schema import AdminUserCreateResponse, LoadUserResponse, GetUserListResponse
+from app.shared.bases.base_model import ModelMixin, ModelType, Page
 from app.shared.bases.base_model import paginate
 from app.shared.exception.utils import safe
 from app.shared.schemas.ExceptionSchema import SafeException
@@ -29,37 +30,48 @@ from app.api.user import schema
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
+from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.page_schema import PagedResponse
 
 
 class User(ModelMixin):
     """
-    One Declarative Schema to rule them all and in the darkness bind them
+        User is a table that stores the user information.
     """
+    __tablename__ = 'user'
 
-    __tablename__ = "user"
-    id: Column = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    email: Column = Column(String(80), unique=True, nullable=True)
-    username: Column = Column(String(80), unique=True, nullable=True)
-    password: Column = Column(String(256), unique=False, nullable=True)
-    name: Column = Column(Text, nullable=False)
-    access_token: Column = Column(Text, nullable=True)
-    id_token: Column = Column(Text, nullable=True)
-    active: Column = Column(Boolean, default=True)
-    created_at: Column = Column(DateTime, default=lambda: datetime.now(pytz.utc))
-    updated_at = Column(DateTime, nullable=True)
-    qa_bypass = Column(Boolean, default=False)
-    error: Optional[str] = None
-    created_by_id = Column(
-        UUID(as_uuid=True), ForeignKey(AdminUser.id, ondelete="CASCADE"), index=True
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    email = Column(String(255))
+    username = Column(String(255))
+    password = Column(String(255))
+    headImage = Column(String(255))
+    active = Column(Boolean)
+    token = Column(String(255))
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    accessToken = Column(String(255))
+
+    agentId = Column(
+        UUID(as_uuid=True),
+        ForeignKey(
+            'agent.id',
+            ondelete="CASCADE",
+            link_to_name=True
+        ),
+        index=True
     )
-    created_by = relationship(
-        "AdminUser",
-        foreign_keys="User.created_by_id",
-        backref=backref("admin", single_parent=True),
+    createdByAgent = relationship(
+        "Agent",
+        foreign_keys="User.agentId",
+        backref=backref(
+            "users",
+            single_parent=True
+        )
     )
+
 
     @classmethod
-    def get(cls, *_, **kwargs):
+    def get(cls, *_, **kwargs) -> ModelType:
         """
         The get function returns a list of all the items in the database.
 
@@ -70,86 +82,34 @@ class User(ModelMixin):
         """
         return cls.where(**kwargs).first()
 
-    @classmethod
-    def load_user(cls, user_id):
-        """
-        The load_user function is used to load a user from the database.
-        It takes in an id as a parameter and returns a dictionary containing the user's information.
-
-        :param user_id: Used to Query the database for a user with the given id.
-        :return: A dictionary with the following keys:.
-        """
-        user = cls.where(id=user_id).first()
-        return (
-            {
-                "success": True,
-                "user_id": user.id,
-                "email": user.email,
-                "name": user.name,
-                "created_at": user.created_at,
-            }
-            if user
-            else {"success": False, "error": "no such user"}
-        )
 
     @classmethod
-    def get_list_of_users(cls, list_of_ids: list, page: int, items: int, user_id: str):
+    def get_list_of_users(cls, list_of_ids: list, page: int, items: int) -> PagedResponse:
         """
         The get_list_of_users function accepts a list of user ids and returns a list of users.
 
         :param list_of_ids:list: Used to Pass in a list of user ids.
         :param page:int: Used to Determine which page of results to return.
         :param items:int: Used to Determine how many items to display per page.
-        :param user_id:str: Used to Filter the users by their owner_id.
+        :param user_id:str: Used to Filter the users by their ownerId.
         :return: A list of user objects.
 
         """
-        users = db.session.query(
-            User.id,
-            User.username,
-            User.name,
-        )
-        user_pages = paginate(users, page, items)
-        response = user_pages.as_dict()
-        response["items"] = list(
-            reversed([schema.User(**x) for x in user_pages.dict_items])
-        )
-        return response
+        users = cls.where(user_id__in=list_of_ids)
+        return paginate(users, page, items)
 
     @classmethod
-    def get_all_users(cls, page, items):
+    def get_all_users(cls, page_cursor: int, num_items: int) -> dict:
         """
-        The get_all_users function returns all users in the database.
+        > This function returns a list of users, paginated by the `pages_cursor` and `num_items` parameters
 
-        :param page: Used to Determine which page of results to fetch.
-        :param items: Used to Limit the number of users returned.
-        :return: A list of all the users in the database.
+        :param cls: The class of the model you want to paginate
+        :param page_cursor: The page number to start from
+        :param num_items: The number of items to return per page
+        :return: A dictionary of the paginated results.
         """
-        return paginate(cls, page, items).as_dict()
-
-    @classmethod
-    def create_user(cls, *_, **kwargs) -> Union[dict, SafeException]:
-        """
-        The create_user function creates a new user in the database.
-        It takes as input a dictionary of data, and returns an object with that data.
-        The function also adds the user to the search index.
-
-        :param cls: Used to Refer to the class itself, so that we can call methods of the class.
-        :param *_: Used to Catch all the extra arguments passed in that are not explicitly defined.
-        :param **kwargs: Used to Catch all the extra arguments passed in that are not explicitly defined.
-        :return: The user object that was created.
-        """
-        user_data = cls.rebuild(kwargs)
-        base_data = BaseUser(**user_data)
-        constraints = [
-            User.username == base_data.username,
-            User.email == base_data.email,
-        ]
-
-        if cls.where(email=base_data.email).first() or cls.where(username=base_data.username).first():
-            return cls.build_response(error="User already exists")
-        user = cls.save(cls(**user_data))
-        return cls.build_response(user.id)
+        query = cls.where().options(joinedload("creditAccount", innerjoin=True).load_only("balance"))
+        return paginate(query, page_cursor, num_items)
 
     @classmethod
     def remove_user(cls, *_, **kwargs) -> dict:
@@ -166,12 +126,10 @@ class User(ModelMixin):
         :param **kwargs: Used to Pass keyworded variable length of arguments to a function.
         :return: A dictionary with the key 'success' and a boolean value of true.
         """
-        user_id = kwargs.get("id")
-        cls.where(**kwargs).delete().save()
-        return cls.build_response(user_id)
+        return cls.where(**kwargs).delete().save()
 
     @classmethod
-    def update_user(cls, *_, **kwargs) -> dict:
+    def update_user(cls, *_, **kwargs) -> ModelType:
         """
         The update_user function updates a user's information.
 
@@ -182,10 +140,9 @@ class User(ModelMixin):
         """
         filters = dict(
             id=kwargs.get("id"),
-            email=kwargs.get("email"),
+            # email=kwargs.pop("email")
         )
-        user = cls.where(**{k: v for k, v in filters.items() if v}).update(kwargs)
-        return cls.build_response(cls(**kwargs).id)
+        return cls.where(**{k: v for k, v in filters.items() if v}).update(kwargs)
 
     @classmethod
     def admin_search_users(cls, *_, **kwargs) -> list:
@@ -205,27 +162,3 @@ class User(ModelMixin):
         filters = cls.build_filters(kwargs)
         return cls.where(**filters).all()
 
-    @classmethod
-    def user_claims(cls, user_id, admin=False):
-        """
-        It takes a user_id, checks if it's an email, phone, or id, and returns a payload with the user_id, user_phone, admin, and admin_role
-
-        :param cls: The class of the resource
-        :param user_id: The user_id is the unique identifier for the user. It can be a phone number, email address, or a unique identifier
-        :return: A dictionary with the user_id, user_phone, admin, and admin_role.
-        """
-        user: ModelType = None
-        if "+" in str(user_id):
-            user = User.get(phone=user_id)
-        if "@" in str(user_id):
-            user = User.get(email=user_id)
-        if len(str(user_id)) > 30:
-            user = User.get(id=user_id)
-        if user := AdminUser.get_admin_by_email(email=user_id) :
-            payload = dict(id=user.id, email=user.email, admin=True)
-
-        if not user:
-            return None
-        # admin_role = AdminRole(user_id=user)
-            # payload["admin_role"] = admin_role
-        return payload

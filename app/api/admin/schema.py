@@ -4,7 +4,9 @@ from uuid import UUID
 from fastapi_camelcase import CamelModel
 from pydantic import BaseModel, EmailStr
 
-from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.api.agent.schema import AgentUser
+from app.api.credit.schema import UserCredit
+from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any
 
@@ -17,29 +19,6 @@ class UpdateUser(CamelModel):
     id: UUID
     password: Optional[str]
     username: Optional[str]
-    phone: Optional[str]
-    name: Optional[str]
-    address_line1: Optional[str]
-    address_line2: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    zipcode: Optional[int]
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": "c1411cf2-ffcb-44dd-8202-8b00fc6dca93",
-                "password": "password12",
-                "username": "someusernam4",
-                "phone": "+14801234567",
-                "name": "some name",
-                "addressLine1": "some address 123 way",
-                "addressLine2": "some other address 123 wey",
-                "city": "Scottsdale",
-                "state": "AZ",
-                "zipcode": "85251",
-            }
-        }
 
 
 class RemoveUser(CamelModel):
@@ -50,12 +29,12 @@ class RemoveUser(CamelModel):
     id: UUID
 
 
-class User(CamelModel):
+class GetAgent(CamelModel):
     # It's a user.
     id: UUID
 
 
-class BaseUser(CamelModel):
+class BaseUser(ORMCamelModel):
     """
     # `BaseUser` is a base class for the `User` class.
     It is used to represent the base fields that are common
@@ -65,23 +44,14 @@ class BaseUser(CamelModel):
 
     id: UUID
     email: Optional[str]
-    username: Optional[str]
     password: Optional[str]
-    name: Optional[str]
-    qa_bypass: Optional[bool]
+    creditAccount: Optional[UserCredit]
 
-    class Config:
-        schema_extra = {
-            "example": {
-                "id": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
-                "email": "test@test.com",
-                "phone": "+14801234567",
-                "name": "some name",
-                "username": "newuser27",
-                "qaBypass": True,
-            }
-            # It's a model that is used to represent a user that is being returned from the database.
-        }
+
+class Admin(ORMCamelModel):
+    id: UUID
+    email: Optional[str]
+    name: Optional[str]
 
 
 class BaseUserResponse(ORMCamelModel):
@@ -93,7 +63,7 @@ class BaseUserResponse(ORMCamelModel):
     email: Optional[str]
     phone: Optional[str]
     username: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
 
 
 class AdminPagedResponse(PagedResponse):
@@ -105,14 +75,14 @@ class AdminPagedResponse(PagedResponse):
     items: List[BaseUserResponse]
 
 
-
-class ListAdminUserResponse(BaseResponse):
+class ListAdminUserResponse(PagedBaseResponse):
     """
     The ListUserResponse class is a PagedResponse class that is
     used to return a list of users
     """
 
     response: AdminPagedResponse
+
 
 class ListUserResponse(PagedResponse):
     """
@@ -146,7 +116,7 @@ class AdminRoleCreate(BaseModel):
     It's a model that represents the data required to create an Admin Role.
     """
 
-    name: str
+    username: str
     parameters: Optional[Dict]
 
 
@@ -156,7 +126,7 @@ class AdminSetRole(BaseModel):
     """
 
     role_id: UUID
-    owner_id: UUID
+    ownerId: UUID
     parameters: Optional[Dict]
 
 
@@ -216,18 +186,28 @@ class SearchResults(BaseModel):
     __root__: Dict[int, List[BaseUser]]
 
 
-class Response(ORMCamelModel):
+class AgentCreateResponse(BaseResponse):
     # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
-    success: Optional[str]
+    success: bool
     error: Optional[str]
-    response: Optional[Optional[Union[str, UUID]]]
+    response: Optional[AgentUser]
 
 
-# It's a model that is used to update a user's name.
+class AgentUpdate(CamelModel):
+    id: UUID
+    quota: Optional[int]
+    active: Optional[bool]
+
+
+class AgentUpdateResponse(BaseResponse):
+    # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
+    success: bool
+    error: Optional[str]
+    response: Optional[AgentUser]
 
 
 class AdminUserUpdateName(CamelModel):
-    name: str
+    username: str
 
 
 # It's a model that is used to return a response from updating a user's name.  It is used in the `/admin` endpoint.
@@ -246,6 +226,3 @@ class AdminSetPassword(CamelModel):
 class AdminSetPasswordResponse(BaseResponse):
     success: bool
     error: Optional[str]
-
-
-

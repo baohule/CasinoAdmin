@@ -1,10 +1,11 @@
 from typing import Optional
 
 from fastapi_camelcase import CamelModel
-from pydantic import Field, EmailStr
+from pydantic import Field, EmailStr, BaseModel
 from uuid import UUID
 
 from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.orm_schema import ORMCamelModel
 
 
 class UserRecovery(CamelModel):
@@ -87,6 +88,7 @@ class EmailStart(CamelModel):
             }
         }
 
+
 class SMSLogin(CamelModel):
     """
     SMSLogin class is a model that represents the start of an SMS message
@@ -141,17 +143,15 @@ class EmailStartResponse(BaseResponse):
     error: Optional[str]
 
 
-class OTPLoginResponse(CamelModel):
+class LoginResponse(CamelModel):
     # The OTPLoginResponse is a model that represents the response from the
     # OTP login endpoint
     access_token: Optional[str]
     refresh_token: Optional[str]
-    #response: Optional[UUID]
-    id_token: Optional[str]
-    scope: Optional[str]
+    # response: Optional[UUID]
     expires_in: Optional[int]
     token_type: Optional[str]
-    #error: Optional[str]
+    # error: Optional[str]
 
 
 #
@@ -197,6 +197,34 @@ class RefreshTokenResponse(BaseResponse):
     error: Optional[str]
 
 
-class EmailLoginResponse(BaseResponse):
-    response: OTPLoginResponse
 
+class CreateUserResponse(BaseResponse):
+    response: Optional[LoginResponse]
+
+class UserClaim(ORMCamelModel):
+    """
+    The UserClaim class is a model that represents a user's claim
+    """
+
+    id: Optional[UUID]
+    email: Optional[str]
+    admin: Optional[bool]
+    agent: Optional[bool]
+    expires: Optional[str]
+
+
+class EmailLLoginResponse(BaseResponse):
+    response: Optional[LoginResponse]
+
+
+class EmailLoginResponse(BaseResponse):
+    response: Optional[UserClaim]
+
+class TokenDetail(ORMCamelModel):
+    access_token: str
+    user_claim: UserClaim
+
+
+class TokenResponse(BaseResponse):
+    success: bool
+    response: Optional[TokenDetail]

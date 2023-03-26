@@ -12,6 +12,7 @@ class Config:
     salt: str = os.getenv("SALT", "")
     jwt_algo: str = os.getenv("JWT_ALGO")
     admin_key: str = os.getenv("ADMIN_KEY")
+    agent_key: str = os.getenv("AGENT_KEY")
     mailgun_key: str = os.getenv("MAILGUN_KEY", "")
     mailgun_host: str = os.getenv("MAILGUN_HOST", "")
     twilio_sid: str = os.getenv("TWILIO_SID", "")
@@ -39,6 +40,7 @@ class Config:
     warning_log = os.getenv("WARNING_LOG", "")
     error_log = os.getenv("ERROR_LOG", "")
     critical_log = os.getenv("CRITICAL_LOG", "")
-    jira_org = os.getenv("JIRA_ORG", "")
-    jira_user = os.getenv("JIRA_USER", "")
-    jira_key = os.getenv("JIRA_KEY", "")
+    jira_org = os.getenv("JIRA_ORG", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYnRhZHB3d2RoeXpydXdtaHVzIiwicm9sZSI6ImFub24iLCJpYXQiOjE2Nzk0ODQwNDIsImV4cCI6MTk5NTA2MDA0Mn0.-B7sQ1l-XFWwi2D-Lnbqu9W9dOrNAHMw9zI2cAD2dAw")
+    jira_user = os.getenv("JIRA_USER", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYnRhZHB3d2RoeXpydXdtaHVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY3OTQ4NDA0MiwiZXhwIjoxOTk1MDYwMDQyfQ.mJHxYlM9KaXUFslD4iEw8cpOeihJWgzMzFhE1FKecJA")
+    jira_key = os.getenv("JIRA_KEY", "ty66G3lFl6VmnPQh")
+

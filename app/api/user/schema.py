@@ -1,34 +1,76 @@
 from datetime import date, datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 from uuid import UUID
 import re
 
 from fastapi_camelcase import CamelModel
-from pydantic import EmailStr, validator
+from pydantic import EmailStr, validator, Field
 
-from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.api.auth.schema import TokenDetail, TokenResponse
+from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 
 from typing import Optional
 from pydantic import BaseModel
 
-
-class AdminRoleCreate(CamelModel):
-    """
-    Pydantic model to represent the request payload for creating a new admin role.
-    """
-    name: str
-    parameters: dict
-    bypass_auth: Optional[bool] = False
+from app.shared.schemas.page_schema import GetPages, PagedResponse
 
 
-class AdminRoleCreateResponse(ORMCamelModel):
+class UserCredit(ORMCamelModel):
+    balance: Optional[float]
+
+
+class User(ORMCamelModel):
+    id: Optional[UUID]
+    email: Optional[str]
+    balance: Optional[UserCredit]
+    username: Optional[str]
+    createdAt: Optional[str]
+
+
+class BaseUser(ORMCamelModel):
     """
-    Pydantic model to represent the response payload for creating a new admin role.
+    `User` is a class that is used to validate the data that is being passed to the `/user` route.
     """
-    success: bool
-    error: Optional[str]
-    role_id: Optional[str]
+    id: Optional[UUID]
+    email: Optional[str]
+    username: Optional[str]
+    createdAt: Optional[datetime]
+    updatedAt: Optional[datetime]
+    creditAccount: Optional[UserCredit]
+
+
+class LoadUserResponse(BaseResponse):
+    """
+    `LoadUserResponse` is a class that is used to validate the data that is being passed to the `/user` route.
+    """
+    response: Optional[BaseUser]
+
+
+class AgentUserCreateResponse(BaseResponse):
+    """
+    `UserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
+    """
+    success: bool = Field(default=False)
+    response: Optional[Union[BaseUser, TokenDetail]]
+
+
+class AgentUserCreate(CamelModel):
+    """
+    `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
+    """
+    email: EmailStr
+    password: str
+    username: str
+    balance: Optional[float]
+
+
+class AdminUserCreateResponse(TokenResponse):
+    """
+    `AdminUserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
+    """
+    success: bool = Field(default=False)
+    response: Optional[Union[BaseUser, TokenDetail]]
 
 
 class AdminUserCreate(CamelModel):
@@ -38,42 +80,33 @@ class AdminUserCreate(CamelModel):
 
     email: EmailStr
     password: str
-    name: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "email": "some@example.com",
-                "password": "adfgszfgsdgsfghsfg",
-                "name": "some guy",
-            },
-            "Valid Phone Numbers": [
-                "+14063335555 OR 406335555",
-                "+14063335555",
-                "+1 (406) 333-5555",
-            ],
-        }
+    username: str
 
 
 class UserLogin(CamelModel):
     """
     A class that is used to validate the data that is being passed to the `/login` route.
-
     """
-
-    phone: str
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "phone": "+19164200014",
-            }
-        }
+    email: EmailStr
+    password: str
 
 
 class AdminLogin(CamelModel):
     """
     This is a class that is used to validate the data that is being passed to the `/admin/login` route.
+
+    """
+
+    email: str
+    password: str
+
+    class Config:
+        schema_extra = {"example": {"email": "test@test.com", "password": "1234567"}}
+
+
+class AgentLogin(CamelModel):
+    """
+    This is a class that is used to validate the data that is being passed to the route.
 
     """
 
@@ -90,25 +123,15 @@ class UserResponse(BaseResponse):
     """
 
     error: Optional[str]
-    response: Optional[str]
+    response: Optional[AdminUserCreate]
     success: Optional[bool]
-    access_token: Optional[str]
-    refresh_token: Optional[str]
 
 
 class GetUser(CamelModel):
     """
     `GetUser` is a class that is used to validate the data that is being passed to the `/user/{userId}` route.
     """
-
-    user_id: UUID
-
-    class Config:
-        schema_extra = {
-            "example": {
-                "userId": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
-            }
-        }
+    id: UUID
 
 
 class AdminBaseResponse(ORMCamelModel):
@@ -120,9 +143,9 @@ class AdminBaseResponse(ORMCamelModel):
     success: bool
     error: Optional[str]
     response: Optional[UUID]
-    name: Optional[str]
     username: Optional[str]
-    created_at: Optional[datetime]
+    username: Optional[str]
+    createdAt: Optional[datetime]
     response: Optional[UUID]
 
 
@@ -132,7 +155,7 @@ class AdminUpdateName(CamelModel):
 
     """
 
-    name: str
+    username: str
 
 
 class AdminUpdateNameResponse(BaseResponse):
@@ -152,3 +175,19 @@ class CLaimAuthPayload(ORMCamelModel):
 
     id: UUID
     email: str
+
+
+class IGetUserList(CamelModel):
+    filter: Optional[GetUser]
+
+
+class GetAllUsers(GetPages):
+    context: Optional[IGetUserList]
+
+
+class GetUserListItems(PagedResponse):
+    items: List[BaseUser]
+
+
+class GetUserListResponse(PagedBaseResponse):
+    response: Optional[GetUserListItems]

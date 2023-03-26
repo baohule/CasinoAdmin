@@ -1,0 +1,134 @@
+"""
+@author: Kuro
+"""
+from typing import Tuple
+
+from fastapi import APIRouter, Depends, Request
+
+from app.api.admin.schema import ListAdminUserResponse, BaseUserResponse
+from app.api.agent.models import Agent
+from app.api.credit.models import Balance
+from app.api.user.models import User
+from app.shared.auth.password_handler import get_password_hash
+from app.shared.middleware.auth import JWTBearer
+from app.api.agent.schema import User as SchemaUser, CreateAgent, AgentCreateResponse, Response, RemoveUser, UpdateUser, GetUserList, CreateUser, AgentCreateUser, \
+    AgentCreateUserResponse, UpdateUserResponse, GetAgentUsersResponse, GetAgentUsers, GetAgentResponse, GetAgent
+from fastapi.exceptions import HTTPException
+
+# from app.shared.helper.logger import StandardizedLogger
+
+# logger = StandardizedLogger(__name__)
+from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
+
+router = APIRouter(
+    prefix="/api/agent",
+    dependencies=[Depends(JWTBearer(admin=True))],
+    tags=["agent"]
+)
+
+
+@router.post("/manage/create_user", response_model=AgentCreateUserResponse)
+async def create_user(context: AgentCreateUser, request: Request):
+    """
+    > Create a user with the given data
+
+    :param context: CreateAgent - This is the context object that is passed to the function. It contains the data that is passed to the function
+    :type context: CreateAgent
+    :param request: Request - The request object that was sent to the server
+    :type request: Request
+    :return: A user object
+    """
+    agent = Agent.read(id=request.user.id)
+    agent_users = len(agent.users)
+    if agent_users >= agent.quota:
+        return BaseResponse(success=False, error="You have reached your quota")
+    user_data = context.dict()
+    user_response = User.create(**user_data)
+    Balance.create(ownerId=user_response.response.id, balance=context.credit_account.balance)
+    return AgentCreateUserResponse(success=True, response=user_response)
+
+
+@router.post("/manage/update_user", response_model=UpdateUserResponse)
+async def update_user(context: UpdateUser, request: Request):
+    """
+    The update_user function updates a user's information.
+    It takes in the following parameters:
+        - user: The schema object of the user to be updated.
+        - request: The request object containing all data sent by client, including session cookie and form data.
+        It returns a dictionary with two keys, success and response.  If successful, success is True and response
+        contains no value (empty string). Otherwise, success is False and response contains an error message.
+
+    :param :
+    :param context:UpdateUser: Used to Pass in the user object.
+    :param request:Request: Used to Get the user id of the current logged in user.
+    :return: A dictionary with the success key set to true or false depending on whether it was.
+    """
+    data = context.dict(exclude_unset=True)
+    updated_user = User.update_user(**data)
+    return (
+        UpdateUserResponse(success=True, response=updated_user)
+        if updated_user
+        else BaseResponse(success=False, error="Object not updated")
+    )
+
+
+@router.post("/manage/remove_user", response_model=BaseResponse)
+async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
+    """
+    `Remove the user with the given id.`
+
+    :param context: RemoveUser - this is the context object that is passed to the function. It contains the id of the user to be removed
+    :type context: RemoveUser
+    :param request: Request - The request object that was sent to the server
+    :type request: Request
+    :return: The agent is being returned.
+    """
+    remove_agent = Agent.remove_agent(id=context.id)
+    return BaseResponse(success=True, response=remove_agent)
+
+
+@router.post("/list_agents", response_model=PagedBaseResponse)
+async def list_agents(context: GetUserList, request: Request) -> PagedBaseResponse:
+    """
+    The list_users function returns a list of all users in the system.
+
+    This function requires admin privileges to run.
+
+    :param context:schema.GetUserList: Used to Pass in the request object.
+    :param request:Request: Used to Pass in the current request.
+    :return: A list of users.
+    """
+    paged_response = Agent.list_agents(context.params.page, context.params.size)
+    return PagedBaseResponse(success=True, response=paged_response)
+
+
+@router.post("/get_agent", response_model=GetAgentResponse)
+async def get_agent(context: GetAgent, request: Request):
+    """
+    "Get the agent with the given id."
+
+    The first line of the function is a docstring. It's a string that describes what the function does. It's a good idea to write docstrings for all your functions
+
+    :param context: GetAgent - this is the context object that is passed to the function. It contains the parameters that are passed to the function
+    :type context: GetAgent
+    :param request: Request - This is the request object that is passed to the function
+    :type request: Request
+    :return: GetAgentResponse
+    """
+    agent = Agent.read(id=context.id)
+    return GetAgentResponse(success=True, response=agent)
+
+
+@router.post("/get_agent_users", response_model=GetAgentUsersResponse)
+async def get_agent_users(context: GetAgentUsers, request: Request) -> GetAgentUsersResponse:
+    """
+    `GetAgentUsersResponse` is a response object that contains a list of `AgentUser` objects
+
+    :param context: GetAgentUsers - This is the context object that is passed to the function. It contains the request parameters and the context object
+    :type context: GetAgentUsers
+    :param request: Request - This is the request object that is passed to the function
+    :type request: Request
+    :return: GetAgentUsersResponse
+    """
+    agent_users = Agent.agent_users(context.context.filter.agent_id, context.params.page, context.params.size)
+    return GetAgentUsersResponse(success=True, response=agent_users)

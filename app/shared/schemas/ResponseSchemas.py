@@ -1,6 +1,8 @@
 from typing import Optional, List, Union, Any
+from uuid import UUID
 
 from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.page_schema import PagedResponse
 
 
 class BaseResponse(ORMCamelModel):
@@ -10,10 +12,19 @@ class BaseResponse(ORMCamelModel):
 
     success: bool
     error: Optional[str]
-    response: Optional[Union[None, str, dict, List[dict]]]
+    response: Optional[Optional[Union[str, dict, List[dict], UUID]]]
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class PagedBaseResponse(BaseResponse):
+    """
+    PagedBaseResponse is a response object that
+    contains a list of objects
+    """
+
+    response: Optional[PagedResponse]
 
 
 class GetObjectsResponse(BaseResponse):

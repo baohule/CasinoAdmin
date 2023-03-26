@@ -5,7 +5,11 @@ class APIPrefix:
     """
 
     include = [
-        "admin",
         "auth",
+        "admin",
+        "agent",
         "user",
+        "credit",
+        "game",
+        "history"
     ]

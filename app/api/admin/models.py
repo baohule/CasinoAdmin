@@ -1,114 +1,28 @@
-import datetime
+import uuid
+from datetime import datetime
 
 import pytz
-from fastapi_sqlalchemy import db
-from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, JSON
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
-import uuid
 
-from app.api.admin.schema import AdminSetRole, AdminRoleCreate
-from app.shared.bases.base_model import ModelMixin, paginate
-from fastapi.logger import logger
-
-
-from typing import Optional, Dict
-from pydantic import BaseModel
+from app.shared.bases.base_model import ModelMixin, paginate, ModelType
+from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.page_schema import PagedResponse
 
 
-
-class AdminRole(ModelMixin):
+class Admin(ModelMixin):
     """
-    Is's a table that holds the roles of the admin users.
+    Admin is a table that stores the admin information.
     """
-
-    __tablename__ = "admin_role"
+    __tablename__ = 'admin'
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    name = Column(Text, unique=True)
-    parameters = Column(JSON)
-
-    @classmethod
-    def set_admin_role(cls, role_data: AdminSetRole) -> dict:
-        """
-
-        :param cls: Used to Call the class method of the AdminRole model.
-        :param role_data: An object of the AdminRoleCreate model.
-        :return: A dictionary containing the created Admin Role.
-
-        """
-        role_data_dict = role_data.dict()
-        if "parameters" in role_data_dict and role_data_dict["parameters"] is None:
-            role_data_dict.pop("parameters")
-        role_change = AdminUser.where(
-            id=role_data_dict["owner_id"]
-        ).update({"role_id": role_data_dict["role_name"]})
-        return cls.build_response(role_change)
-
-
-    @classmethod
-    def create_role(cls, role_data: AdminRoleCreate) -> dict:
-        """
-        The create_role function is used to create a new Admin Role.
-        It takes in a AdminRoleCreate object as an argument, and returns a dictionary containing the
-        created Admin Role.
-
-        :param cls: Used to Call the class method of the AdminRole model.
-        :param role_data: An object of the AdminRoleCreate model.
-        :return: A dictionary containing the created Admin Role.
-
-        """
-        role_data_dict = role_data.dict()
-        if "parameters" in role_data_dict and role_data_dict["parameters"] is None:
-            role_data_dict.pop("parameters")
-        role = cls.create(**role_data_dict)
-        return cls.build_response(role)
-
-    @classmethod
-    def alter_role_perms(cls, *_, **kwargs):
-        """
-        The alter_role_perms function is used to alter the permissions of a role.
-        It takes in a list of permission names and removes them from the role,
-        if they exist. If they don't exist, it adds them to the role.
-
-        :param cls: Used to Access the class of the object that is being altered.
-        :param *_: Used to Pass a variable number of arguments to a function.
-        :param **kwargs: Used to Pass a variable number of keyword arguments to a function.
-        :return: The update_at column of the role table.
-
-        """
-        kwargs["update_at"] = datetime.datetime.now(pytz.utc)
-        role_id = kwargs.pop("role_id")
-        admin_id = kwargs.pop("admin_id")
-        role = cls.where(role=role_id).update(**kwargs)
-        return cls.build_response(role)
-
-
-#
-class AdminUser(ModelMixin):
-    """
-    `AdminUser` is a class that is used to represent an admin user.
-    """
-
-    __tablename__ = "admin_user"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    email = Column(Text, unique=True)
-    password = Column(Text)
-    name: Column = Column(Text)
-    role_id = Column(
-        UUID(as_uuid=True), ForeignKey(AdminRole.id, ondelete="CASCADE"), index=True
-    )
-    active = Column(Boolean, default=True)
-    token = Column(Text)
-    role = relationship(
-        "AdminRole",
-        foreign_keys="AdminUser.role_id",
-        backref=backref("admin", single_parent=True),
-    )
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
-    updated_at = Column(DateTime, nullable=True)
-    access_token: Column = Column(Text, nullable=True)
-    id_token: Column = Column(Text, nullable=True)
+    email = Column(String(255), unique=True)
+    password = Column(String(255))
+    name = Column(String(255))
+    token = Column(String(255))
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime, nullable=True)
+    accessToken = Column(String(255))
 
     @classmethod
     def add_admin(cls, *_, **kwargs):
@@ -126,14 +40,14 @@ class AdminUser(ModelMixin):
         """
         admin_data = cls.rebuild(kwargs)
         if cls.where(email=admin_data['email']).first():
-            return cls.build_response(error="User already exists")
+            return
         admin = cls(**admin_data)
         cls.session.add(admin)
         cls.session.commit()
-        return cls.build_response(admin.id)
+        return admin
 
     @classmethod
-    def update_admin_user(cls, *_, **kwargs) -> dict:
+    def update_admin_user(cls, *_, **kwargs) -> ModelType:
         """
         The update_admin_user function updates the admin user with the given id.
         It takes in a dictionary of key value pairs to update and returns a dictionary of updated values.
@@ -145,46 +59,25 @@ class AdminUser(ModelMixin):
 
         """
         admin_user_id = kwargs.get("id")
-        kwargs["updated_at"] = datetime.datetime.now(pytz.utc)
-        admin = cls.where(id=admin_user_id).update(**kwargs)
-        return cls.build_response(admin.id)
+        kwargs["updatedAt"] = datetime.now(pytz.utc)
+        return cls.where(id=admin_user_id).update(**kwargs)
 
     @classmethod
-    def list_all_admin_users(cls, page, num_items) -> dict:
+    def list_all_admin_users(cls, page, num_items) -> PagedResponse:
         """
         The list_all_admin_users function returns a list of all admin users in the database.
 
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the admin users in a class.
-
         """
         users = cls.session.query(
             cls.id,
             cls.email,
         )
-        user_pages = paginate(users, page, num_items)
-        response = user_pages.as_dict()
-        response["items"] = list(
-            reversed([cls(**x) for x in user_pages.dict_items])
-        )
-        return cls.build_response(response)
-
-
+        return paginate(users, page, num_items)
 
     @classmethod
-    def get_admins_by_role(cls, role_id: str) -> dict:
-        """
-        The get_admins_by_role function returns a list of all admins with the specified role.
-
-        :param cls: Used to Access the class object.
-        :param role_id:str: Used to Specify which role to return the admins for.
-        :return: A dictionary of all the admins.
-
-        """
-        return cls.build_response(cls.where(role_id=role_id).all())
-
-    @classmethod
-    def search_admins(cls, *_, **kwargs) -> dict:
+    def search_admins(cls, *_, **kwargs) -> BaseResponse:
         """
         The search_admins function searches for admins based on the given filters.
 
@@ -194,11 +87,11 @@ class AdminUser(ModelMixin):
         :return: A dictionary.
 
         """
-        filters = AdminUser.build_filters(kwargs)
-        return cls.build_response(cls.where(**filters).all())
+        filters = cls.build_filters(kwargs)
+        return cls.where(**filters).all()
 
     @classmethod
-    def get_admin_by_email(cls, email: str) -> dict:
+    def get_admin_by_email(cls, email: str) -> ModelType:
         """
         The get_admin_by_email function accepts an email address as a string and returns the admin that is associated with that email address.
 
@@ -207,10 +100,10 @@ class AdminUser(ModelMixin):
         :return: A dictionary containing the admin's information.
 
         """
-        return cls.build_response(cls.where(email=email).first())
+        return cls.where(email=email).first()
 
     @classmethod
-    def get_admin_by_id(cls, user_id: UUID) -> dict:
+    def get_admin_by_id(cls, user_id: UUID) -> ModelType:
         """
         The get_admin_by_id function accepts a user_id and returns the admin associated with that id.
 
@@ -219,71 +112,4 @@ class AdminUser(ModelMixin):
         :return: The admin details for the user with the given id.
 
         """
-        return cls.build_response(cls.where(id=user_id).first())
-
-
-class AdminRolePermission(ModelMixin):
-    """
-    IIs's a table that holds the permissions of the admin roles.
-    """
-
-    __tablename__ = "admin_role_permission"
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    role_id = Column(
-        UUID(as_uuid=True), ForeignKey("admin_role.id", ondelete="CASCADE"), index=True
-    )
-    permission = Column(Text)
-    created_at = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
-    updated_at = Column(DateTime, nullable=True)
-
-    role = relationship(
-        "AdminRole", foreign_keys="AdminRolePermission.role_id", backref="permissions"
-    )
-
-    @classmethod
-    def add_permission(cls, permission_data: dict):
-        """
-        The add_permission function creates a new Admin Role Permission.
-        It takes in a dictionary as an argument, containing the following keys:
-        * role_id
-        * permission
-
-        :param cls: Used to Call the class itself.
-        :param permission_data: A dictionary containing the role_id and permission.
-        :return: The new Admin Role Permission.
-
-        """
-        permission = cls.create(**permission_data)
-        return cls.build_response(permission)
-
-    @classmethod
-    def update_permission(cls, *_, **kwargs):
-        """
-        The update_permission function updates an Admin Role Permission.
-        It takes in a dictionary as an argument, containing the following keys:
-        * id
-        * permission
-
-        :param cls: Used to Call the class itself.
-        :param *_: Used to Catch all the extra parameters that are passed in to the function.
-        :param **kwargs: A dictionary containing the id and permission.
-        :return: The updated Admin Role Permission.
-
-        """
-        permission_id = kwargs.pop("id")
-        kwargs["updated_at"] = datetime.datetime.now(pytz.utc)
-        permission = cls.where(id=permission_id).update(**kwargs)
-        return cls.build_response(permission)
-
-    @classmethod
-    def delete_permission(cls, permission_id: str):
-        """
-        The delete_permission function deletes an Admin Role Permission.
-        It takes in an ID as an argument.
-
-        :param cls: Used to Call the class itself.
-        :param permission_id: The ID of the permission to delete.
-        :return: None
-
-        """
-        cls.where(id=permission_id).delete()
+        return cls.where(id=user_id).first()
