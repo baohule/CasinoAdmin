@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from typing import Optional, Union, Any
 
 from app.shared.schemas.ResponseSchemas import BaseResponse

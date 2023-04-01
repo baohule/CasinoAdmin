@@ -8,6 +8,7 @@ import sys
 from dotenv import load_dotenv
 from app.endpoints.urls import APIPrefix
 from app.shared.bases.base_model import Base
+
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from settings import Config
 import logging
 from twilio.base.exceptions import TwilioRestException

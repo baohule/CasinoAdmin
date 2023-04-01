@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from settings import Config
 import boto3
 from botocore.exceptions import NoCredentialsError
@@ -13,7 +16,7 @@ def get_file_from_bucket(filename, file_type="files"):
     bucket = Config.s3_image_bucket
     if file_type == "image":
         bucket = Config.s3_image_bucket
-    if file_type == "video":
+    elif file_type == "video":
         bucket = Config.s3_video_bucket
 
     try:

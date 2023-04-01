@@ -1,11 +1,14 @@
+"""
+@author: Kuro
+"""
 from fastapi.testclient import TestClient
 
 from app import app
 from app.api.admin.schema import BaseUser
 
 # from app.api.post.schema import GetPagedPost
-from app.api.auth.views import AuthController
 from app.endpoints.routes import add_routes
+from app.shared.auth.auth_handler import sign_jwt
 
 user_data = {
     "id": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
@@ -18,7 +21,7 @@ user_data = {
 
 test_user = BaseUser(**user_data)
 user_id = str(test_user.id)
-access_token = AuthController.sign_jwt(user_id, skip_verification=True)
+access_token = sign_jwt(user_id)
 auth_header = {"Authorization": "Bearer 1337H4X"}
 client = TestClient(app)
 add_routes()

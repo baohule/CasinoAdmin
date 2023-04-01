@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from fastapi.logger import logger
 
 from app.shared.schemas.ExceptionSchema import SafeException, BaseResponse

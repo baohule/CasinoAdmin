@@ -1,7 +1,6 @@
-from typing import Union
-
-from fastapi import APIRouter
-
+"""
+@author: Kuro
+"""
 from app.api.admin.models import Admin
 from app.api.agent.models import Agent
 from app.api.auth.schema import UserClaim
@@ -44,7 +43,9 @@ async def create_user(context: AdminUserCreate) -> TokenResponse:
     return sign_jwt(UserClaim(id=user_response.id, email=context.email))
 
 
-def jwt_login(context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False) -> TokenResponse:
+def jwt_login(
+    context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
+) -> TokenResponse:
     """
     Takes a context object, which is either an AdminLogin, UserLogin or AgentLogin,
     and returns a signed JWT if the password is correct, otherwise it returns a
@@ -86,5 +87,3 @@ async def email_login(context: UserLogin) -> TokenResponse:
     :return: A token response
     """
     return jwt_login(context)
-
-

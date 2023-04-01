@@ -7,11 +7,6 @@ from sqlalchemy import func
 from app.shared.bases.base_model import ModelType
 from app.shared.exception.utils import safe
 from settings import Config
-from fastapi_sqlalchemy import db
-from meilisearch.errors import MeiliSearchError
-from py_linq import Enumerable
-from sqlalchemy.util.langhelpers import counter
-from fastapi.logger import logger
 
 client = meilisearch.Client(Config.meilisearch_url, Config.meili_admin_key)
 

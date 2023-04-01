@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from uuid import UUID
 
 

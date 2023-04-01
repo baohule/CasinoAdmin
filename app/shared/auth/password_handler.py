@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from typing import Union
 
 from passlib.context import CryptContext
@@ -28,4 +31,3 @@ def get_password_hash(password: str) -> str:
     :return: A string
     """
     return pwd_context.hash(password)
-

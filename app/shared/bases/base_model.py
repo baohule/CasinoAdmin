@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import contextlib
 import math
 import uuid
@@ -5,8 +8,10 @@ from datetime import datetime, timedelta
 from enum import Enum
 from operator import or_
 from random import randint, choice
+import pytz
+from faker import Faker
 from types import SimpleNamespace
-from typing import Type, Union, Tuple, List, Any, Generic
+from typing import Type, Union, Tuple, List, Any, Generic, Iterable, Optional
 from typing import TypeVar
 
 import pytz
@@ -23,7 +28,9 @@ from sqlalchemy import (
     String,
     Integer,
     Boolean,
-    Interval, )
+    Interval,
+    Table, Column,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
@@ -59,6 +66,7 @@ class UserTypeEnum(Enum):
     """
     The UserTypeEnum is used to define the different types of users that can be created.
     """
+
     admin = "admin"
     agent = "agent"
     user = "user"
@@ -168,7 +176,9 @@ class ModelMixin(Base):
         return {k: v for k, v in kwargs.items() if k in constraints}
 
     @classmethod
-    def get_owner_context(cls, request: Request, context: BaseModel) -> Tuple[UUID, dict]:
+    def get_owner_context(
+            cls, request: Request, context: BaseModel
+    ) -> Tuple[UUID, dict]:
         """
         The get_owner_context function accepts a request and context object as arguments.
         It returns the ownerId of the user making the request, and a dictionary containing
@@ -261,7 +271,11 @@ class ModelMixin(Base):
 
         if cls and error is None and object_data:
             return BaseResponse(success=True, response=object_data)
-        return BaseResponse(success=False, error=error or f"unable to perform crud operation on {cls.__name__ or 'object'}")
+        return BaseResponse(
+            success=False,
+            error=error
+                  or f"unable to perform crud operation on {cls.__name__ or 'object'}",
+        )
 
     @classmethod
     def user_claims(cls, *_, **kwargs) -> UserClaim:
@@ -348,8 +362,8 @@ class ModelMixin(Base):
         :return: The first row of the table that matches the query.
         """
         return cls.where(**kwargs).first()
-    @classmethod
 
+    @classmethod
     def read_all(cls, **kwargs) -> ModelType:
         """
         > It takes a class and a dictionary of keyword arguments, and returns an instance of that class with the data from the database
@@ -365,15 +379,16 @@ class DataSeeder:
     This class is used to seed the database with data
     """
 
-    def __init__(self, number_of_users: int = 10, exclude_list: list = None) -> None:
-        self.number_of_users = number_of_users
+    def __init__(self, number_of_records: int = 10, exclude_list: list = None) -> None:
+        self.number_of_records = number_of_records
         engine = create_engine(f"postgresql+psycopg2://{Config.postgres_connection}")
         Session = sessionmaker(bind=engine)
         self.session = Session()
         self.fake = Faker()
         self.metadata = MetaData(bind=engine)
         self.metadata.reflect()
-        self.limit_tables = {"credit_user": 1}
+        self.mapped = {}
+        # exclude models from generation
         self.exclude_list = exclude_list
 
     @staticmethod
@@ -403,22 +418,68 @@ class DataSeeder:
             # handle unique constraint violation by rolling back the transaction
             model.session.rollback()
 
-    @staticmethod
-    def get_model_class(table_name: str):
+    def get_model_class(self, table_name: str) -> ModelType:
         """
-        It imports the module `app.api.{route}.models` and returns the class `{table_name}` from that module
+        It imports the module `app.api.{route}.models`
+        and returns the class `{table_name}` from that module
 
         :param table_name: The name of the table you want to get the model class for
         :type table_name: str
         :return: The model class for the table name.
         """
+
         for route in APIPrefix.include:
             with contextlib.suppress(ImportError, AttributeError):
                 module = __import__(f"app.api.{route}.models", fromlist=[table_name])
                 class_name = DataSeeder.snake_to_pascal_case(table_name)
                 return getattr(module, class_name)
 
-    def get_table_data(self, table, column):
+    def get_model_metadata(self):
+        # import metadata for all routes to build the registry
+        for route in APIPrefix.include:
+            with contextlib.suppress(ImportError):
+                if route != "auth":
+                    exec(f"from app.api.{route}.models import ModelMixin as Base")
+
+        # loop through models in registry
+        for table in sorted(Base.metadata.sorted_tables, key=lambda t: t.name, reverse=True):
+            if table.name not in self.metadata.tables:  # or table.name in self.exclude_list:
+                continue
+
+            if model := self.get_model_class(table.name):
+                model.name = model.__name__
+                yield model, table
+
+    def get_data_type_mapper(self) -> SimpleNamespace:
+        """
+        returns a list of objects that have a type and fake_type attribute
+
+        :param table: The table name
+        :return: A list of objects with the type and fake_type attributes.
+        """
+        return SimpleNamespace(
+            type_maps=[
+                SimpleNamespace(
+                    type=DateTime,
+                    fake_type=self.fake.date_time_between(
+                        start_date="-30y", end_date="now"
+                    ),
+                ),
+                SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
+                SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
+                SimpleNamespace(type=Float, fake_type=self.fake.pyfloat(positive=True)),
+                SimpleNamespace(
+                    type=Interval, fake_type=timedelta(seconds=randint(0, 86400))
+                ),
+                SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
+                SimpleNamespace(
+                    type=String,
+                    fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}",
+                ),
+            ]
+        )
+
+    def get_table_data(self, table, column) -> List[ModelType]:
         """
         It returns a list of all the values in a given column of a given table
 
@@ -428,44 +489,21 @@ class DataSeeder:
         """
         return self.session.query(getattr(self.get_model_class(table), column)).all()
 
-    def generate_fake_row_data(self, table):
+    def generate_fake_row_data(self, table: MetaData) -> dict:
         """
-        It generates a dictionary of fake data for a given table, and if the table has a foreign key, it will generate a fake row for that table and use the primary key of that row as
-        the foreign key value
+        Loop through all table columns, check data types for all columns in a
+        table and generate fake data, ensure pk is unique, loop through table
+        relationships, link fk to existing record, or make one first then build relationship
 
-        :param table: The table object from the database metadata
-        :return: A dictionary of column names and values.
+        :param table: The table object that we're generating data for
+        :return: A dictionary of column names and fake data.
         """
 
         # loop through all table columns
         row_data = {}
         for column in table.columns:
-            # build a namespace for easy type access
-            data_type_mapper = SimpleNamespace(
-                type_maps=[
-                    SimpleNamespace(
-                        type=DateTime,
-                        fake_type=self.fake.date_time_between(
-                            start_date="-30y", end_date="now"
-                        ),
-                    ),
-                    SimpleNamespace(type=Boolean, fake_type=self.fake.boolean()),
-                    SimpleNamespace(type=Integer, fake_type=self.fake.random_int()),
-                    SimpleNamespace(
-                        type=Float, fake_type=self.fake.pyfloat(positive=True)
-                    ),
-                    SimpleNamespace(
-                        type=Interval, fake_type=timedelta(seconds=randint(0, 86400))
-                    ),
-                    SimpleNamespace(type=UUID, fake_type=str(uuid.uuid4())),
-                    SimpleNamespace(
-                        type=String,
-                        fake_type=f"{' '.join([self.fake.word() for _ in range(8)])}",
-                    ),
-                ]
-            )
-
             # Check data types for all columns in a table and generate fake data
+            data_type_mapper = self.get_data_type_mapper()
             for data_type in data_type_mapper.type_maps:
                 if isinstance(column.type, data_type.type):
                     row_data[column.name] = data_type.fake_type
@@ -473,6 +511,8 @@ class DataSeeder:
             # ensure pk is unique
             if column.primary_key and isinstance(column.type, UUID):
                 row_data[column.name] = str(uuid.uuid4())
+            if column.primary_key and isinstance(column.type, int):
+                row_data[column.name] = self.fake.random_int() * self.fake.random_int()
 
             # loop through table relationships
             for fk in column.foreign_keys:
@@ -490,39 +530,18 @@ class DataSeeder:
 
     def generate(self):
         """
-        It loops through all the tables in the database, and for each table,
-        it loops through the number of users specified in the config file,
-        and for each user, it generates a row of data for that table,
-        and then adds that row to the database
+        For each model in the registry, generate a number
+        of fake records equal to the number of records specified by
+        the user, and save them to the database.
         """
-        # import metadata for all routes to build the registry
-        for route in APIPrefix.include:
-            with contextlib.suppress(ImportError):
-                if route != "auth":
-                    exec(f"from app.api.{route}.models import ModelMixin as Base")
 
         # loop through models in registry
-        for table in sorted(Base.metadata.sorted_tables, key=lambda t: t.name, reverse=True):
-            if table.name not in self.metadata.tables or table.name in self.exclude_list:
-                continue
+        for model, table in list(self.get_model_metadata()):
 
-            if model := self.get_model_class(table.name):
-                model.name = model.__name__
-
-                number_of_passes = self.number_of_users
-                if table.name in self.limit_tables.keys():
-                    number_of_passes = self.limit_tables[table.name]
-                # generate n records for each table
-                for _ in range(number_of_passes):
-                    row_data = self.generate_fake_row_data(table)
-
-                    # discover all models from declared routes
-                    for route in APIPrefix.include:
-                        with contextlib.suppress(ImportError):
-                            exec(f"from app.api.{route}.models import {model.name}")
-
-                    self.save_model(model, row_data)
-                    print(model.name, "data added to db")
+            for _ in range(self.number_of_records):
+                row_data = self.generate_fake_row_data(table)
+                self.save_model(model, row_data)
+            print(model, f"{self.number_of_records} records added to db")
 
 
 class Page(Generic[T]):
@@ -532,7 +551,9 @@ class Page(Generic[T]):
 
     def __init__(self, items, page, page_size, total):
         self.items = items
-        self.dict_items = [isinstance(_item, Row) and _item._asdict() or _item for _item in items]
+        self.dict_items = [
+            isinstance(_item, Row) and _item._asdict() or _item for _item in items
+        ]
         self.page = page
         self.page_size = page_size
         self.total = total

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import uuid
 from datetime import datetime
 from typing import Optional, Generator, Union, Dict
@@ -21,12 +24,17 @@ from sqlalchemy.orm import relationship, backref, joinedload, selectinload
 from sqlalchemy.util import counter
 
 from app.api.admin.schema import BaseUser
-from app.api.user.schema import AdminUserCreateResponse, LoadUserResponse, GetUserListResponse
+from app.api.user.schema import (
+    AdminUserCreateResponse,
+    LoadUserResponse,
+    GetUserListResponse,
+)
 from app.shared.bases.base_model import ModelMixin, ModelType, Page
 from app.shared.bases.base_model import paginate
 from app.shared.exception.utils import safe
 from app.shared.schemas.ExceptionSchema import SafeException
 from app.api.user import schema
+
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
@@ -36,39 +44,30 @@ from app.shared.schemas.page_schema import PagedResponse
 
 class User(ModelMixin):
     """
-        User is a table that stores the user information.
+    User is a table that stores the user information.
     """
-    __tablename__ = 'user'
+
+    __tablename__ = "user"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    email = Column(String(255))
-    username = Column(String(255))
-    password = Column(String(255))
-    headImage = Column(String(255))
-    active = Column(Boolean)
-    token = Column(String(255))
+    email = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=False)
+    active = Column(Boolean, default=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
-    updatedAt = Column(DateTime)
-    accessToken = Column(String(255))
+    updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    accessToken = Column(String(255), nullable=True)
 
     agentId = Column(
         UUID(as_uuid=True),
-        ForeignKey(
-            'agent.id',
-            ondelete="CASCADE",
-            link_to_name=True
-        ),
-        index=True
+        ForeignKey("agent.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
     )
     createdByAgent = relationship(
         "Agent",
         foreign_keys="User.agentId",
-        backref=backref(
-            "users",
-            single_parent=True
-        )
+        backref=backref("users", single_parent=True),
     )
-
 
     @classmethod
     def get(cls, *_, **kwargs) -> ModelType:
@@ -82,9 +81,10 @@ class User(ModelMixin):
         """
         return cls.where(**kwargs).first()
 
-
     @classmethod
-    def get_list_of_users(cls, list_of_ids: list, page: int, items: int) -> PagedResponse:
+    def get_list_of_users(
+        cls, list_of_ids: list, page: int, items: int
+    ) -> PagedResponse:
         """
         The get_list_of_users function accepts a list of user ids and returns a list of users.
 
@@ -108,7 +108,9 @@ class User(ModelMixin):
         :param num_items: The number of items to return per page
         :return: A dictionary of the paginated results.
         """
-        query = cls.where().options(joinedload("creditAccount", innerjoin=True).load_only("balance"))
+        query = cls.where().options(
+            joinedload("creditAccount", innerjoin=True).load_only("balance")
+        )
         return paginate(query, page_cursor, num_items)
 
     @classmethod
@@ -161,4 +163,3 @@ class User(ModelMixin):
         """
         filters = cls.build_filters(kwargs)
         return cls.where(**filters).all()
-

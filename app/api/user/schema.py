@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from datetime import date, datetime
 from typing import Optional, List, Union
 from uuid import UUID
@@ -32,6 +35,7 @@ class BaseUser(ORMCamelModel):
     """
     `User` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     id: Optional[UUID]
     email: Optional[str]
     username: Optional[str]
@@ -44,6 +48,7 @@ class LoadUserResponse(BaseResponse):
     """
     `LoadUserResponse` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     response: Optional[BaseUser]
 
 
@@ -51,6 +56,7 @@ class AgentUserCreateResponse(BaseResponse):
     """
     `UserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     success: bool = Field(default=False)
     response: Optional[Union[BaseUser, TokenDetail]]
 
@@ -59,6 +65,7 @@ class AgentUserCreate(CamelModel):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     email: EmailStr
     password: str
     username: str
@@ -69,6 +76,7 @@ class AdminUserCreateResponse(TokenResponse):
     """
     `AdminUserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     success: bool = Field(default=False)
     response: Optional[Union[BaseUser, TokenDetail]]
 
@@ -87,6 +95,7 @@ class UserLogin(CamelModel):
     """
     A class that is used to validate the data that is being passed to the `/login` route.
     """
+
     email: EmailStr
     password: str
 
@@ -119,7 +128,7 @@ class AgentLogin(CamelModel):
 
 class UserResponse(BaseResponse):
     """
-        `UserResponse` is a class that is used to validate the data that is being passed to the `/login` route.
+    `UserResponse` is a class that is used to validate the data that is being passed to the `/login` route.
     """
 
     error: Optional[str]
@@ -131,6 +140,7 @@ class GetUser(CamelModel):
     """
     `GetUser` is a class that is used to validate the data that is being passed to the `/user/{userId}` route.
     """
+
     id: UUID
 
 

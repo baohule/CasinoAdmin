@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import logging
 from settings import Config as settings
 

@@ -3,7 +3,15 @@
 """
 from fastapi import APIRouter, Depends, Request
 
-from app.api.admin.schema import AgentUpdateResponse, AgentUpdate, ListAdminUserResponse, GetUserList, GetAgent, RemoveUser, AgentCreateResponse
+from app.api.admin.schema import (
+    AgentUpdateResponse,
+    AgentUpdate,
+    ListAdminUserResponse,
+    GetUserList,
+    GetAgent,
+    RemoveUser,
+    AgentCreateResponse,
+)
 from app.api.agent.models import Agent
 from app.api.user.models import User
 from app.shared.auth.password_handler import get_password_hash

@@ -1,4 +1,7 @@
-from app.shared.auth.auth_handler import AuthController
+"""
+@author: Kuro
+"""
+from app.shared.auth.auth_handler import sign_jwt
 
 phone = input("Enter phone number: ")
-print(AuthController.sign_jwt(phone))
+print(sign_jwt(phone))

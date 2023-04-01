@@ -1,7 +1,9 @@
+"""
+@author: Kuro
+"""
 from fastapi.logger import logger
 from fastapi_cache import caches
 from app.shared.middleware.json_encoders import decode_model
-from app.shared.utils.timer import Timer
 
 
 class RedisCache:
@@ -26,19 +28,8 @@ class RedisCache:
             if expire_time:
                 await self.cache.expire(key=key, ttl=expire_time)
 
-    async def get_posts_from_cache(self, cache_key):
+    async def get_from_cache(self, cache_key):
         cache_data: list = await self.check_cache(cache_key)
         if cache_data:
             logger.info(f"fetching {cache_key} from cache")
             return cache_data
-
-    async def get_trending_from_cache(self, content_filter):
-        cache_data: list = await self.check_cache(f"trending_{content_filter}")
-        if cache_data:
-            logger.info(f"fetching {content_filter} from cache")
-            return cache_data
-
-    async def cache_singe_post(self, post: dict, post_id: str):
-        cache_key = f"{post_id}"
-        await self.put_in_cache(cache_key, post)
-        logger.info(f"stored {post_id} in cache")

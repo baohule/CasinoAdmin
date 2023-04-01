@@ -1,4 +1,8 @@
-#
+"""
+@author: Kuro
+"""
+
+
 class PredicateConditionException(Exception):
     """
     Raising an exception for invalid predicate condition

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import uvicorn
 from settings import Config
 from app.endpoints.routes import add_routes

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from itsdangerous import URLSafeTimedSerializer
 from settings import Config
 from fastapi.logger import logger

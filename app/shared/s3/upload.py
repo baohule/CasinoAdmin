@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from settings import Config
 from datetime import datetime
 import boto3
@@ -16,7 +19,7 @@ async def upload_file(filename, filetype="files"):
     bucket = Config.s3_image_bucket
     if filetype == "image":
         bucket = Config.s3_image_bucket
-    if filetype == "video":
+    elif filetype == "video":
         bucket = Config.s3_video_bucket
 
     bucket_file = f"{datetime.now().timestamp()}-{filename}"
