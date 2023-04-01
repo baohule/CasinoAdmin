@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -13,6 +16,7 @@ import app.shared.search.search as search
 
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from fastapi.logger import logger, logging
+
 #
 # sentry_sdk.init(
 #     Config.sentry_ingestion_url,
@@ -29,6 +33,7 @@ origins = [
     "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
+    "http://193.149.176.137:3000",
 ]
 app.add_middleware(
     CORSMiddleware,

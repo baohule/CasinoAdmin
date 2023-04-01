@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from starlette.authentication import (
     AuthenticationBackend,
     AuthenticationError,
@@ -53,7 +56,9 @@ class AgentUser(BaseUser):
 
 
 class JWTBearer(HTTPBearer, AuthenticationBackend):
-    def __init__(self, auto_error: bool = True, admin: bool = False, agent: bool = False):
+    def __init__(
+        self, auto_error: bool = True, admin: bool = False, agent: bool = False
+    ):
         self.admin = admin
         self.agent = agent
         super(JWTBearer, self).__init__(auto_error=auto_error)
@@ -120,8 +125,12 @@ class JWTBearer(HTTPBearer, AuthenticationBackend):
                 "44c6b702-6ea5-4872-b140-3b5e0b22ead6",
             )
 
-        middleware_user_type = self.admin and AdminUser or self.agent and AgentUser or DBUser
-        decoded_user: UserClaim = decode_jwt(credentials, admin=self.admin, agent=self.agent)
+        middleware_user_type = (
+            self.admin and AdminUser or self.agent and AgentUser or DBUser
+        )
+        decoded_user: UserClaim = decode_jwt(
+            credentials, admin=self.admin, agent=self.agent
+        )
         if not decoded_user:
             error = "Invalid basic auth credentials"
             logger.info(error)

@@ -1,9 +1,22 @@
+"""
+@author: Kuro
+"""
 import uuid
 from datetime import datetime
 import pytz
 from fastapi_sqlalchemy import db
 from pydantic import BaseModel
-from sqlalchemy import Column, String, Date, Boolean, DateTime, Text, Float, ForeignKey, Integer
+from sqlalchemy import (
+    Column,
+    String,
+    Date,
+    Boolean,
+    DateTime,
+    Text,
+    Float,
+    ForeignKey,
+    Integer,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
 
@@ -16,7 +29,8 @@ class Balance(ModelMixin):
     """
     Balance is a table that stores the balance of a user.
     """
-    __tablename__ = 'balance'
+
+    __tablename__ = "balance"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     balance = Column(Integer)
@@ -24,20 +38,12 @@ class Balance(ModelMixin):
     updatedAt = Column(DateTime)
     ownerId = Column(
         UUID(as_uuid=True),
-        ForeignKey(
-            'user.id',
-            ondelete="CASCADE",
-            link_to_name=True
-        ),
+        ForeignKey("user.id", ondelete="CASCADE", link_to_name=True),
         index=True,
-        unique=True
+        unique=True,
     )
     creditAccount = relationship(
         "User",
         foreign_keys="Balance.ownerId",
-        backref=backref(
-            "creditAccount",
-            single_parent=True,
-            uselist=False
-        )
+        backref=backref("creditAccount", single_parent=True, uselist=False),
     )

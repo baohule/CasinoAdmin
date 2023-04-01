@@ -1,29 +1,34 @@
 """
 @author: Kuro
 """
-from typing import Tuple
 
 from fastapi import APIRouter, Depends, Request
 
-from app.api.admin.schema import ListAdminUserResponse, BaseUserResponse
 from app.api.agent.models import Agent
+from app.api.agent.schema import (
+    CreateAgent,
+    RemoveUser,
+    UpdateUser,
+    GetUserList,
+    AgentCreateUser,
+    AgentCreateUserResponse,
+    UpdateUserResponse,
+    GetAgentUsersResponse,
+    GetAgentUsers,
+    GetAgentResponse,
+    GetAgent,
+)
 from app.api.credit.models import Balance
 from app.api.user.models import User
-from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
-from app.api.agent.schema import User as SchemaUser, CreateAgent, AgentCreateResponse, Response, RemoveUser, UpdateUser, GetUserList, CreateUser, AgentCreateUser, \
-    AgentCreateUserResponse, UpdateUserResponse, GetAgentUsersResponse, GetAgentUsers, GetAgentResponse, GetAgent
-from fastapi.exceptions import HTTPException
-
-# from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 
+# from app.shared.helper.logger import StandardizedLogger
+
 router = APIRouter(
-    prefix="/api/agent",
-    dependencies=[Depends(JWTBearer(admin=True))],
-    tags=["agent"]
+    prefix="/api/agent", dependencies=[Depends(JWTBearer(admin=True))], tags=["agent"]
 )
 
 
@@ -44,7 +49,9 @@ async def create_user(context: AgentCreateUser, request: Request):
         return BaseResponse(success=False, error="You have reached your quota")
     user_data = context.dict()
     user_response = User.create(**user_data)
-    Balance.create(ownerId=user_response.response.id, balance=context.credit_account.balance)
+    Balance.create(
+        ownerId=user_response.response.id, balance=context.credit_account.balance
+    )
     return AgentCreateUserResponse(success=True, response=user_response)
 
 
@@ -104,23 +111,14 @@ async def list_agents(context: GetUserList, request: Request) -> PagedBaseRespon
 
 @router.post("/get_agent", response_model=GetAgentResponse)
 async def get_agent(context: GetAgent, request: Request):
-    """
-    "Get the agent with the given id."
-
-    The first line of the function is a docstring. It's a string that describes what the function does. It's a good idea to write docstrings for all your functions
-
-    :param context: GetAgent - this is the context object that is passed to the function. It contains the parameters that are passed to the function
-    :type context: GetAgent
-    :param request: Request - This is the request object that is passed to the function
-    :type request: Request
-    :return: GetAgentResponse
-    """
     agent = Agent.read(id=context.id)
     return GetAgentResponse(success=True, response=agent)
 
 
 @router.post("/get_agent_users", response_model=GetAgentUsersResponse)
-async def get_agent_users(context: GetAgentUsers, request: Request) -> GetAgentUsersResponse:
+async def get_agent_users(
+    context: GetAgentUsers, request: Request
+) -> GetAgentUsersResponse:
     """
     `GetAgentUsersResponse` is a response object that contains a list of `AgentUser` objects
 
@@ -130,5 +128,7 @@ async def get_agent_users(context: GetAgentUsers, request: Request) -> GetAgentU
     :type request: Request
     :return: GetAgentUsersResponse
     """
-    agent_users = Agent.agent_users(context.context.filter.agent_id, context.params.page, context.params.size)
+    agent_users = Agent.agent_users(
+        context.context.filter.id, context.params.page, context.params.size
+    )
     return GetAgentUsersResponse(success=True, response=agent_users)

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import uuid
 from datetime import datetime
 
@@ -14,15 +17,16 @@ class Admin(ModelMixin):
     """
     Admin is a table that stores the admin information.
     """
-    __tablename__ = 'admin'
+
+    __tablename__ = "admin"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), unique=True)
-    password = Column(String(255))
-    name = Column(String(255))
-    token = Column(String(255))
+    password = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
+    token = Column(String(255), nullable=False)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, nullable=True)
-    accessToken = Column(String(255))
+    accessToken = Column(String(255), nullable=True)
 
     @classmethod
     def add_admin(cls, *_, **kwargs):
@@ -39,7 +43,7 @@ class Admin(ModelMixin):
 
         """
         admin_data = cls.rebuild(kwargs)
-        if cls.where(email=admin_data['email']).first():
+        if cls.where(email=admin_data["email"]).first():
             return
         admin = cls(**admin_data)
         cls.session.add(admin)

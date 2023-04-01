@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from typing import Optional
 
 from fastapi_camelcase import CamelModel
@@ -197,9 +200,9 @@ class RefreshTokenResponse(BaseResponse):
     error: Optional[str]
 
 
-
 class CreateUserResponse(BaseResponse):
     response: Optional[LoginResponse]
+
 
 class UserClaim(ORMCamelModel):
     """
@@ -219,6 +222,7 @@ class EmailLLoginResponse(BaseResponse):
 
 class EmailLoginResponse(BaseResponse):
     response: Optional[UserClaim]
+
 
 class TokenDetail(ORMCamelModel):
     access_token: str

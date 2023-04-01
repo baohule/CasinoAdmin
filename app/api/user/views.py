@@ -1,7 +1,15 @@
+"""
+@author: Kuro
+"""
 from fastapi import APIRouter, Depends, Request
 from app.api.user import schema
 from app.api.user.models import User
-from app.api.user.schema import GetUserListResponse, LoadUserResponse, GetUserListItems, GetAllUsers
+from app.api.user.schema import (
+    GetUserListResponse,
+    LoadUserResponse,
+    GetUserListItems,
+    GetAllUsers,
+)
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
 

@@ -1,13 +1,20 @@
+"""
+@author: Kuro
+"""
 import datetime
-import uuid
 import pytz
-from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String, JSON
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, joinedload
+from sqlalchemy import (
+    Column,
+    DateTime,
+    Integer,
+    String,
+    JSON,
+)
 
-from app.api.game.schema import CreateGameResponse, UpdateGameResponse, PagedListAllGamesResponse, PagedGameItems
+from app.api.game.schema import (
+    CreateGameResponse,
+)
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
-from app.shared.schemas.ResponseSchemas import PagedBaseResponse, BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
 
 
@@ -15,11 +22,12 @@ class GameList(ModelMixin):
     """
     GameList is a table that stores the game list.
     """
-    __tablename__ = 'game_list'
+
+    __tablename__ = "game_list"
 
     id = Column(Integer, primary_key=True, unique=True, index=True)
-    eGameName = Column(String(255))
-    cGameName = Column(String(255))
+    eGameName = Column(String(255), nullable=False)
+    cGameName = Column(String(255), nullable=False)
     type = Column(Integer)
     json = Column(JSON)
     createdAt = Column(DateTime)
@@ -75,7 +83,9 @@ class GameList(ModelMixin):
         """
         games = cls.where()
         games_pages: PagedResponse = paginate(games, page, num_items)
-        games_pages.items = sorted(games_pages.items, key=lambda x: x.name, reverse=True)
+        games_pages.items = sorted(
+            games_pages.items, key=lambda x: x.name, reverse=True
+        )
         return games_pages
 
     @classmethod

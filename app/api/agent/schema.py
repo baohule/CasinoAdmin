@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from datetime import datetime
 from typing import Optional, List, Dict, Union
 from uuid import UUID
@@ -8,13 +11,20 @@ from pydantic import BaseModel, EmailStr, Field
 from app.api.user.schema import User, UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any, GetPages, Filter
+from app.shared.schemas.page_schema import (
+    GetOptionalContextPages,
+    PagedResponse,
+    Any,
+    GetPages,
+    Filter,
+)
 
 
 class AgentUser(ORMCamelModel):
     """
     `Agent` is a class that is used to represent an agent.
     """
+
     id: Optional[UUID]
     username: Optional[str]
     email: Optional[str]
@@ -27,6 +37,7 @@ class GetAgent(CamelModel):
     """
     `GetAgent` is a class that is used to represent a request
     """
+
     id: UUID
 
 
@@ -34,6 +45,7 @@ class GetAgentResponse(BaseResponse):
     """
     `GetAgentResponse` is a class that is used to represent a response
     """
+
     response: Optional[AgentUser]
 
 
@@ -53,6 +65,7 @@ class UpdateUserResponse(BaseResponse):
     """
     It's a model that represents a user that is being updated.
     """
+
     response: Optional[User]
 
 
@@ -227,6 +240,7 @@ class Agent(BaseModel):
     """
     `Agent` is a model that is used to represent an Agent user that is being returned from the database.
     """
+
     id: Optional[UUID]
     email: EmailStr
     username: Optional[str]
@@ -242,6 +256,7 @@ class CreateUserResponse(BaseResponse):
     """
     `CreateUserResponse` is a model that is used to return a response from the creation of a user
     """
+
     response: Optional[UUID]
 
 
@@ -249,6 +264,7 @@ class CreditAccount(BaseModel):
     """
     `CreditAccount` is a model that is used to credit an account.
     """
+
     balance: float = Field(default=0.0)
 
 
@@ -256,6 +272,7 @@ class CreateUser(BaseModel):
     """
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     email: EmailStr
     password: str
     username: str
@@ -265,6 +282,7 @@ class AgentCreateUser(BaseModel):
     """
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
+
     email: EmailStr
     password: str
     username: Optional[str]
@@ -323,6 +341,7 @@ class AgentCreateUserResponse(BaseResponse):
     """
     `AgentCreateResponse` is a model that is used to return a response from the `/user` route.
     """
+
     response: Optional[User]
 
 
@@ -330,6 +349,7 @@ class AgentCreateResponse(BaseResponse):
     """
     `AgentCreateResponse` is a model that is used to return a response from the `/user` route.
     """
+
     response: Optional[Agent]
 
 
@@ -342,7 +362,7 @@ class GetAgentUsersResponse(PagedBaseResponse):
 
 
 class AgentContext(BaseModel):
-    agent_id: Optional[UUID]
+    id: Optional[UUID]
 
 
 class GetAgentPagedContext(Filter):

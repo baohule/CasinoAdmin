@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from fastapi.types import Any
 from fastapi_camelcase import CamelModel
 from typing import List, Optional, Dict

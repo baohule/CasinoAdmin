@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import datetime
 import uuid
 import pytz
@@ -10,35 +13,26 @@ from app.shared.schemas.page_schema import PagedResponse
 
 
 class Agent(ModelMixin):
-    __tablename__ = 'agent'
+    __tablename__ = "agent"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    email = Column(String(255))
-    password = Column(String(255))
-    username = Column(String(255))
+    email = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False)
     active = Column(Boolean)
-    token = Column(String(255))
     createdAt = Column(DateTime)
     updatedAt = Column(DateTime)
-    accessToken = Column(String(255))
+    accessToken = Column(String(255), nullable=True)
     quota = Column(Integer, default=0)
     adminId = Column(
         UUID(as_uuid=True),
-        ForeignKey(
-            "admin.id",
-            ondelete="CASCADE",
-            link_to_name=True
-        ),
-        index=True
+        ForeignKey("admin.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
     )
     createdByAdmin = relationship(
         "Admin",
         foreign_keys="Agent.adminId",
-        backref=backref(
-            "admin",
-            single_parent=True
-        )
+        backref=backref("admin", single_parent=True),
     )
-
 
     @classmethod
     def agent_users(cls, agent_id: UUID, page_num: int, num_items: int):
@@ -55,7 +49,8 @@ class Agent(ModelMixin):
         :type num_items: int
         :return: A paginated list of users
         """
-        users = cls.where(id=agent_id).first().users[:num_items]
+        if user := cls.where(id=agent_id).join("users"):
+            return paginate(user.users, page_num, num_items)
         # agent_user = cls.where(id=agent_id).options(
         #     joinedload(
         #         "users"
@@ -66,7 +61,7 @@ class Agent(ModelMixin):
         #         )
         #     )
 
-        return {"items": users}# paginate(users, page_num, num_items)
+        return   # paginate(users, page_num, num_items)
 
     @classmethod
     def add_agent(cls, *_, **kwargs) -> ModelType:
@@ -83,7 +78,7 @@ class Agent(ModelMixin):
 
         """
         agent_data = cls.rebuild(kwargs)
-        if cls.where(email=agent_data['email']).first():
+        if cls.where(email=agent_data["email"]).first():
             return
         agent = cls(**agent_data)
         cls.session.add(agent)

@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from fastapi.routing import APIRoute
 
 from app import app
@@ -6,7 +9,8 @@ from app.endpoints.urls import APIPrefix
 
 def use_route_names_as_operation_ids(app):
     """
-    It takes a FastAPI app and sets the operation_id of each route to be the tag, name, and method of the route
+    It takes a FastAPI app and sets the operation_id of
+    each route to be the tag, name, and method of the route
 
     :param app: The FastAPI application
     """
@@ -18,7 +22,8 @@ def use_route_names_as_operation_ids(app):
 
 def add_routes():
     """
-    It imports all the routers from the routes.include list and includes them in the app
+    It imports all the routers from the routes.include list
+    and includes them in the app
     :return: The app object is being returned.
     """
     for route in APIPrefix.include:

@@ -1,7 +1,17 @@
+"""
+@author: Kuro
+"""
 from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
 from fastapi import APIRouter, Depends, Request
 
-from app.api.history.schema import GetBetHistory, GetBetHistoryResponse, GetActionHistory, GetActionHistoryResponse, GetPaymentHistory, GetPaymentHistoryResponse
+from app.api.history.schema import (
+    GetBetHistory,
+    GetBetHistoryResponse,
+    GetActionHistory,
+    GetActionHistoryResponse,
+    GetPaymentHistory,
+    GetPaymentHistoryResponse,
+)
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
 
@@ -15,13 +25,13 @@ router = APIRouter(
 @router.post("/get_bet_history", response_model=GetBetHistoryResponse)
 async def get_bet_history_(context: GetBetHistory, request: Request):
     """
-`   "Get the bet history for the given bet id."
+    `   "Get the bet history for the given bet id."
 
-    :param context: GetBetHistory - this is the request object that is passed in from the client
-    :type context: GetBetHistory
-    :param request: Request - this is the request object that is passed to the function
-    :type request: Request
-    :return: GetBetHistoryResponse
+        :param context: GetBetHistory - this is the request object that is passed in from the client
+        :type context: GetBetHistory
+        :param request: Request - this is the request object that is passed to the function
+        :type request: Request
+        :return: GetBetHistoryResponse
     """
     history = BetDetailHistory.read_all(**context.dict())
     return (

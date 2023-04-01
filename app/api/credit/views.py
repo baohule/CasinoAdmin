@@ -1,7 +1,18 @@
+"""
+@author: Kuro
+"""
 from fastapi import APIRouter, Depends, Request
 from app.api.credit import schema
 from app.api.credit.models import Balance
-from app.api.credit.schema import CreateUserCreditResponse, CreateUserCredit, UserCredit, GetUserCredit, GetUserCreditResponse, UpdateUserCreditResponse, UpdateUserCredit
+from app.api.credit.schema import (
+    CreateUserCreditResponse,
+    CreateUserCredit,
+    UserCredit,
+    GetUserCredit,
+    GetUserCreditResponse,
+    UpdateUserCreditResponse,
+    UpdateUserCredit,
+)
 from app.shared.middleware.auth import JWTBearer
 
 
@@ -20,7 +31,9 @@ async def create_credit(context: CreateUserCredit, request: Request):
     :param request:
     :return: BaseResponse
     """
-    _create_credit: UserCredit = Balance.create(ownerId=context.ownerId, balance=context.balance)
+    _create_credit: UserCredit = Balance.create(
+        ownerId=context.ownerId, balance=context.balance
+    )
     return (
         CreateUserCreditResponse(success=True, response=_create_credit)
         if _create_credit
@@ -43,7 +56,9 @@ async def get_credit(context: GetUserCredit, request: Request):
     return GetUserCreditResponse(success=True, response=user_credits)
 
 
-@router.post("/manage/update_user_credit", response_model=schema.UpdateUserCreditResponse)
+@router.post(
+    "/manage/update_user_credit", response_model=schema.UpdateUserCreditResponse
+)
 async def update_credit(context: UpdateUserCredit, request: Request):
     """
     `update_credit` updates the credit of a user

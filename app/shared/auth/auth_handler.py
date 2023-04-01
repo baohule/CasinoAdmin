@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 import contextlib
 import time
 from datetime import timedelta
@@ -19,7 +22,6 @@ JWT_SECRET = Config.fastapi_key
 JWT_ALGORITHM = Config.jwt_algo
 ADMIN_SECRET = Config.admin_key
 AGENT_SECRET = Config.agent_key
-
 
 
 def token_response(token_detail: TokenDetail) -> TokenResponse:
@@ -44,7 +46,9 @@ def generate_main_jwt(user_claim: UserClaim, secret: str = JWT_SECRET) -> str:
     :return: A jwt token that is generated from the refresh_token.
 
     """
-    payload = user_claim.dict() | {"expires": time.time() + timedelta(minutes=10).seconds}
+    payload = user_claim.dict() | {
+        "expires": time.time() + timedelta(minutes=10).seconds
+    }
 
     return jwt.encode(
         payload, secret, algorithm=JWT_ALGORITHM, json_encoder=ModelEncoder

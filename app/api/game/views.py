@@ -1,3 +1,6 @@
+"""
+@author: Kuro
+"""
 from fastapi import APIRouter, Depends, Request
 
 from app.api.game.models import GameList
@@ -7,7 +10,10 @@ from app.api.game.schema import (
     UpdateGame,
     CreateGameResponse,
     GetGameResponse,
-    UpdateGameResponse, PagedListAllGamesResponse, ListAllGames, PagedGameItems,
+    UpdateGameResponse,
+    PagedListAllGamesResponse,
+    ListAllGames,
+    PagedGameItems,
 )
 from app.shared.middleware.auth import JWTBearer
 
@@ -71,7 +77,7 @@ async def update_game(context: UpdateGame, request: Request) -> UpdateGameRespon
 
 
 @router.post("/manage/get_all_games", response_model=PagedListAllGamesResponse)
-def get_all_games(context:  ListAllGames, request: Request):
+def get_all_games(context: ListAllGames, request: Request):
     """
     > Get all games in the database
 
@@ -79,5 +85,7 @@ def get_all_games(context:  ListAllGames, request: Request):
     :type request: Request
     :return: A list of all games
     """
-    games = GameList.list_all_games(page=context.params.page, num_items=context.params.size)
+    games = GameList.list_all_games(
+        page=context.params.page, num_items=context.params.size
+    )
     return PagedListAllGamesResponse(success=True, response=games)
