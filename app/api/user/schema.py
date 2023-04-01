@@ -21,6 +21,7 @@ from app.shared.schemas.page_schema import GetPages, PagedResponse
 
 class UserCredit(ORMCamelModel):
     balance: Optional[float]
+    updatedAt: Optional[datetime]
 
 
 class User(ORMCamelModel):
