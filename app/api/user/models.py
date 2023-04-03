@@ -108,7 +108,7 @@ class User(ModelMixin):
         :param num_items: The number of items to return per page
         :return: A dictionary of the paginated results.
         """
-        query = cls.where().join("creditAccount")
+        query = cls.where()
         return paginate(query, page_cursor, num_items)
 
     @classmethod
