@@ -14,14 +14,12 @@ class Params(CamelModel):
     size: int
 
     class Config:
-        schema_extra = {"example": {"page": "3", "size": "2"}}
+        schema_extra = {"example": {"page": "1", "size": "10"}}
 
 
 class Filter(CamelModel):
-    filter: str
+    filter: Optional[Dict[str, UUID]]
 
-    class Config:
-        schema_extra = {"example": {"filter": "following"}}
 
 
 class Post(CamelModel):
