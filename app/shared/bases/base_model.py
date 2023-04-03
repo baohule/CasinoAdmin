@@ -596,7 +596,7 @@ class Page(Generic[T]):
         """
 
 
-def paginate(cls: object, page: int, page_size: int) -> PagedResponse:
+def paginate(cls, page: int, page_size: int):
     """
     The paginate function takes a query, the page number and page size as arguments.
     It then returns a tuple of the items on that page and the total number of items.
@@ -611,5 +611,5 @@ def paginate(cls: object, page: int, page_size: int) -> PagedResponse:
     if page_size <= 0:
         raise HTTPException(400, detail="page_size needs to be >= 1")
     items: list[Row] = cls.where().limit(page_size).offset((page - 1) * page_size).all()
-    total = cls.session.query(func.count(1)).scalar()
-    return Page(items, page, page_size, total)
+    total_items = cls.count()
+    return Page(items, page, page_size, total_items)
