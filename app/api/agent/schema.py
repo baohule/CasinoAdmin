@@ -353,8 +353,9 @@ class AgentCreateResponse(BaseResponse):
     response: Optional[Agent]
 
 
-class GetAgentUsersItems(ORMCamelModel):
+class GetAgentUsersItems(PagedResponse):
     items: List[BaseUserResponse]
+
 
 
 class GetAgentUsersResponse(PagedBaseResponse):

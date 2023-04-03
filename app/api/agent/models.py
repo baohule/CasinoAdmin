@@ -50,7 +50,7 @@ class Agent(ModelMixin):
         :return: A paginated list of users
         """
         if user := cls.where(id=agent_id).join("users"):
-            return paginate(user.users, page_num, num_items)
+            return paginate(user, page_num, num_items)
         # agent_user = cls.where(id=agent_id).options(
         #     joinedload(
         #         "users"
