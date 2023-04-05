@@ -10,7 +10,7 @@ from app.api.admin.schema import (
     GetUserList,
     GetAgent,
     RemoveUser,
-    AgentCreateResponse,
+    AgentCreateResponse, SearchResults, SearchUser,
 )
 from app.api.agent.models import Agent
 from app.api.user.models import User
@@ -139,3 +139,27 @@ async def get_agent(user: GetAgent, request: Request):
     if not agent:
         BaseResponse(success=False, response="Agent not found")
     return BaseResponse(success=True, response=agent)
+
+
+@router.post("/search", response_model=SearchResults)
+async def search_users(context: SearchUser, request: Request):
+    """
+    The search_users function searches for users in the database.
+    It accepts a list of dictionaries, each dictionary containing search parameters.
+    Each dictionary is searched independently and the results are merged together.
+    The keys of each dictionary should be one or more fields from the User model, and their values should be strings to search for.
+
+     Phone number can be any form as long as it exists in the db.
+
+    :param query:schema.SearchUsers: Used to Pass the data to the function.
+    :param request:Request: Used to Access the user object.
+    :return: A list of users that match the search criteria.
+    """
+    model = User
+    if context.type == 'agent':
+        model = Agent
+    if context.type == 'admin':
+        model = Admin
+    if context.type == 'user':
+        model = User
+    return SearchResults(success=True, response=model.search(**context.dict(exclude_unset=True)))

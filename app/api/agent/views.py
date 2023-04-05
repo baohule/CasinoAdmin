@@ -37,7 +37,8 @@ async def create_user(context: AgentCreateUser, request: Request):
     """
     > Create a user with the given data
 
-    :param context: CreateAgent - This is the context object that is passed to the function. It contains the data that is passed to the function
+    :param context: CreateAgent - This is the context object that is passed to the
+    function. It contains the data that is passed to the function
     :type context: CreateAgent
     :param request: Request - The request object that was sent to the server
     :type request: Request
