@@ -30,6 +30,9 @@ class GetOptionalContextPages(CamelModel):
     context: Optional[Filter]
     params: Params
 
+class GetNoContextPages(CamelModel):
+    params: Params
+
 
 class GetPages(CamelModel):
     context: Filter
