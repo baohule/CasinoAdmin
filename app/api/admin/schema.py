@@ -1,11 +1,12 @@
 """
 @author: Kuro
 """
+from datetime import datetime
 from typing import Optional, List, Dict, Union
 from uuid import UUID
 
 from fastapi_camelcase import CamelModel
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, Field
 
 from app.api.agent.schema import AgentUser
 from app.api.credit.schema import UserCredit
@@ -64,9 +65,15 @@ class BaseUserResponse(ORMCamelModel):
 
     id: UUID
     email: Optional[str]
-    phone: Optional[str]
     username: Optional[str]
-    username: Optional[str]
+    createdAt: Optional[datetime]
+    updatedAt: Optional[datetime]
+    quota: Optional[int]
+    creditAccount: Optional[UserCredit]
+    active: Optional[bool]
+    createdByAdmin: Optional[AgentUser]
+    createdByAgent: Optional[Admin]
+
 
 
 class AdminPagedResponse(PagedResponse):
@@ -171,22 +178,26 @@ class SetPermsResponse(BaseResponse):
     error: Optional[str]
 
 
-class SearchUsers(CamelModel):
+class SearchUser(CamelModel):
     """
-    `SearchUsers` is a model that is used to search for users.
+    `SearchUser` is a model that is used to search for users.
     It is used in the `/search` endpoint.
     """
 
-    users: List[BaseUser]
+    email: Optional[str]
+    username: Optional[str]
+    type: str = Field(..., example="agent | admin | user")
 
 
-class SearchResults(BaseModel):
+
+
+class SearchResults(BaseResponse):
     """
     `SearchResults` is a model that is used to return a list of users that match a search query.  It is used in the `/search` endpoint.
 
     """
+    response: Optional[List[BaseUserResponse]]
 
-    __root__: Dict[int, List[BaseUser]]
 
 
 class AgentCreateResponse(BaseResponse):

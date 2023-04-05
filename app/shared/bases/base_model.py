@@ -373,6 +373,28 @@ class ModelMixin(Base):
         """
         return cls.where(**kwargs).all()
 
+    @classmethod
+    def search(cls, *_, **kwargs) -> list:
+        """
+        The admin_search_users function allows an admin user to search for users by various criteria.
+        The function accepts a dictionary of key-value pairs as input, and returns a list of dictionaries
+        of matching users. The keys in the input dictionary can be any field in the User model, and each value
+        can be either a single string or an iterable containing strings.
+
+        note: the filter will search by phone OR email if provided, and if not,
+        ALL criteria so pass explicit fields to search by.
+
+        :param *_: Used to Catch any additional arguments that are passed in, but not used by the function.
+        :param **kwargs: Used to Allow the caller to pass in a dictionary of key/value pairs that will be used as filters for the query.
+        :return: A list of users that match the filters in kwargs.
+        """
+        if email := kwargs.get("email"):
+            if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
+                return results
+        if username := kwargs.get("username"):
+            if results := cls.where().filter(cls.username.ilike(f"%{username}%")).all():
+                return results
+
 
 class DataSeeder:
     """
