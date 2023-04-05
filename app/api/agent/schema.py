@@ -16,7 +16,7 @@ from app.shared.schemas.page_schema import (
     PagedResponse,
     Any,
     GetPages,
-    Filter,
+    Filter, GetNoContextPages,
 )
 
 
@@ -159,6 +159,15 @@ class GetUserList(GetOptionalContextPages):
     """
 
     __self__: GetOptionalContextPages
+
+
+class GetAgentList(GetNoContextPages):
+    """
+    GetUserList is a model that is used to get a list of users.
+    that is used in the `/list` endpoint.
+    """
+
+    __self__: GetNoContextPages
 
 
 class BatchUsers(CamelModel):

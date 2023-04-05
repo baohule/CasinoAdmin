@@ -16,7 +16,7 @@ from app.api.agent.schema import (
     GetAgentUsersResponse,
     GetAgentUsers,
     GetAgentResponse,
-    GetAgent,
+    GetAgent, GetAgentList,
 )
 from app.api.credit.models import Balance
 from app.api.user.models import User
@@ -95,9 +95,9 @@ async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
 
 
 @router.post("/list_agents", response_model=PagedBaseResponse)
-async def list_agents(context: GetUserList, request: Request) -> PagedBaseResponse:
+async def list_agents(context: GetAgentList, request: Request) -> PagedBaseResponse:
     """
-    The list_users function returns a list of all users in the system.
+    The list_all_agents function returns a list of all agents in the system.
 
     This function requires admin privileges to run.
 
@@ -105,12 +105,21 @@ async def list_agents(context: GetUserList, request: Request) -> PagedBaseRespon
     :param request:Request: Used to Pass in the current request.
     :return: A list of users.
     """
-    paged_response = Agent.list_agents(context.params.page, context.params.size)
+    paged_response = Agent.list_all_agents(context.params.page, context.params.size)
     return PagedBaseResponse(success=True, response=paged_response)
 
 
 @router.post("/get_agent", response_model=GetAgentResponse)
 async def get_agent(context: GetAgent, request: Request):
+    """
+    This function retrieves an agent object based on the provided ID and returns it as a response.
+
+    :param context: The context parameter is of type GetAgent, contains information about the request being made to retrieve an agent.
+    :type context: GetAgent
+    \   :param request: The `request` parameter is an instance of the `Request` class, which represents an HTTP request received by the server.
+]|) :type request: Request
+    :return: The function `get_agent` returns a `GetAgentResponse` object with a boolean `success` attribute set to `True` and an `Agent` object as the `response` attribute.
+    """
     agent = Agent.read(id=context.id)
     return GetAgentResponse(success=True, response=agent)
 
