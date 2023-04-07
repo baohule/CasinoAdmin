@@ -47,7 +47,7 @@ app.add_middleware(AuthenticationMiddleware, backend=JWTBearer())
 app.add_middleware(SentryAsgiMiddleware)
 app.add_middleware(
     DBSessionMiddleware,
-    db_url=f"postgresql+psycopg2://{quote_plus(Config.postgres_connection)}",
+    db_url=f"postgresql+psycopg2://{Config.postgres_connection}",
     engine_args={"pool_size": 100000, "max_overflow": 10000},
 )
 with db():
