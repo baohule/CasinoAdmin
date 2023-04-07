@@ -34,7 +34,9 @@ class Admin(ModelMixin):
         """
         The add_admin function creates a new admin object.
         It takes in the following parameters:
-            * _ - A list of objects that will be ignored by the function. These are usually objects passed into a function automatically, like HTTP request or database connections.
+            * _ - A list of objects that will be ignored by the
+            function. These are usually objects passed into a function
+            automatically, like HTTP request or database connections.
             * kwargs - Keyword arguments corresponding to fields in an admin object.
 
         :param cls: Used to Call the class itself.
