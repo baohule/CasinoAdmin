@@ -295,7 +295,7 @@ class AgentCreateUser(BaseModel):
     email: EmailStr
     password: str
     username: Optional[str]
-    credit_account: Optional[CreditAccount]
+    creditAccount: Optional[CreditAccount]
 
 
 class CreateAgent(CamelModel):
