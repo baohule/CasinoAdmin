@@ -77,11 +77,6 @@ class RemoveUser(CamelModel):
     id: UUID
 
 
-class User(CamelModel):
-    # It's a user.
-    id: Optional[UUID]
-    username: Optional[str]
-    email: Optional[str]
 
 
 class BaseUser(CamelModel):
