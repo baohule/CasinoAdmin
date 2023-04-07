@@ -31,6 +31,13 @@ router = APIRouter(
     prefix="/api/agent", dependencies=[Depends(JWTBearer(admin=True))], tags=["agent"]
 )
 
+def make_user(context):
+    user_data = context.dict(exclude_unset=True)
+    user_response = User.create(**user_data)
+    Balance.create(
+        ownerId=user_response.response.id, balance=context.credit_account.balance
+    )
+    return user_response
 
 @router.post("/manage/create_user", response_model=AgentCreateUserResponse)
 async def create_user(context: AgentCreateUser, request: Request):
@@ -45,15 +52,12 @@ async def create_user(context: AgentCreateUser, request: Request):
     :return: A user object
     """
     agent = Agent.read(id=request.user.id)
+    if not agent:
+        return AgentCreateUserResponse(success=True, response=make_user(context))
     agent_users = len(agent.users)
     if agent_users >= agent.quota:
         return BaseResponse(success=False, error="You have reached your quota")
-    user_data = context.dict()
-    user_response = User.create(**user_data)
-    Balance.create(
-        ownerId=user_response.response.id, balance=context.credit_account.balance
-    )
-    return AgentCreateUserResponse(success=True, response=user_response)
+    return AgentCreateUserResponse(success=True, response=make_user(context))
 
 
 @router.post("/manage/update_user", response_model=UpdateUserResponse)
