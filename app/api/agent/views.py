@@ -35,7 +35,7 @@ def make_user(context):
     user_data = context.dict(exclude_unset=True)
     user_response = User.create(**user_data)
     Balance.create(
-        ownerId=user_response.response.id, balance=context.credit_account.balance
+        ownerId=user_response.id, balance=context.creditAccount.balance
     )
     return user_response
 
