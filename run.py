@@ -12,7 +12,7 @@ if __name__ == "__main__":
         "app:app",
         host=Config.fastapi_host,
         port=Config.fastapi_port,
-        # ssl_keyfile="certs/local.key",
-        # ssl_certfile="certs/local.pem",
+        ssl_keyfile="certs/local.key",
+        ssl_certfile="certs/local.pem",
         workers=Config.workers,
     )
