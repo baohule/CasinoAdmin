@@ -41,7 +41,7 @@ class User(ModelMixin):
 
     agentId = Column(
         UUID(as_uuid=True),
-        ForeignKey("agent.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
     createdByAgent = relationship(

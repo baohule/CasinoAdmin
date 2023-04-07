@@ -29,7 +29,7 @@ class PaymentHistory(ModelMixin):
     ownerId = Column(
         UUID(as_uuid=True),
         ForeignKey(
-            "user.id",
+            "User.id",
             ondelete="CASCADE",
             link_to_name=True,
         ),
@@ -59,7 +59,7 @@ class BetDetailHistory(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     gameId = Column(
         Integer,
-        ForeignKey("game_list.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("GameList.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
     game = relationship(
@@ -69,7 +69,7 @@ class BetDetailHistory(ModelMixin):
     )
     ownerId = Column(
         UUID(as_uuid=True),
-        ForeignKey("user.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
     owner = relationship(
@@ -93,7 +93,7 @@ class ActionHistory(ModelMixin):
     createdAt = Column(DateTime)
     userId = Column(
         UUID(as_uuid=True),
-        ForeignKey("user.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         nullable=True,
     )
@@ -104,7 +104,7 @@ class ActionHistory(ModelMixin):
     )
     agentId = Column(
         UUID(as_uuid=True),
-        ForeignKey("agent.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         nullable=True,
     )
@@ -115,7 +115,7 @@ class ActionHistory(ModelMixin):
     )
     adminId = Column(
         UUID(as_uuid=True),
-        ForeignKey("admin.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Admin.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         nullable=True,
     )

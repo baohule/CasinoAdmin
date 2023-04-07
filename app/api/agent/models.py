@@ -27,7 +27,7 @@ class Agent(ModelMixin):
     quota = Column(Integer, default=0)
     adminId = Column(
         UUID(as_uuid=True),
-        ForeignKey("admin.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Admin.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
     createdByAdmin = relationship(

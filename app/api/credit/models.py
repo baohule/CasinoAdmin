@@ -38,7 +38,7 @@ class Balance(ModelMixin):
     updatedAt = Column(DateTime)
     ownerId = Column(
         UUID(as_uuid=True),
-        ForeignKey("user.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         unique=True,
     )
