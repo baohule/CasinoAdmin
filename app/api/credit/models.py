@@ -30,7 +30,7 @@ class Balance(ModelMixin):
     Balance is a table that stores the balance of a user.
     """
 
-    __tablename__ = "balance"
+    __tablename__ = "Balance"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     balance = Column(Integer)

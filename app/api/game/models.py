@@ -23,7 +23,7 @@ class GameList(ModelMixin):
     GameList is a table that stores the game list.
     """
 
-    __tablename__ = "game_list"
+    __tablename__ = "GameList"
 
     id = Column(Integer, primary_key=True, unique=True, index=True)
     eGameName = Column(String(255), nullable=False)

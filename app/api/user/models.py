@@ -3,43 +3,24 @@
 """
 import uuid
 from datetime import datetime
-from typing import Optional, Generator, Union, Dict
 
 import pytz
-from fastapi_sqlalchemy import db
 from sqlalchemy import (
     Column,
     String,
-    Date,
     Boolean,
     DateTime,
-    Text,
-    and_,
-    or_,
     ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.engine import Row
-from sqlalchemy.orm import relationship, backref, joinedload, selectinload
-from sqlalchemy.util import counter
+from sqlalchemy.orm import relationship, backref
 
-from app.api.admin.schema import BaseUser
-from app.api.user.schema import (
-    AdminUserCreateResponse,
-    LoadUserResponse,
-    GetUserListResponse,
-)
-from app.shared.bases.base_model import ModelMixin, ModelType, Page
+from app.shared.bases.base_model import ModelMixin, ModelType
 from app.shared.bases.base_model import paginate
-from app.shared.exception.utils import safe
-from app.shared.schemas.ExceptionSchema import SafeException
-from app.api.user import schema
+from app.shared.schemas.page_schema import PagedResponse
+
 
 # from app.shared.helper.logger import StandardizedLogger
-
-# logger = StandardizedLogger(__name__)
-from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.schemas.page_schema import PagedResponse
 
 
 class User(ModelMixin):
@@ -47,7 +28,7 @@ class User(ModelMixin):
     User is a table that stores the user information.
     """
 
-    __tablename__ = "user"
+    __tablename__ = "User"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False)

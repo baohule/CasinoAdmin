@@ -13,7 +13,9 @@ from app.shared.schemas.page_schema import PagedResponse
 
 
 class Agent(ModelMixin):
-    __tablename__ = "agent"
+
+    __tablename__ = "Agent"
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False)
     password = Column(String(255), nullable=False)

@@ -18,7 +18,8 @@ class Admin(ModelMixin):
     Admin is a table that stores the admin information.
     """
 
-    __tablename__ = "admin"
+    __tablename__ = "Admin"
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), unique=True)
     password = Column(String(255), nullable=False)
