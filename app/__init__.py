@@ -16,7 +16,7 @@ import app.shared.search.search as search
 
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 from fastapi.logger import logger, logging
-
+from urllib.parse import quote_plus
 #
 # sentry_sdk.init(
 #     Config.sentry_ingestion_url,
@@ -47,7 +47,7 @@ app.add_middleware(AuthenticationMiddleware, backend=JWTBearer())
 app.add_middleware(SentryAsgiMiddleware)
 app.add_middleware(
     DBSessionMiddleware,
-    db_url=f"postgresql+psycopg2://{Config.postgres_connection}",
+    db_url=f"postgresql+psycopg2://{quote_plus(Config.postgres_connection)}",
     engine_args={"pool_size": 100000, "max_overflow": 10000},
 )
 with db():
