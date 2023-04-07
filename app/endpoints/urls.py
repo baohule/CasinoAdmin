@@ -4,4 +4,4 @@ class APIPrefix:
     To use, add the route name as a string to the include list and your route will be built.
     """
 
-    include = ["auth", "admin"]
+    include = ["auth", "admin", "agent", "user", "credit", "game", "history"]
