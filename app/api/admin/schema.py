@@ -185,7 +185,7 @@ class SearchUser(CamelModel):
     """
 
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     type: str = Field(..., example="agent | admin | user")
 
 

@@ -391,8 +391,8 @@ class ModelMixin(Base):
         if email := kwargs.get("email"):
             if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
                 return results
-        if username := kwargs.get("username"):
-            if results := cls.where().filter(cls.username.ilike(f"%{username}%")).all():
+        if username := kwargs.get("name"):
+            if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
                 return results
 
 
