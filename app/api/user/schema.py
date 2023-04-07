@@ -89,7 +89,7 @@ class AdminUserCreate(CamelModel):
 
     email: EmailStr
     password: str
-    username: str
+    name: str
 
 
 class UserLogin(CamelModel):
