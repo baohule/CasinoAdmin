@@ -19,7 +19,7 @@ class Agent(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False)
     password = Column(String(255), nullable=False)
-    username = Column(String(255), nullable=False)
+    name = Column(String(255), nullable=False)
     active = Column(Boolean)
     createdAt = Column(DateTime)
     updatedAt = Column(DateTime)
