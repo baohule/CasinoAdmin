@@ -53,14 +53,15 @@ async def create_user(context: AgentCreateUser, request: Request):
     :type request: Request
     :return: A user object
     """
-    agent = Agent.read(id=request.user.id)
-    if not agent:
+
+    if not request.user:
         user_response = make_user(context)
         return (
             AgentCreateUserResponse(success=True, response=user_response)
             if user_response
             else BaseResponse(success=False, error="User not created")
         )
+    agent = Agent.read(id=request.user.id)
     agent_users = len(agent.users)
     if agent_users >= agent.quota:
         return BaseResponse(success=False, error="You have reached your quota")
