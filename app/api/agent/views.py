@@ -34,6 +34,8 @@ router = APIRouter(
 def make_user(context):
     user_data = context.dict(exclude_unset=True)
     user_response = User.create(**user_data)
+    if not user_response:
+        return
     Balance.create(
         ownerId=user_response.id, balance=context.creditAccount.balance
     )
@@ -53,11 +55,21 @@ async def create_user(context: AgentCreateUser, request: Request):
     """
     agent = Agent.read(id=request.user.id)
     if not agent:
-        return AgentCreateUserResponse(success=True, response=make_user(context))
+        user_response = make_user(context)
+        return (
+            AgentCreateUserResponse(success=True, response=user_response)
+            if user_response
+            else BaseResponse(success=False, error="User not created")
+        )
     agent_users = len(agent.users)
     if agent_users >= agent.quota:
         return BaseResponse(success=False, error="You have reached your quota")
-    return AgentCreateUserResponse(success=True, response=make_user(context))
+    user_response = make_user(context)
+    return (
+        AgentCreateUserResponse(success=True, response=user_response)
+        if user_response
+        else BaseResponse(success=False, error="User not created")
+    )
 
 
 @router.post("/manage/update_user", response_model=UpdateUserResponse)
