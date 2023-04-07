@@ -17,7 +17,7 @@ class PaymentHistory(ModelMixin):
     PaymentHistory is a table that stores the payment history of a user.
     """
 
-    __tablename__ = "payment_history"
+    __tablename__ = "PaymentHistory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     beforeScore = Column(Integer)
@@ -48,7 +48,7 @@ class BetDetailHistory(ModelMixin):
     history of bet details performed by users
     """
 
-    __tablename__ = "bet_detail_history"
+    __tablename__ = "BetDetailHistory"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     beforeScore = Column(Integer)
@@ -86,7 +86,7 @@ class ActionHistory(ModelMixin):
 
     """
 
-    __tablename__ = "action_history"
+    __tablename__ = "ActionHistory"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     newValueJson = Column(JSON)
     ip = Column(String(255), nullable=False)
