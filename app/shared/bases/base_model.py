@@ -308,7 +308,8 @@ class ModelMixin(Base):
                 return
             cls.session.add(new_object)
             cls.session.commit()
-        except IntegrityError:
+        except IntegrityError as e:
+            print(e)
             cls.session.rollback()
             return
         return new_object
