@@ -44,6 +44,7 @@ class User(ModelMixin):
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
+        nullable=True
     )
     createdByAgent = relationship(
         "Agent",
