@@ -92,8 +92,7 @@ class JWTBearer(HTTPBearer, AuthenticationBackend):
         try:
             payload = decode_jwt(jwt, self.admin, self.agent)
         except Exception as e:
-            print(e)
-            payload = None
+            raise HTTPException(status_code=401, detail=str(e)) from e
         return bool(payload)
 
     async def authenticate(self, request: Request):
