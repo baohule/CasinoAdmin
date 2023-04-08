@@ -99,9 +99,11 @@ class Agent(ModelMixin):
         :return: A dictionary of the updated agent user.
 
         """
-        agent_user_id = kwargs.get("id")
+        agent_user_id = kwargs.pop("id")
         kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
-        return cls.where(id=agent_user_id).update(**kwargs)
+        updated = cls.where(id=agent_user_id).update(kwargs)
+        cls.session.commit()
+        return updated
 
     @classmethod
     def remove_agent(cls, *_, **kwargs) -> UUID:
