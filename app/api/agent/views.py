@@ -31,15 +31,7 @@ router = APIRouter(
     prefix="/api/agent", dependencies=[Depends(JWTBearer(admin=True))], tags=["agent"]
 )
 
-def make_user(context):
-    user_data = context.dict(exclude_unset=True)
-    user_response = User.create(**user_data)
-    if not user_response:
-        return
-    Balance.create(
-        ownerId=user_response.id, balance=context.creditAccount.balance
-    )
-    return user_response
+
 
 @router.post("/manage/create_user", response_model=AgentCreateUserResponse)
 async def create_user(context: AgentCreateUser, request: Request):
@@ -53,6 +45,17 @@ async def create_user(context: AgentCreateUser, request: Request):
     :type request: Request
     :return: A user object
     """
+
+    def make_user(context):
+        user_data = context.dict(exclude_unset=True)
+        user_response = User.create(**user_data)
+        if not user_response:
+            return
+        Balance.create(
+            ownerId=user_response.id, balance=context.creditAccount.balance
+        )
+        return user_response
+
     if not request.user:
         return BaseResponse(success=False, error="You are not logged in")
     agent = Agent.read(id=request.user.id)
