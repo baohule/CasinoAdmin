@@ -34,6 +34,7 @@ class User(ModelMixin):
     email = Column(String(255), nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    headImage = Column(String(255), nullable=True, unique=True)
     active = Column(Boolean, default=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
