@@ -29,7 +29,7 @@ class User(ORMCamelModel):
     email: Optional[str]
     balance: Optional[UserCredit]
     username: Optional[str]
-    createdAt: Optional[str]
+    createdAt: Optional[datetime]
 
 
 class BaseUser(ORMCamelModel):

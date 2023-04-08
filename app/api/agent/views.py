@@ -48,11 +48,12 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     def make_user(context):
         user_data = context.dict(exclude_unset=True)
+        credit_account = user_data.pop("credit_account")
         user_response = User.create(**user_data)
         if not user_response:
             return
         Balance.create(
-            ownerId=user_response.id, balance=context.creditAccount.balance
+            ownerId=user_response.id, balance=credit_account.get("balance", 0)
         )
         return user_response
 
