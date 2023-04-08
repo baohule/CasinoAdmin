@@ -264,7 +264,7 @@ class CreateUserResponse(BaseResponse):
     response: Optional[UUID]
 
 
-class CreditAccount(BaseModel):
+class Balance(BaseModel):
     """
     `CreditAccount` is a model that is used to credit an account.
     """
@@ -290,7 +290,7 @@ class AgentCreateUser(BaseModel):
     email: EmailStr
     password: str
     username: Optional[str]
-    creditAccount: Optional[CreditAccount]
+    credit_account: Optional[Balance] = Field(title="CreditAccount")
 
 
 class CreateAgent(CamelModel):
