@@ -50,8 +50,13 @@ async def get_user_data(request: Request):
 @router.post("/list_all_users", response_model=GetUserListResponse)
 async def list_all_users(context: GetAllUsers):
     """
-    The list_all_users function returns a list of all users.
-    :return: A list of all users.
+    This function lists all users in a paged format.
+
+    :param context: The context parameter is an object of type GetAllUsers, which likely contains additional information or context needed to execute the list_all_users function. This
+    could include things like authentication credentials, request headers, or other metadata
+    :type context: GetAllUsers
+    :return: The function `list_all_users` returns an instance of `GetUserListResponse` with a boolean `success` attribute set to `True` and a `response` attribute containing a paged
+    list of users obtained from the `User` model's `get_all_users` method.
     """
     paged_users = User.get_all_users(context.params.page, context.params.size)
     return GetUserListResponse(success=True, response=paged_users)
