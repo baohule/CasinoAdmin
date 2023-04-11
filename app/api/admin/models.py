@@ -45,13 +45,18 @@ class Admin(ModelMixin):
         :return: The admin instance.
 
         """
-        admin_data = cls.rebuild(kwargs)
-        if cls.where(email=admin_data["email"]).first():
+        try:
+            admin_data = cls.rebuild(kwargs)
+            if cls.where(email=admin_data["email"]).first():
+                return
+            admin = cls(**admin_data)
+            cls.session.add(admin)
+            cls.session.commit()
+            return admin
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
             return
-        admin = cls(**admin_data)
-        cls.session.add(admin)
-        cls.session.commit()
-        return admin
 
     @classmethod
     def update_admin_user(cls, *_, **kwargs) -> ModelType:
@@ -65,9 +70,15 @@ class Admin(ModelMixin):
         :return: A dictionary of the updated admin user.
 
         """
-        admin_user_id = kwargs.get("id")
-        kwargs["updatedAt"] = datetime.now(pytz.utc)
-        return cls.where(id=admin_user_id).update(**kwargs)
+        try:
+            admin_user_id = kwargs.get("id")
+            kwargs["updatedAt"] = datetime.now(pytz.utc)
+            admin = cls.where(id=admin_user_id).update(**kwargs)
+            return admin
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
 
     @classmethod
     def list_all_admin_users(cls, page, num_items) -> PagedResponse:
@@ -77,10 +88,7 @@ class Admin(ModelMixin):
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the admin users in a class.
         """
-        users = cls.session.query(
-            cls.id,
-            cls.email,
-        )
+        users = cls.where()
         return paginate(users, page, num_items)
 
     @classmethod
