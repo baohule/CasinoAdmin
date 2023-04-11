@@ -97,7 +97,6 @@ class ModelMixin(Base):
             _object = cls(**kwargs)
             cls.session.add(_object)
             cls.session.commit()
-            cls.session.close()
             return _object
 
     @classmethod
@@ -290,7 +289,6 @@ class ModelMixin(Base):
         password = kwargs.get("password")
         user_email = kwargs.get("email")
         user_lookup: ModelType = cls.read(email=user_email)
-        cls.session.close()
         if user_lookup and verify_password(password, user_lookup.password):
             return UserClaim(id=user_lookup.id, email=user_email)
 
@@ -310,7 +308,6 @@ class ModelMixin(Base):
                 return
             cls.session.add(new_object)
             cls.session.commit()
-            cls.session.close()
         except Exception as e:
             print(e)
             cls.session.rollback()
@@ -330,7 +327,6 @@ class ModelMixin(Base):
         try:
             updated_data = cls.where(id=object_id).update(kwargs)
             cls.session.commit()
-            cls.session.close()
             return updated_data
         except Exception as e:
             print(e)
@@ -348,7 +344,6 @@ class ModelMixin(Base):
         object_id = kwargs.get("id")
         try:
             delete = cls.where(id=object_id).delete()
-            cls.session.close()
             return delete
         except Exception as e:
             print(e)
