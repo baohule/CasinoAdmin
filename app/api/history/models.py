@@ -55,8 +55,7 @@ class BetDetailHistory(ModelMixin):
     betScore = Column(Integer)
     winScore = Column(Integer)
     newScore = Column(Integer)
-    updateAt = Column(DateTime)
-    createAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     gameId = Column(
         Integer,
         ForeignKey("GameList.id", ondelete="CASCADE", link_to_name=True),
