@@ -194,10 +194,18 @@ class SearchUser(CamelModel):
 
 class SearchResults(BaseResponse):
     """
-    `SearchResults` is a model that is used to return a list of users that match a search query.  It is used in the `/search` endpoint.
+    `SearchResults` is a model that is used to return a list of users
+    that match a search query.  It is used in the `/search` endpoint.
 
     """
     response: Optional[List[BaseUserResponse]]
+
+    def dict(self, *args, **kwargs) -> dict[str, Any]:
+        """
+            Override the default dict method to exclude None values in the response
+        """
+        kwargs.pop('exclude_none', None)
+        return super().dict(*args, exclude_none=True, **kwargs)
 
 
 
