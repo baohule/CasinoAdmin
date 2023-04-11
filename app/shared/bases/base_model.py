@@ -311,7 +311,7 @@ class ModelMixin(Base):
             cls.session.add(new_object)
             cls.session.commit()
             cls.session.close()
-        except IntegrityError as e:
+        except Exception as e:
             print(e)
             cls.session.rollback()
             return
@@ -327,10 +327,15 @@ class ModelMixin(Base):
         """
         object_id = kwargs.pop("id")
         kwargs["updatedAt"] = datetime.now(pytz.utc)
-        updated_data = cls.where(id=object_id).update(kwargs)
-        cls.session.commit()
-        cls.session.close()
-        return updated_data
+        try:
+            updated_data = cls.where(id=object_id).update(kwargs)
+            cls.session.commit()
+            cls.session.close()
+            return updated_data
+        except Exception as e:
+            print(e)
+            cls.session.rollback()
+            return
 
     @classmethod
     def remove(cls, *_, **kwargs) -> BaseResponse:
@@ -341,9 +346,14 @@ class ModelMixin(Base):
         :return: The id of the deleted object.
         """
         object_id = kwargs.get("id")
-        delete = cls.where(id=object_id).delete()
-        cls.session.close()
-        return delete
+        try:
+            delete = cls.where(id=object_id).delete()
+            cls.session.close()
+            return delete
+        except Exception as e:
+            print(e)
+            cls.session.rollback()
+            return
 
     @classmethod
     def list_all(cls, page: int, num_items: int) -> PagedResponse:
@@ -357,8 +367,13 @@ class ModelMixin(Base):
         :type num_items: int
         :return: A PagedBaseResponse object.
         """
-        objects = cls.where()
-        return paginate(objects, page, num_items)
+        try:
+            objects = cls.where()
+            return paginate(objects, page, num_items)
+        except Exception as e:
+            print(e)
+            cls.session.rollback()
+            return
 
     @classmethod
     def read(cls, **kwargs) -> ModelType:
@@ -395,12 +410,17 @@ class ModelMixin(Base):
         :param **kwargs: Used to Allow the caller to pass in a dictionary of key/value pairs that will be used as filters for the query.
         :return: A list of users that match the filters in kwargs.
         """
-        if email := kwargs.get("email"):
-            if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
-                return results
-        if username := kwargs.get("name"):
-            if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
-                return results
+        try:
+            if email := kwargs.get("email"):
+                if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
+                    return results
+            if username := kwargs.get("name"):
+                if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
+                    return results
+        except Exception as e:
+            print(e)
+            cls.session.rollback()
+            return
 
 
 class DataSeeder:
