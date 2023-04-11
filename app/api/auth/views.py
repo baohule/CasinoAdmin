@@ -75,7 +75,7 @@ async def agent_login(context: AgentLogin) -> TokenResponse:
     This function logs in an agent and returns a token response using JWT authentication.
 
     :param context: The `context` parameter in the `agent_login` function is an instance of the `AgentLogin` class. It likely contains information about the agent trying to log in,
-    such as their username and password
+    such as their name and password
     :type context: AgentLogin
     :return: The function `agent_login` is returning a
     `TokenResponse` object. The `TokenResponse` object

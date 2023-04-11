@@ -56,13 +56,13 @@ class GetGameResponse(BaseModel):
 
 
 class CreateGame(BaseModel):
-    username: str
+    name: str
     description: str
 
 
 class UpdateGame(BaseModel):
     id: UUID
-    username: str
+    name: str
     description: str
 
 
