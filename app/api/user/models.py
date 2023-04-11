@@ -13,7 +13,7 @@ from sqlalchemy import (
     ForeignKey,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, defer
 
 from app.shared.bases.base_model import ModelMixin, ModelType
 from app.shared.bases.base_model import paginate
@@ -91,7 +91,7 @@ class User(ModelMixin):
         :param num_items: The number of items to return per page
         :return: A dictionary of the paginated results.
         """
-        query = cls.where()
+        query = cls.where().options(defer("password"))
         return paginate(query, page_cursor, num_items)
 
     @classmethod
