@@ -6,7 +6,7 @@ import uuid
 import pytz
 from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, joinedload, lazyload
+from sqlalchemy.orm import relationship, backref, joinedload, lazyload, defer
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse, BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
@@ -146,7 +146,7 @@ class Agent(ModelMixin):
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where()
+        users = cls.where().options(defer("password"))
         return paginate(users, page, num_items)
 
     @classmethod
