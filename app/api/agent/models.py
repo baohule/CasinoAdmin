@@ -70,7 +70,9 @@ class Agent(ModelMixin):
         """
         The add_agent function creates a new agent object.
         It takes in the following parameters:
-            * _ - A list of objects that will be ignored by the function. These are usually objects passed into a function automatically, like HTTP request or database connections.
+            * _ - A list of objects that will be ignored by the function.
+            These are usually objects passed into a function automatically,
+            like HTTP request or database connections.
             * kwargs - Keyword arguments corresponding to fields in an agent object.
 
         :param cls: Used to Call the class itself.
@@ -79,13 +81,18 @@ class Agent(ModelMixin):
         :return: The agent instance.
 
         """
-        agent_data = cls.rebuild(kwargs)
-        if cls.where(email=agent_data["email"]).first():
+        try:
+            agent_data = cls.rebuild(kwargs)
+            if cls.where(email=agent_data["email"]).first():
+                return
+            agent = cls(**agent_data)
+            cls.session.add(agent)
+            cls.session.commit()
+            return agent
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
             return
-        agent = cls(**agent_data)
-        cls.session.add(agent)
-        cls.session.commit()
-        return agent
 
     @classmethod
     def update_agent(cls, *_, **kwargs) -> ModelType:
@@ -99,11 +106,17 @@ class Agent(ModelMixin):
         :return: A dictionary of the updated agent user.
 
         """
-        agent_user_id = kwargs.pop("id")
-        kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
-        updated = cls.where(id=agent_user_id).update(kwargs)
-        cls.session.commit()
-        return updated
+        try:
+            agent_user_id = kwargs.pop("id")
+            kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
+            updated = cls.where(id=agent_user_id).update(kwargs)
+            cls.session.commit()
+            return updated
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
+
 
     @classmethod
     def remove_agent(cls, *_, **kwargs) -> UUID:
@@ -116,9 +129,14 @@ class Agent(ModelMixin):
         :return: A dictionary of the updated agent user.
 
         """
-        agent_user_id = kwargs.get("id")
-        agent = cls.where(id=agent_user_id).delete()
-        return agent.id
+        try:
+            agent_user_id = kwargs.get("id")
+            agent = cls.where(id=agent_user_id).delete()
+            return agent.id
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
 
     @classmethod
     def list_all_agents(cls, page, num_items) -> PagedResponse:
