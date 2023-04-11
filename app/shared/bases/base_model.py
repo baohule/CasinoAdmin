@@ -663,4 +663,7 @@ def paginate(cls, page: int, page_size: int):
         raise HTTPException(400, detail="page_size needs to be >= 1")
     items: list[Row] = cls.where().limit(page_size).offset((page - 1) * page_size).all()
     total_items = cls.count()
+    for item in items:
+        if item.password:
+            item.password = None
     return Page(items, page, page_size, total_items)
