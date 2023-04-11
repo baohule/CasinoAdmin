@@ -393,7 +393,13 @@ class ModelMixin(Base):
         :param cls: The class that is calling the method
         :return: The first row of the table that matches the query.
         """
-        return cls.where(**kwargs).all()
+        try:
+            history = cls.where(**kwargs).all()
+            return history
+        except Exception as e:
+            print(e)
+            cls.session.rollback()
+            return
 
     @classmethod
     def search(cls, *_, **kwargs) -> list:
