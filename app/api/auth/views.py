@@ -37,11 +37,9 @@ async def create_user(context: AdminUserCreate) -> TokenResponse:
     password_authentication = get_password_hash(context.password)
     context_data["password"] = password_authentication
     user_response = User.create(**context_data)
-    User.session.close()
     if not user_response:
         return TokenResponse(success=False, error="Object not created")
     Balance.create(ownerId=user_response.id, balance=0)
-    Balance.session.close()
     return sign_jwt(UserClaim(id=user_response.id, email=context.email))
 
 
