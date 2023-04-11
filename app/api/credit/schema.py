@@ -14,7 +14,7 @@ from app.shared.schemas.orm_schema import ORMCamelModel
 class User(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
 
 
 class UserCredit(ORMCamelModel):

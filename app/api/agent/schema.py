@@ -57,7 +57,7 @@ class UpdateUser(CamelModel):
     id: UUID
     password: Optional[str]
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     active: Optional[bool]
 
 
@@ -89,9 +89,9 @@ class BaseUser(CamelModel):
 
     id: UUID
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     password: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     qa_bypass: Optional[bool]
 
     class Config:
@@ -101,7 +101,7 @@ class BaseUser(CamelModel):
                 "email": "test@test.com",
                 "phone": "+14801234567",
                 "name": "some name",
-                "username": "newuser27",
+                "name": "newuser27",
                 "qaBypass": True,
             }
             # It's a model that is used to represent a user that is being returned from the database.
@@ -115,7 +115,7 @@ class BaseUserResponse(ORMCamelModel):
 
     id: UUID
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     active: Optional[bool]
     credit_account: Optional[UserCredit]
 
@@ -179,7 +179,7 @@ class AgentRoleCreate(BaseModel):
     It's a model that represents the data required to create an Agent Role.
     """
 
-    username: str
+    name: str
     parameters: Optional[Dict]
 
 
@@ -247,7 +247,7 @@ class Agent(BaseModel):
 
     id: Optional[UUID]
     email: EmailStr
-    username: Optional[str]
+    name: Optional[str]
     password: Optional[str]
     quota: Optional[float]
     active: Optional[str]
@@ -279,7 +279,7 @@ class CreateUser(BaseModel):
 
     email: EmailStr
     password: str
-    username: str
+    name: str
 
 
 class AgentCreateUser(BaseModel):
@@ -289,7 +289,7 @@ class AgentCreateUser(BaseModel):
 
     email: EmailStr
     password: str
-    username: Optional[str]
+    name: Optional[str]
     headImage: Optional[str]
     credit_account: Optional[Balance] = Field(title="CreditAccount")
 
@@ -301,7 +301,7 @@ class CreateAgent(CamelModel):
 
     email: EmailStr
     password: str
-    username: str
+    name: str
 
 
 class SearchResults(BaseModel):
@@ -324,7 +324,7 @@ class Response(ORMCamelModel):
 
 
 class AgentUserUpdateName(CamelModel):
-    username: str
+    name: str
 
 
 class AgentUserUpdateNameResponse(BaseResponse):

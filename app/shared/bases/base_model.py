@@ -84,8 +84,8 @@ class ModelMixin(Base):
     def get_or_create(cls: ModelType, *_, **kwargs) -> ModelType:
         """
         The get_or_create function is a helper function that will either get an object or create it if it doesn't exist.
-        For example, let's say we have a model called User with two fields: username and email.
-        We want to be able to easily create new users based on their username and email address, but we also
+        For example, let's say we have a model called User with two fields: name and email.
+        We want to be able to easily create new users based on their name and email address, but we also
         want our API endpoints (and other parts of our code) to check whether a user already exists before creating them.
 
         :param cls:ModelType: Used to Specify the model class that will be used to create or retrieve an instance.

@@ -42,7 +42,7 @@ async def get_user_data(request: Request):
     The get_user_data function returns the user data for a given user.
 
     :param request:Request: Used to Get the user object from the request.
-    :return: A dictionary with the user's username, email and is_superuser attributes.
+    :return: A dictionary with the user's name, email and is_superuser attributes.
     """
     user = request.user
 

@@ -22,7 +22,7 @@ class UpdateUser(CamelModel):
 
     id: UUID
     password: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
 
 
 class RemoveUser(CamelModel):
@@ -65,7 +65,7 @@ class BaseUserResponse(ORMCamelModel):
 
     id: UUID
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     name: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
@@ -127,7 +127,7 @@ class AdminRoleCreate(BaseModel):
     It's a model that represents the data required to create an Admin Role.
     """
 
-    username: str
+    name: str
     parameters: Optional[Dict]
 
 
@@ -223,7 +223,7 @@ class AgentUpdateResponse(BaseResponse):
 
 
 class AdminUserUpdateName(CamelModel):
-    username: str
+    name: str
 
 
 # It's a model that is used to return a response from updating a user's name.  It is used in the `/admin` endpoint.

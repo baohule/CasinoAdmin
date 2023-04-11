@@ -29,7 +29,7 @@ class User(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    username: Optional[str]
+    name: Optional[str]
     email: Optional[str]
 
 
