@@ -61,7 +61,6 @@ def jwt_login(
     """
     model = admin and Admin or agent and Agent or User
     claim: UserClaim = model.user_claims(**context.dict())
-    model.session.close()
     if not claim:
         return TokenResponse(success=False, error="Wrong login details")
     claim.admin = admin
@@ -82,7 +81,19 @@ async def agent_login(context: AgentLogin) -> TokenResponse:
     return jwt_login(context, agent=True)
 
 
-@router.post("/login/email", response_model=TokenResponse)
+@router.post("/login/admin", response_model=TokenResponse)
+async def agent_login(context: AgentLogin) -> TokenResponse:
+    """
+    The agent_login function takes a user object and returns a JWT token.
+    The function uses the Auth0 email_token method to generate an access token for the agent user.
+
+    :param context:schema.AgentLogin: Used to Pass in the user object.
+    :return: A dictionary with a jwt token.
+    """
+    return jwt_login(context, admin=True)
+
+
+@router.post("/login/user", response_model=TokenResponse)
 async def email_login(context: UserLogin) -> TokenResponse:
     """
     Takes a user login object, and returns a token response
