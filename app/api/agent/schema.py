@@ -26,7 +26,7 @@ class AgentUser(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    username: Optional[str]
+    name: Optional[str]
     email: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
