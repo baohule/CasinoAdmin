@@ -39,7 +39,7 @@ class BaseUser(ORMCamelModel):
 
     id: Optional[UUID]
     email: Optional[str]
-    username: Optional[str]
+    name: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     creditAccount: Optional[UserCredit]
