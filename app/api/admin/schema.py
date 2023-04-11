@@ -202,8 +202,6 @@ class SearchResults(BaseResponse):
 
 
 
-
-
 class AgentCreateResponse(BaseResponse):
     # This is a model that is used to return a response from the database.  It is used in the `/batch` endpoint.
     success: bool

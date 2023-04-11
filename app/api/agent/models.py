@@ -128,7 +128,7 @@ class Agent(ModelMixin):
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where()
+        users = cls.session.query(cls.id, cls.name, cls.email, cls.active, cls.createdAt, cls.updatedAt)
         return paginate(users, page, num_items)
 
     @classmethod
