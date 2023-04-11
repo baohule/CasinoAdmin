@@ -98,6 +98,7 @@ async def update_user(context: UpdateUser, request: Request):
     """
     data = context.dict(exclude_unset=True)
     updated_user = User.update_user(**data)
+    User.session.close()
     return (
         UpdateUserResponse(success=True, response=updated_user)
         if updated_user
@@ -117,6 +118,7 @@ async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
     :return: The agent is being returned.
     """
     remove_agent = Agent.remove_agent(id=context.id)
+    Agent.session.close()
     return BaseResponse(success=True, response=remove_agent)
 
 
@@ -132,6 +134,7 @@ async def list_agents(context: GetAgentList, request: Request) -> PagedBaseRespo
     :return: A list of users.
     """
     paged_response = Agent.list_all_agents(context.params.page, context.params.size)
+    Agent.session.close()
     return PagedBaseResponse(success=True, response=paged_response)
 
 
@@ -147,6 +150,7 @@ async def get_agent(context: GetAgent, request: Request):
     :return: The function `get_agent` returns a `GetAgentResponse` object with a boolean `success` attribute set to `True` and an `Agent` object as the `response` attribute.
     """
     agent = Agent.read(id=context.id)
+    Agent.session.close()
     return GetAgentResponse(success=True, response=agent)
 
 
@@ -166,4 +170,5 @@ async def get_agent_users(
     agent_users = Agent.agent_users(
         context.context.filter.id, context.params.page, context.params.size
     )
+    Agent.session.close()
     return GetAgentUsersResponse(success=True, response=agent_users)
