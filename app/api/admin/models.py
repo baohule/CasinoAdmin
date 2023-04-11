@@ -73,8 +73,7 @@ class Admin(ModelMixin):
         try:
             admin_user_id = kwargs.get("id")
             kwargs["updatedAt"] = datetime.now(pytz.utc)
-            admin = cls.where(id=admin_user_id).update(**kwargs)
-            return admin
+            return cls.where(id=admin_user_id).update(**kwargs)
         except Exception as e:
             cls.session.rollback()
             print(e)
