@@ -66,6 +66,7 @@ class BaseUserResponse(ORMCamelModel):
     id: UUID
     email: Optional[str]
     username: Optional[str]
+    name: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     quota: Optional[int]

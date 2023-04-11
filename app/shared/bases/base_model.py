@@ -408,7 +408,8 @@ class ModelMixin(Base):
         ALL criteria so pass explicit fields to search by.
 
         :param *_: Used to Catch any additional arguments that are passed in, but not used by the function.
-        :param **kwargs: Used to Allow the caller to pass in a dictionary of key/value pairs that will be used as filters for the query.
+        :param **kwargs: Used to Allow the caller to pass in a dictionary of key/value pairs that
+        will be used as filters for the query.
         :return: A list of users that match the filters in kwargs.
         """
         try:
@@ -417,6 +418,8 @@ class ModelMixin(Base):
                     return results
             if username := kwargs.get("name"):
                 if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
+                    if not results:
+                        results = cls.where().filter(cls.username.ilike(f"%{username}%")).all()
                     return results
         except Exception as e:
             print(e)

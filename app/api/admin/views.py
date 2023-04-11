@@ -101,7 +101,8 @@ async def remove_agent(user: RemoveUser, request: Request):
     """
     > This function removes an agent from the database
 
-    :param user: RemoveUser - This is the parameter that will be passed to the function. It is a class that is defined in the
+    :param user: RemoveUser - This is the parameter that will be passed to
+    the function. It is a class that is defined in the
     :type user: RemoveUser
     :param request: Request - This is the request object that is passed to the function
     :type request: Request
@@ -115,7 +116,8 @@ async def list_agents(context: GetUserList, request: Request):
     """
     > This function returns a list of agents
 
-    :param context: GetUserList - this is the context object that is passed to the function. It contains the parameters that are passed in the request
+    :param context: GetUserList - this is the context object that is passed
+    to the function. It contains the parameters that are passed in the request
     :type context: GetUserList
     :param request: Request - This is the request object that is passed to the function
     :type request: Request
@@ -149,7 +151,8 @@ async def search_users(context: SearchUser, request: Request):
     The search_users function searches for users in the database.
     It accepts a list of dictionaries, each dictionary containing search parameters.
     Each dictionary is searched independently and the results are merged together.
-    The keys of each dictionary should be one or more fields from the User model, and their values should be strings to search for.
+    The keys of each dictionary should be one or more fields from the User model,
+    and their values should be strings to search for.
 
      Phone number can be any form as long as it exists in the db.
 
@@ -164,4 +167,6 @@ async def search_users(context: SearchUser, request: Request):
         model = Admin
     if context.type == 'user':
         model = User
-    return SearchResults(success=True, response=model.search(**context.dict(exclude_unset=True)))
+    result = model.search(**context.dict(exclude_none=True))
+    return SearchResults(success=True, response=result)
+
