@@ -72,23 +72,26 @@ def jwt_login(
 @router.post("/login/agent", response_model=TokenResponse)
 async def agent_login(context: AgentLogin) -> TokenResponse:
     """
-    The agent_login function takes a user object and returns a JWT token.
-    The function uses the Auth0 email_token method to generate an access token for the agent user.
+    This function logs in an agent and returns a token response using JWT authentication.
 
-    :param context:schema.AgentLogin: Used to Pass in the user object.
-    :return: A dictionary with a jwt token.
+    :param context: The `context` parameter in the `agent_login` function is an instance of the `AgentLogin` class. It likely contains information about the agent trying to log in,
+    such as their username and password
+    :type context: AgentLogin
+    :return: The function `agent_login` is returning a `TokenResponse` object. The `TokenResponse` object is the result of calling the `jwt_login` function with the `context` argument
+    and the `agent` parameter set to `True`.
     """
     return jwt_login(context, agent=True)
 
 
 @router.post("/login/admin", response_model=TokenResponse)
-async def agent_login(context: AgentLogin) -> TokenResponse:
+async def agent_login(context: AdminLogin) -> TokenResponse:
     """
-    The agent_login function takes a user object and returns a JWT token.
-    The function uses the Auth0 email_token method to generate an access token for the agent user.
+    This function logs in an agent and returns a dictionary with a JWT token.
 
-    :param context:schema.AgentLogin: Used to Pass in the user object.
-    :return: A dictionary with a jwt token.
+    :param context: The context parameter is an instance of the AgentLogin schema class, which is used to pass in the user object. This object contains information about the user who
+    is attempting to log in, such as their email and password
+    :type context: AgentLogin
+    :return: a dictionary with a JWT token.
     """
     return jwt_login(context, admin=True)
 

@@ -127,6 +127,8 @@ class AgentLogin(CamelModel):
         schema_extra = {"example": {"email": "test@test.com", "password": "1234567"}}
 
 
+
+
 class UserResponse(BaseResponse):
     """
     `UserResponse` is a class that is used to validate the data that is being passed to the `/login` route.
