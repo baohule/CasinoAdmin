@@ -97,6 +97,7 @@ class ModelMixin(Base):
             _object = cls(**kwargs)
             cls.session.add(_object)
             cls.session.commit()
+            cls.session.close()
             return _object
 
     @classmethod
@@ -289,6 +290,7 @@ class ModelMixin(Base):
         password = kwargs.get("password")
         user_email = kwargs.get("email")
         user_lookup: ModelType = cls.read(email=user_email)
+        cls.session.close()
         if user_lookup and verify_password(password, user_lookup.password):
             return UserClaim(id=user_lookup.id, email=user_email)
 
@@ -308,6 +310,7 @@ class ModelMixin(Base):
                 return
             cls.session.add(new_object)
             cls.session.commit()
+            cls.session.close()
         except IntegrityError as e:
             print(e)
             cls.session.rollback()
@@ -326,6 +329,7 @@ class ModelMixin(Base):
         kwargs["updatedAt"] = datetime.now(pytz.utc)
         updated_data = cls.where(id=object_id).update(kwargs)
         cls.session.commit()
+        cls.session.close()
         return updated_data
 
     @classmethod
@@ -337,7 +341,9 @@ class ModelMixin(Base):
         :return: The id of the deleted object.
         """
         object_id = kwargs.get("id")
-        return cls.where(id=object_id).delete()
+        delete = cls.where(id=object_id).delete()
+        cls.session.close()
+        return delete
 
     @classmethod
     def list_all(cls, page: int, num_items: int) -> PagedResponse:
