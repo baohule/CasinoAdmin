@@ -32,7 +32,7 @@ class User(ModelMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False, unique=True)
-    username = Column(String(255), nullable=False, unique=True)
+    name = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
     headImage = Column(String(255), nullable=True, unique=True)
     active = Column(Boolean, default=True)

@@ -418,8 +418,6 @@ class ModelMixin(Base):
                     return results
             if username := kwargs.get("name"):
                 if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
-                    if not results:
-                        results = cls.where().filter(cls.username.ilike(f"%{username}%")).all()
                     return results
         except Exception as e:
             print(e)
