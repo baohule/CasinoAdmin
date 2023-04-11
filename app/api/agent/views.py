@@ -99,7 +99,7 @@ async def update_user(context: UpdateUser, request: Request):
     data = context.dict(exclude_unset=True)
     updated_user = User.update_user(**data)
     return (
-        UpdateUserResponse(success=True, response=updated_user)
+        UpdateUserResponse(success=True, response=context.dict(exclude_unset=True))
         if updated_user
         else BaseResponse(success=False, error="Object not updated")
     )
