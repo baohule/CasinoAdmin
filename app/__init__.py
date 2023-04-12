@@ -33,7 +33,7 @@ origins = [
     "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
-    "http://193.149.176.137:3000",
+    "https://react-dashboard-flax.vercel.app",
 ]
 app.add_middleware(
     CORSMiddleware,
