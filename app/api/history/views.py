@@ -52,7 +52,7 @@ async def get_action_history_(context: GetActionHistory, request: Request):
     :type request: Request
     :return: GetActionHistoryResponse
     """
-    history = ActionHistory.read(**context.dict())
+    history = ActionHistory.read_all(**context.dict(exclude_unset=True, exclude_none=True))
     return (
         GetActionHistoryResponse(success=True, response=history)
         if history

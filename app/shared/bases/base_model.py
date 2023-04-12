@@ -373,7 +373,8 @@ class ModelMixin(Base):
     @classmethod
     def read(cls, **kwargs) -> ModelType:
         """
-        > It takes a class and a dictionary of keyword arguments, and returns an instance of that class with the data from the database
+        > It takes a class and a dictionary of keyword arguments, and returns an
+        instance of that class with the data from the database
 
         :param cls: The class that is calling the method
         :return: The first row of the table that matches the query.
@@ -383,14 +384,14 @@ class ModelMixin(Base):
     @classmethod
     def read_all(cls, **kwargs) -> ModelType:
         """
-        > It takes a class and a dictionary of keyword arguments, and returns an instance of that class with the data from the database
+        > It takes a class and a dictionary of keyword arguments, and returns an
+        instance of that class with the data from the database
 
         :param cls: The class that is calling the method
         :return: The first row of the table that matches the query.
         """
         try:
-            history = cls.where(**kwargs).all()
-            return history
+            return cls.where(**kwargs).all()
         except Exception as e:
             print(e)
             cls.session.rollback()

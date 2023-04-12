@@ -93,9 +93,9 @@ class GetActionHistory(BaseModel):
     is used to represent a request
     """
 
-    agentID: Optional[UUID]
-    adminID: Optional[UUID]
-    userID: Optional[UUID]
+    agentId: Optional[UUID]
+    adminId: Optional[UUID]
+    userId: Optional[UUID]
 
     class Config:
         arbitrary_types_allowed = True
