@@ -328,10 +328,24 @@ class ModelMixin(Base):
         :param cls: The class that inherits from BaseModel
         :return: The updated object.
         """
-        object_id = kwargs.pop("id")
+        filters = {
+            k: v
+            for k, v in kwargs.items()
+            if k in [
+                "id",
+                "ownerId",
+                "agentId",
+                "adminId",
+                "userId",
+                "createdByAdminId",
+                "createdByAgentId",
+            ]
+        }
+        for key in filters:
+            kwargs.pop(key)
         kwargs["updatedAt"] = datetime.now(pytz.utc)
         try:
-            updated_data = cls.where(id=object_id).update(kwargs)
+            updated_data = cls.where(**filters).update(kwargs)
             cls.session.commit()
             return updated_data
         except Exception as e:

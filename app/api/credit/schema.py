@@ -49,7 +49,7 @@ class UpdateUserCredit(CamelModel):
     `UpdateUserCredit` is a class that is used to represent a request
     """
 
-    id: UUID
+    ownerId: UUID
     balance: float
 
 
