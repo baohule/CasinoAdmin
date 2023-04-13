@@ -20,8 +20,10 @@ from app.api.agent.schema import (
 )
 from app.api.credit.models import Balance
 from app.api.user.models import User
+from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
-
+from app.shared.auth.password_generator import generate_password
+from app.shared.email.mailgun import send_password_email
 # logger = StandardizedLogger(__name__)
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 
@@ -46,24 +48,28 @@ async def create_user(context: AgentCreateUser, request: Request):
     :return: A user object
     """
 
-    def make_user(context):
+    def make_user(context, password):
         user_data = context.dict(exclude_unset=True)
+        hashed_password = get_password_hash(password)
+        user_data['password'] = hashed_password
         credit_account = user_data.pop("credit_account")
-        user_response = User.create(**user_data)
+        _user_response = User.create(**user_data)
         if not user_response:
             return
         balance = Balance.create(
-            ownerId=user_response.id, balance=credit_account.get("balance", 0)
+            ownerId=_user_response.id, balance=credit_account.get("balance", 0)
         )
         if not balance:
             return
-        return user_response
+        return _user_response
 
     if not request.user:
         return BaseResponse(success=False, error="You are not logged in")
+    password = generate_password(18)
     agent = Agent.read(id=request.user.id)
     if not agent:
-        user_response = make_user(context)
+        user_response = make_user(context, password)
+        send_password_email(user_response.email, user_response.name, password)
         return (
             AgentCreateUserResponse(success=True, response=user_response)
             if user_response
@@ -73,7 +79,8 @@ async def create_user(context: AgentCreateUser, request: Request):
     agent_users = len(agent.users)
     if agent_users >= agent.quota:
         return BaseResponse(success=False, error="You have reached your quota")
-    user_response = make_user(context)
+    user_response = make_user(context, password)
+    send_password_email(user_response.email, user_response.name, password)
     return (
         AgentCreateUserResponse(success=True, response=user_response)
         if user_response

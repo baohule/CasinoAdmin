@@ -286,7 +286,6 @@ class AgentCreateUser(BaseModel):
     """
 
     email: EmailStr
-    password: str
     name: Optional[str]
     headImage: Optional[str]
     credit_account: Optional[Balance] = Field(title="CreditAccount")
