@@ -75,7 +75,9 @@ class ActionHistory(ORMCamelModel):
     newValueJson: Optional[str]
     ip: Optional[str]
     createdAt: Optional[datetime]
-    owner: Union[User, AgentUser, Admin]
+    userActionHistory:  Optional[User]
+    agentActionHistory: Optional[AgentUser]
+    adminActionHistory: Optional[Admin]
 
 
 class GetBetHistory(BaseModel):
