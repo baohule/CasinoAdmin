@@ -54,7 +54,7 @@ async def create_user(context: AgentCreateUser, request: Request):
         user_data['password'] = hashed_password
         credit_account = user_data.pop("credit_account")
         _user_response = User.create(**user_data)
-        if not user_response:
+        if not _user_response:
             return
         balance = Balance.create(
             ownerId=_user_response.id, balance=credit_account.get("balance", 0)
