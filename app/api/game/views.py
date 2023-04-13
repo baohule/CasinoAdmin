@@ -71,7 +71,7 @@ async def update_game(context: UpdateGame, request: Request) -> UpdateGameRespon
     :type request: Request
     :return: The updated game is being returned.
     """
-    _game = update_game.dict()
+    _game = context.dict()
     updated_game = GameList.update(id=_game.get("id"), balance=_game.get("balance"))
     return UpdateGameResponse(success=True, response=updated_game)
 
