@@ -14,7 +14,7 @@ from app.api.credit.schema import (
     UpdateUserCredit,
 )
 from app.shared.middleware.auth import JWTBearer
-
+from app.shared.schemas.ResponseSchemas import BaseResponse
 
 router = APIRouter(
     prefix="/api/credit",
@@ -56,9 +56,7 @@ async def get_credit(context: GetUserCredit, request: Request):
     return GetUserCreditResponse(success=True, response=user_credits)
 
 
-@router.post(
-    "/manage/update_user_credit", response_model=schema.UpdateUserCreditResponse
-)
+@router.post("/manage/update_user_credit", response_model=UpdateUserCreditResponse)
 async def update_credit(context: UpdateUserCredit, request: Request):
     """
     `update_credit` updates the credit of a user
@@ -69,5 +67,9 @@ async def update_credit(context: UpdateUserCredit, request: Request):
     :type request: Request
     :return: The updated credit object.
     """
-    _updated = Balance.update(id=context.id, balance=context.balance)
+    balance = Balance.read(ownerId=context.ownerId)
+    if not balance:
+        return BaseResponse(success=False, error="User Has no Credit Account")
+    _updated = Balance.update(**context.dict())
+
     return UpdateUserCreditResponse(success=True, response=UserCredit(**context.dict()))
