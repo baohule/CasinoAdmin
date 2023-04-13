@@ -121,9 +121,14 @@ class User(ModelMixin):
         :param **kwargs: Used to Allow the user to specify any number of key-value pairs in the function call.
         :return: A dictionary containing the user data.
         """
-        filters = dict(
-            id=kwargs.get("id"),
-            # email=kwargs.pop("email")
-        )
-        return cls.where(**{k: v for k, v in filters.items() if v}).update(kwargs)
+        try:
+            user_id = kwargs.pop("id")
+            user = cls.where(id=user_id)
+            user.update(kwargs)
+            cls.session.commit()
+            return user.first()
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
 

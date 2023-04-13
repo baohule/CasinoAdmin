@@ -7,16 +7,19 @@ from app.api.auth.schema import UserClaim
 from app.api.credit.models import Balance
 from app.api.user import schema as user_schema
 from app.api.user.models import User
-from app.api.user.schema import AdminLogin, UserLogin, AgentLogin, AdminUserCreate
+from app.api.user.schema import AdminLogin, UserLogin, AgentLogin, AdminUserCreate, GeneratePassword, GeneratePasswordResponse, NewPassword
 from app.shared.auth.auth_handler import sign_jwt, TokenResponse
 from app.shared.auth.password_handler import get_password_hash
 from typing import Union
+from app.shared.auth.password_generator import generate_password
+from app.shared.email.mailgun import send_password_email
 
 from fastapi import APIRouter
 
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
+from app.shared.schemas.ResponseSchemas import BaseResponse
 
 router = APIRouter(
     prefix="/api/auth",
@@ -72,7 +75,8 @@ async def agent_login(context: AgentLogin) -> TokenResponse:
     """
     This function logs in an agent and returns a token response using JWT authentication.
 
-    :param context: The `context` parameter in the `agent_login` function is an instance of the `AgentLogin` class. It likely contains information about the agent trying to log in,
+    :param context: The `context` parameter in the `agent_login` function is an instance of the
+    `AgentLogin` class. It likely contains information about the agent trying to log in,
     such as their name and password
     :type context: AgentLogin
     :return: The function `agent_login` is returning a
@@ -90,7 +94,8 @@ async def admin_login(context: AdminLogin) -> TokenResponse:
     This function logs in an agent and returns a dictionary with a JWT token.
 
     :param context: The context parameter is an instance of the
-    AgentLogin schema class, which is used to pass in the user object. This object contains information about the user who
+    AgentLogin schema class, which is used to pass in the user object. This object contains
+     information about the user who
     is attempting to log in, such as their email and password
     :type context: AgentLogin
     :return: a dictionary with a JWT token.
@@ -106,3 +111,28 @@ async def email_login(context: UserLogin) -> TokenResponse:
     :return: A token response
     """
     return jwt_login(context)
+
+
+@router.post("/generate_password", response_model=GeneratePasswordResponse)
+async def generate_random_password(context: GeneratePassword):
+    """
+    This function generates a new password for a user, hashes it, updates the user's
+    password in the database, sends an email with the new password, and returns a response
+    indicating success or failure.
+
+    :param context: The context parameter is an instance of the GeneratePassword class,
+    which likely contains id for the user for whom the password is being generated,
+    :type context: GeneratePassword
+    :return: The function `generate_password` returns either a `GeneratePasswordResponse`
+    object with a `success` flag set to `True`, a `response` field containing a `NewPassword`
+    object with the newly generated password, and no error message, or a `BaseResponse`
+    object with a `success` flag set to `False` and an error message.
+    """
+    new_password = generate_password(18)
+    hash_password = get_password_hash(new_password)
+    if user := User.update_user(id=context.id, password=hash_password):
+        send_password_email(user.email, new_password)
+        return GeneratePasswordResponse(success=True, response=NewPassword(password=new_password))
+    return BaseResponse(success=False, error="Email Not Sent")
+
+

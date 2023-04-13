@@ -18,7 +18,7 @@ from app.api.game.schema import (
 from app.shared.middleware.auth import JWTBearer
 
 router = APIRouter(
-    prefix="/api/Game",
+    prefix="/api/game",
     dependencies=[Depends(JWTBearer())],
     tags=["Game"],
 )
@@ -79,11 +79,14 @@ async def update_game(context: UpdateGame, request: Request) -> UpdateGameRespon
 @router.post("/manage/get_all_games", response_model=PagedListAllGamesResponse)
 def get_all_games(context: ListAllGames, request: Request):
     """
-    > Get all games in the database
+    This function retrieves a list of all games with pagination.
 
-    :param request: The incoming request
+    :param context: The context parameter is of type ListAllGames
+    :type context: ListAllGames
+    :param request: The `request` parameter is an instance of the `Request` class
     :type request: Request
-    :return: A list of all games
+    :return: a PagedListAllGamesResponse object with a success flag set to True and a
+    response attribute containing a list of games.
     """
     games = GameList.list_all_games(
         page=context.params.page, num_items=context.params.size
