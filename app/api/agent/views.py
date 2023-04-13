@@ -34,7 +34,6 @@ router = APIRouter(
 )
 
 
-
 @router.post("/manage/create_user", response_model=AgentCreateUserResponse)
 async def create_user(context: AgentCreateUser, request: Request):
     """
@@ -69,23 +68,19 @@ async def create_user(context: AgentCreateUser, request: Request):
     agent = Agent.read(id=request.user.id)
     if not agent:
         user_response = make_user(context, password)
-        send_password_email(user_response.email, user_response.name, password)
-        return (
-            AgentCreateUserResponse(success=True, response=user_response)
-            if user_response
-            else BaseResponse(success=False, error="User not created")
-        )
+        if user_response:
+            send_password_email(user_response.email, user_response.name, password)
+            return AgentCreateUserResponse(success=True, response=user_response)
+        return BaseResponse(success=False, error="User not created")
 
     agent_users = len(agent.users)
     if agent_users >= agent.quota:
         return BaseResponse(success=False, error="You have reached your quota")
     user_response = make_user(context, password)
-    send_password_email(user_response.email, user_response.name, password)
-    return (
-        AgentCreateUserResponse(success=True, response=user_response)
-        if user_response
-        else BaseResponse(success=False, error="User not created")
-    )
+    if user_response:
+        send_password_email(user_response.email, user_response.name, password)
+        return AgentCreateUserResponse(success=True, response=user_response)
+    return BaseResponse(success=False, error="User not created")
 
 
 @router.post("/manage/update_user", response_model=UpdateUserResponse)
@@ -163,7 +158,7 @@ async def get_agent(context: GetAgent, request: Request):
 
 @router.post("/get_agent_users", response_model=GetAgentUsersResponse)
 async def get_agent_users(
-    context: GetAgentUsers, request: Request
+        context: GetAgentUsers, request: Request
 ) -> GetAgentUsersResponse:
     """
     `GetAgentUsersResponse` is a response object that contains a list of `AgentUser` objects
