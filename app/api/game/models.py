@@ -8,8 +8,10 @@ from sqlalchemy import (
     DateTime,
     Integer,
     String,
-    JSON,
+    JSON, ForeignKey, Boolean,
 )
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship, backref
 
 from app.api.game.schema import (
     CreateGameResponse,
@@ -17,6 +19,52 @@ from app.api.game.schema import (
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.page_schema import PagedResponse
 
+#
+# class GameSession(ModelMixin):
+#     """
+#     GameSession is a table that stores the game session.
+#     """
+#     __tablename__ = "GameSession"
+#
+#     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
+#     gameId = Column(Integer, nullable=False)
+#     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
+#
+#
+# class PlayerSession(ModelMixin):
+#     """
+#     PlayerSession is a table that stores the player session.
+#     """
+#     __tablename__ = "PlayerSession"
+#
+#     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
+#     gameSessionId = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
+#         index=True,
+#         nullable=True,
+#     )
+#     gameSession = relationship(
+#         "GameSession",
+#         foreign_keys="PlayerSession.gameSessionId",
+#         backref=backref("gameSession", single_parent=True, uselist=False),
+#     )
+#     userId = Column(
+#         UUID(as_uuid=True),
+#         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+#         index=True,
+#         nullable=False,
+#     )
+#     user = relationship(
+#         "User",
+#         foreign_keys="PlayerSession.userId",
+#         backref=backref("sessionUser", single_parent=True, uselist=False),
+#     )
+#     betAmount = Column(Integer, nullable=False)
+#     betLines = Column(Integer, nullable=True)
+#     betResult = Column(Integer, nullable=False, default=0)
+#     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
+#
 
 class GameList(ModelMixin):
     """
@@ -40,13 +88,18 @@ class GameList(ModelMixin):
         :param cls: The class that the method is being called on
         :return: CreateGameResponse
         """
-        game_data = cls.rebuild(kwargs)
-        if cls.where(id=game_data["id"]).first():
-            return CreateGameResponse(error="Game not Found")
-        game = cls(**game_data)
-        cls.session.add(game)
-        cls.session.commit()
-        return game
+        try:
+            game_data = cls.rebuild(kwargs)
+            if cls.where(id=game_data["id"]).first():
+                return CreateGameResponse(error="Game not Found")
+            game = cls(**game_data)
+            cls.session.add(game)
+            cls.session.commit()
+            return game
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
 
     @classmethod
     def update_game(cls, *_, **kwargs) -> ModelType:
@@ -56,9 +109,17 @@ class GameList(ModelMixin):
         :param cls: The class that the method is being called on
         :return: A class1 object with the success and response attributes.
         """
-        game_id = kwargs.get("id")
-        kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
-        return cls.where(id=game_id).update(**kwargs)
+        try:
+            game_id = kwargs.get("id")
+            kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
+            update = cls.where(id=game_id).update(**kwargs)
+            cls.session.commit()
+            return update
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
+
 
     @classmethod
     def remove_game(cls, *_, **kwargs) -> ModelType:
@@ -68,8 +129,14 @@ class GameList(ModelMixin):
         :param cls: The class that the method is being called on
         :return: A BaseResponse object with the success and response attributes.
         """
-        game_id = kwargs.get("id")
-        return cls.where(id=game_id).delete()
+        try:
+            game_id = kwargs.get("id")
+            return cls.where(id=game_id).delete()
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
+
 
     @classmethod
     def list_all_games(cls, page, num_items) -> PagedResponse:

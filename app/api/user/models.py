@@ -39,7 +39,17 @@ class User(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     accessToken = Column(String(255), nullable=True)
-
+    # gameSessionId = Column(
+    #     UUID(as_uuid=True),
+    #     ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
+    #     index=True,
+    #     nullable=True,
+    # )
+    # gameSession = relationship(
+    #     "GameSession",
+    #     foreign_keys="User.gameSessionId",
+    #     backref=backref("userGameSession", single_parent=True, uselist=False),
+    # )
     agentId = Column(
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
@@ -109,7 +119,12 @@ class User(ModelMixin):
         :param **kwargs: Used to Pass keyworded variable length of arguments to a function.
         :return: A dictionary with the key 'success' and a boolean value of true.
         """
-        return cls.where(**kwargs).delete().save()
+        try:
+            return cls.where(**kwargs).delete().save()
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
 
     @classmethod
     def update_user(cls, *_, **kwargs) -> ModelType:

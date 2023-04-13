@@ -93,11 +93,16 @@ class ModelMixin(Base):
         :param **kwargs: Used to Pass in all the fields of the model.
         :return: A tuple containing the object and a boolean value indicating whether it was created.
         """
-        if not cls.find(kwargs.get("id")):
-            _object = cls(**kwargs)
-            cls.session.add(_object)
-            cls.session.commit()
-            return _object
+        try:
+            if not cls.find(kwargs.get("id")):
+                _object = cls(**kwargs)
+                cls.session.add(_object)
+                cls.session.commit()
+                return _object
+        except Exception as e:
+            cls.sesison.rollback()
+            print(e)
+            return
 
     @classmethod
     def map_to_model(cls, model: Type[BaseModel], db_response: Union[Row, List[Row]]):
@@ -308,11 +313,12 @@ class ModelMixin(Base):
                 return
             cls.session.add(new_object)
             cls.session.commit()
+            return new_object
         except Exception as e:
             print(e)
             cls.session.rollback()
             return
-        return new_object
+
 
     @classmethod
     def update(cls, *_, **kwargs) -> ModelType:
