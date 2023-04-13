@@ -131,7 +131,7 @@ async def generate_random_password(context: GeneratePassword):
     new_password = generate_password(18)
     hash_password = get_password_hash(new_password)
     if user := User.update_user(id=context.id, password=hash_password):
-        send_password_email(user.email, new_password)
+        send_password_email(user.email, user.name, new_password)
         return GeneratePasswordResponse(success=True, response=NewPassword(password=new_password))
     return BaseResponse(success=False, error="Email Not Sent")
 

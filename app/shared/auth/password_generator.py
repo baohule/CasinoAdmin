@@ -25,4 +25,8 @@ def generate_password(length=12):
     special_chars = string.punctuation
     alphabet = letters + digits + special_chars
 
-    return ''.join(''.join(secrets.choice(alphabet)) for _ in range(length))
+    def filter_chars():
+        random_char = secrets.choice(alphabet)
+        return random_char if random_char not in ['<', '>', '^'] else filter_chars()
+
+    return ''.join(''.join(filter_chars()) for _ in range(length))

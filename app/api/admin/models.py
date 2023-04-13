@@ -107,7 +107,8 @@ class Admin(ModelMixin):
     @classmethod
     def get_admin_by_email(cls, email: str) -> ModelType:
         """
-        The get_admin_by_email function accepts an email address as a string and returns the admin that is associated with that email address.
+        The get_admin_by_email function accepts an email address as a string and returns the admin that
+        is associated with that email address.
 
         :param cls: Used to Reference the class that is being called.
         :param email:str: Used to Specify the email of the admin that is being searched for.

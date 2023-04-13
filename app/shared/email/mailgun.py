@@ -2,6 +2,8 @@
 @author: Kuro
 """
 import requests
+
+from app.shared.email.templates.new_password import get_template
 from settings import Config
 
 
@@ -33,17 +35,15 @@ def send_recovery_email(email, token):
     )
 
 
-def send_password_email(email, password):
+def send_password_email(email: str, name: str, password: str):
     response = requests.post(
         f"{Config.mailgun_host}/messages",
         auth=("api", Config.mailgun_key),
         data={
-            "from": " Mailer<roreply@baohule.com>",
+            "from": " Baohule<roreply@baohule.com>",
             "to": [{email}, ""],
             "subject": "New Password",
-            "html": f"""A New Password for your account has been generated,\n
-                <span style="background-color: gainsboro;"">{password}</span>
-            """
+            "html": get_template(name, password)
         },
     )
     if response.status_code == 200:

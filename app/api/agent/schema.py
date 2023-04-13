@@ -55,9 +55,7 @@ class UpdateUser(CamelModel):
     """
 
     id: UUID
-    password: Optional[str]
     email: Optional[str]
-    name: Optional[str]
     active: Optional[bool]
 
 
