@@ -204,3 +204,15 @@ class GetUserListItems(PagedResponse):
 
 class GetUserListResponse(PagedBaseResponse):
     response: Optional[GetUserListItems]
+
+
+class GeneratePassword(BaseModel):
+    id: UUID = Field(..., alias='userId')
+
+
+class NewPassword(CamelModel):
+    password: Optional[str]
+
+
+class GeneratePasswordResponse(BaseResponse):
+    response: Optional[NewPassword]
