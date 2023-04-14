@@ -57,6 +57,7 @@ class UpdateUser(CamelModel):
     id: UUID
     email: Optional[str]
     active: Optional[bool]
+    credit_account: Optional[UserCredit]
 
 
 class UpdateUserResponse(BaseResponse):
