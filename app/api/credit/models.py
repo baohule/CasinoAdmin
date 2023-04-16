@@ -47,3 +47,27 @@ class Balance(ModelMixin):
         foreign_keys="Balance.ownerId",
         backref=backref("creditAccount", single_parent=True, uselist=False),
     )
+
+
+class Quota(ModelMixin):
+    """
+    Quota is a table that stores the quota of a user.
+    """
+
+    __tablename__ = "Quota"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    balance = Column(Integer, default=0)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    agentId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        unique=True,
+    )
+    agent_quota = relationship(
+        "Agent",
+        foreign_keys="Quota.agentId",
+        backref=backref("agentQuota", single_parent=True, uselist=False),
+    )
