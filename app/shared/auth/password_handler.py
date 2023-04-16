@@ -5,9 +5,9 @@ import hashlib
 from typing import Union
 
 from passlib.context import CryptContext
-from app.shared.schemas.ResponseSchemas import BaseResponse
 
-pwd_context = CryptContext(schemes=["md5_crypt"])
+
+pwd_context = CryptContext(schemes=["hex_md5"])
 md5_key = "89b5b987124d2ec3"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
