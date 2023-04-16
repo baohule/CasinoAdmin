@@ -23,7 +23,7 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
     password_context = plain_password + md5_key
     md5_sign = hashlib.md5(password_context.encode()).hexdigest()
-    return pwd_context.verify(md5_sign, hashed_password)
+    return md5_sign == hashed_password
 
 
 def get_password_hash(password: str) -> str:
@@ -35,6 +35,5 @@ def get_password_hash(password: str) -> str:
     :return: A string
     """
     password_context = password + md5_key
-    md5_sign = hashlib.md5(password_context.encode()).hexdigest()
-    return pwd_context.hash(md5_sign)
+    return hashlib.md5(password_context.encode()).hexdigest()
 
