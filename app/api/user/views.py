@@ -64,7 +64,7 @@ async def list_all_users(context: GetAllUsers):
     paged_users = User.get_all_users(context.params.page, context.params.size)
     return GetUserListResponse(success=True, response=paged_users)
 
-
-@router.post("/get_user_withdrawals", response_model=GetUserWithdrawalResponse)
-async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
-    return User.get_withdrawals(**context.dict())
+#
+# @router.post("/get_user_withdrawals", response_model=GetUserWithdrawalResponse)
+# async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
+#     return User.get_withdrawals(**context.dict())
