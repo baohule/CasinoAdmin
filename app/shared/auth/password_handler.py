@@ -6,8 +6,8 @@ from typing import Union
 from passlib.context import CryptContext
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
-# pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-from passlib.hash import hex_md5 as pwd_context
+pwd_context = CryptContext(schemes=["hex_md5"], deprecated="auto")
+
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
