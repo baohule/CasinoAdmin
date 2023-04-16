@@ -73,9 +73,6 @@ async def create_user(context: AgentCreateUser, request: Request):
             return AgentCreateUserResponse(success=True, response=user_response)
         return BaseResponse(success=False, error="User not created")
 
-    agent_users = len(agent.users)
-    if agent_users >= agent.quota:
-        return BaseResponse(success=False, error="You have reached your quota")
     user_response = make_user(context, password)
     if user_response:
         send_password_email(user_response.email, user_response.name, password)

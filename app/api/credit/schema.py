@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+from datetime import datetime
 from typing import Optional, Union
 from uuid import UUID
 
@@ -92,3 +93,31 @@ class CreateUserCreditResponse(BaseResponse):
     """
 
     response: Optional[UserCredit]
+
+
+class AgentQuta(ORMCamelModel):
+    """
+    `AgentQuta` is a class that is used to represent a user credit
+    """
+    id: Optional[UUID]
+    createdAt: Optional[datetime]
+    updatedAt: Optional[datetime]
+    balance: Optional[float]
+    agent: Optional[User]
+
+
+class UpdateAgentQuotaResponse(BaseResponse):
+    """
+    `UpdateAgentQuotaResponse` is a class that is used to represent a response
+    """
+
+    response: Optional[AgentQuta]
+
+
+class UpdateAgentQuota(CamelModel):
+    """
+    `UpdateAgentQuota` is a class that is used to represent a request
+    """
+
+    agentId: UUID
+    balance: float

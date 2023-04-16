@@ -24,7 +24,6 @@ class Agent(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
     accessToken = Column(String(255), nullable=True)
-    quota = Column(Integer, default=0)
     adminId = Column(
         UUID(as_uuid=True),
         ForeignKey("Admin.id", ondelete="CASCADE", link_to_name=True),
