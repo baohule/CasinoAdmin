@@ -299,8 +299,8 @@ class ModelMixin(Base):
         password = kwargs.get("password")
         user_email = kwargs.get("email")
         user_lookup: ModelType = cls.read(email=user_email)
-        if user_lookup and verify_password(user_lookup.name + password, user_lookup.password):
-            return UserClaim(id=user_lookup.id, email=user_email)
+        if user_lookup and verify_password(password, user_lookup.password):
+            return UserClaim(id=user_lookup.id, email=user_email, name=user_lookup.name)
 
     @classmethod
     def create(cls, *_, **kwargs) -> ModelType:
