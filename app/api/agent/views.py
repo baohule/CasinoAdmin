@@ -49,7 +49,7 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     def make_user(context, password):
         user_data = context.dict(exclude_unset=True)
-        hashed_password = get_password_hash(password)
+        hashed_password = get_password_hash(context.name + password)
         user_data['password'] = hashed_password
         credit_account = user_data.pop("credit_account")
         _user_response = User.create(**user_data)
