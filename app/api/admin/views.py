@@ -46,7 +46,7 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
 
     """
-    user.password = get_password_hash(user.password)
+    user.password = get_password_hash(user.name + user.password)
     admin = Admin.add_admin(**user.dict())
     return (
         AdminUserCreateResponse(success=True, response=admin)
@@ -69,7 +69,7 @@ async def create_agent(context: AdminUserCreate, request: Request):
     :return: AgentCreateResponse(success=True, response=agent)
     """
 
-    context.password = get_password_hash(context.password)
+    context.password = get_password_hash(context.name + context.password)
     agent = Agent.add_agent(**context.dict())
     return (
         AgentCreateResponse(success=True, response=agent)

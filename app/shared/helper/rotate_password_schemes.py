@@ -10,7 +10,7 @@ agents = Agent.read_all()
 
 for admin in admins:
     try:
-        admin.password = get_password_hash("123")
+        admin.password = get_password_hash(admin.name + "123")
         admin.session.commit()
     except Exception as e:
         print(e)
@@ -19,7 +19,7 @@ for admin in admins:
 for user in users:
 
     try:
-        user.password = get_password_hash("123")
+        user.password = get_password_hash(user.name + "123")
         user.session.commit()
     except Exception as e:
         print(e)
@@ -27,7 +27,7 @@ for user in users:
 
 for agent in agents:
     try:
-        agent.password = get_password_hash("123")
+        agent.password = get_password_hash(agent.name + "123")
         agent.session.commit()
     except Exception as e:
         print(e)

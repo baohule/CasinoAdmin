@@ -1,17 +1,19 @@
 """
 @author: Kuro
 """
+import hashlib
 from typing import Union
 
 from passlib.context import CryptContext
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
-pwd_context = CryptContext(schemes=["hex_md5"], deprecated="auto")
-
+pwd_context = CryptContext(schemes=["md5_crypt"])
+md5_key = "89b5b987124d2ec3"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """
-    It takes a plain text password and a hashed password and returns True if the plain text password matches the hashed password
+    It takes a plain text password and a hashed password and returns True
+    if the plain text password matches the hashed password
 
     :param plain_password: The password that the user entered
     :type plain_password: str
@@ -19,7 +21,9 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     :type hashed_password: str
     :return: A boolean value.
     """
-    return pwd_context.verify(plain_password, hashed_password)
+    password_context = plain_password + md5_key
+    md5_sign = hashlib.md5(password_context.encode()).hexdigest()
+    return pwd_context.verify(md5_sign, hashed_password)
 
 
 def get_password_hash(password: str) -> str:
@@ -30,5 +34,7 @@ def get_password_hash(password: str) -> str:
     :type password: str
     :return: A string
     """
-    return pwd_context.hash(password)
+    password_context = password + md5_key
+    md5_sign = hashlib.md5(password_context.encode()).hexdigest()
+    return pwd_context.hash(md5_sign)
 
