@@ -6,7 +6,7 @@ import secrets
 import string
 
 
-def generate_password(length=12):
+def generate_password(length=16):
     """
     This Python function generates a random string of specified length using a
     combination of letters, digits, and special characters.

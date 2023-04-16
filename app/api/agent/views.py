@@ -64,7 +64,7 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     if not request.user:
         return BaseResponse(success=False, error="You are not logged in")
-    password = generate_password(18)
+    password = generate_password(16)
     agent = Agent.read(id=request.user.id)
     if not agent:
         user_response = make_user(context, password)
