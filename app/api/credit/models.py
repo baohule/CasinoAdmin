@@ -33,7 +33,7 @@ class Balance(ModelMixin):
     __tablename__ = "Balance"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    balance = Column(Integer)
+    balance = Column(Integer, default=0)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
     ownerId = Column(
@@ -73,39 +73,6 @@ class Quota(ModelMixin):
     )
 
 
-class Deposit(ModelMixin):
-    """
-    Deposit is a table that stores the deposit of a user.
-    """
-
-    __tablename__ = "Deposit"
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    amount = Column(Integer)
-    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
-    updatedAt = Column(DateTime)
-    approvalId = Column(
-        UUID(as_uuid=True),
-        ForeignKey("Approval.id", ondelete="CASCADE", link_to_name=True),
-        index=True,
-    )
-    approval = relationship(
-        "Approval",
-        foreign_keys="Withdrawal.approvalId",
-        backref=backref("approval", single_parent=True, uselist=False),
-    )
-    ownerId = Column(
-        UUID(as_uuid=True),
-        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
-        index=True,
-    )
-    user = relationship(
-        "User",
-        foreign_keys="Deposit.ownerId",
-        backref=backref("deposit", single_parent=True, uselist=False),
-    )
-
-
 class StatusEnum(str, Enum):
     """
     Status is a table that stores the status of a user.
@@ -129,7 +96,7 @@ class Status(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
-    approval = Column(Enum(StatusEnum), default="pending")
+    approval = Column(Text, default="Pending")
     approvedById = Column(
         UUID(as_uuid=True),
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
@@ -137,7 +104,7 @@ class Status(ModelMixin):
     )
     approvedBy = relationship(
         "User",
-        foreign_keys="Approval.ownerId",
+        foreign_keys="Status.approvedById",
         backref=backref("approvedBy", single_parent=True, uselist=False),
     )
 
@@ -153,15 +120,15 @@ class Withdrawal(ModelMixin):
     amount = Column(Integer)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
-    approvalId = Column(
+    statusId = Column(
         UUID(as_uuid=True),
-        ForeignKey("Approval.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Status.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
-    approval = relationship(
-        "Approval",
-        foreign_keys="Withdrawal.approvalId",
-        backref=backref("approval", single_parent=True, uselist=False),
+    status = relationship(
+        "Status",
+        foreign_keys="Withdrawal.statusId",
+        backref=backref("status", single_parent=True, uselist=False),
     )
     ownerId = Column(
         UUID(as_uuid=True),
@@ -172,4 +139,37 @@ class Withdrawal(ModelMixin):
         "User",
         foreign_keys="Withdrawal.ownerId",
         backref=backref("withdrawal", single_parent=True, uselist=False),
+    )
+
+
+class Deposit(ModelMixin):
+    """
+    Deposit is a table that stores the deposit of a user.
+    """
+
+    __tablename__ = "Deposit"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    amount = Column(Integer)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    statusId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("Status.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    status = relationship(
+        "Status",
+        foreign_keys="Deposit.statusId",
+        backref=backref("status", single_parent=True, uselist=False),
+    )
+    ownerId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    user = relationship(
+        "User",
+        foreign_keys="Deposit.ownerId",
+        backref=backref("deposit", single_parent=True, uselist=False),
     )

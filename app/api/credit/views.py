@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.agent.models import Agent
 from app.api.credit import schema
-from app.api.credit.models import Balance, Deposit, Approval, Withdrawal
+from app.api.credit.models import Balance, Deposit, Status, Withdrawal
 from app.api.credit.schema import (
     CreateUserCreditResponse,
     CreateUserCredit,
