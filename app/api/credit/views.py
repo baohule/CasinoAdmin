@@ -233,7 +233,15 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     :param request: Request
     :return: GetUserWithdrawalsResponse
     """
-    withdrawals = Withdrawal.read_all(**context.context.filter.dict(exclude_unset=True))
+
+    filters = dict(
+        status___approval=context.context.filter.status.approval,
+        ownerId=context.context.filter.ownerId,
+        approvedById=context.context.filter.status.approvedById
+    )
+    filters = {k: v for k, v in filters.items() if v}
+
+    withdrawals = Withdrawal.read_all(**filters)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
         if withdrawals
@@ -249,7 +257,14 @@ async def get_user_deposits(context: GetUserDeposits, request: Request):
     :param request: Request
     :return: GetUserDepositsResponse
     """
-    deposits = Deposit.read_all(**context.context.filter.dict(exclude_unset=True))
+    filters = dict(
+        status___approval=context.context.filter.status.approval,
+        ownerId=context.context.filter.ownerId,
+        approvedById=context.context.filter.status.approvedById
+    )
+    filters = {k: v for k, v in filters.items() if v}
+
+    deposits = Deposit.read_all(**filters)
     return (
         GetUserDepositsResponse(success=True, response=deposits)
         if deposits
