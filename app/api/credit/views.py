@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.agent.models import Agent
 from app.api.credit import schema
-from app.api.credit.models import Balance
+from app.api.credit.models import Balance, Deposit, Approval, Withdrawal
 from app.api.credit.schema import (
     CreateUserCreditResponse,
     CreateUserCredit,
@@ -13,7 +13,7 @@ from app.api.credit.schema import (
     GetUserCredit,
     GetUserCreditResponse,
     UpdateUserCreditResponse,
-    UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota,
+    UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
@@ -103,4 +103,151 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
         )
         if _updated
         else BaseResponse(success=False, error="Could not update agent quota")
+    )
+
+
+@router.post("/manage/deposit", response_model=UpdateUserCreditResponse)
+async def deposit(context: UpdateUserCredit, request: Request):
+    """
+    `deposit` deposits money into a user's account
+    :param context: contains the ownerId and the amount to deposit
+    :param request: Request object
+    :return: UpdateUserCreditResponse
+    """
+    if (
+            _ := Deposit.read_all(ownerId=context.ownerId)
+                    .join(Approval, isouter=True)
+                    .filter(Approval.status == "Pending")
+                    .first()
+    ):
+        return BaseResponse(success=False, error="User has pending deposit")
+    _deposit = Deposit.create(**context.dict())
+    return UpdateUserCreditResponse(success=True, response=_deposit)
+
+
+@router.post("/manage/approve_deposit", response_model=UpdateUserCreditResponse)
+async def approve_deposit(context: UpdateUserCredit, request: Request):
+    """
+    `approve_deposit` approves a deposit request
+    :param context: contains the ownerId and the amount to deposit
+    :param request: Request object
+    :return: UpdateUserCreditResponse
+    """
+    _deposit = Deposit.read(ownerId=context.ownerId)
+    if not _deposit:
+        return BaseResponse(success=False, error="Deposit not found")
+    _approval = Approval.create(
+        depositId=_deposit.id, status="approved", approvedBy=request.user.id
+    )
+    if not _approval:
+        return BaseResponse(success=False, error="Could not approve deposit")
+    _updated = Balance.update(
+        ownerId=context.ownerId, balance=_deposit.balance + context.balance
+    )
+    return UpdateUserCreditResponse(success=True, response=_updated)
+
+
+@router.post("/manage/reject_deposit", response_model=UpdateUserCreditResponse)
+async def reject_deposit(context: UpdateUserCredit, request: Request):
+    """
+    `reject_deposit` rejects a deposit request
+    :param context: contains the ownerId and the amount to deposit
+    :param request: Request object
+    :return: UpdateUserCreditResponse
+    """
+    _deposit = Deposit.read(ownerId=context.ownerId)
+    if not _deposit:
+        return BaseResponse(success=False, error="Deposit not found")
+    _approval = Approval.create(
+        depositId=_deposit.id, status="rejected", approvedBy=request.user.id
+    )
+    return (
+        UpdateUserCreditResponse(success=True, response=_deposit)
+        if _approval
+        else BaseResponse(success=False, error="Could not reject deposit")
+    )
+
+
+@router.post("/manage/withdraw", response_model=UpdateUserCreditResponse)
+async def withdraw(context: UpdateUserCredit, request: Request):
+    """
+    `withdraw` withdraws money from a user's account
+    :param context: contains the ownerId and the amount to withdraw
+    :param request: Request object
+    :return: UpdateUserCreditResponse
+    """
+    if (
+            _ := Withdrawal.where(ownerId=context.ownerId)
+                    .join(Approval, isouter=True)
+                    .filter(Approval.status == "Pending")
+                    .first()
+    ):
+        return BaseResponse(success=False, error="User has pending withdrawal")
+    _withdraw = Withdrawal.create(**context.dict())
+    return UpdateUserCreditResponse(success=True, response=_withdraw)
+
+
+@router.post("/manage/approve_withdraw", response_model=UpdateUserCreditResponse)
+async def approve_withdraw(context: UpdateUserCredit, request: Request):
+    """
+    `approve_withdraw` approves a withdrawal request
+    :param context: contains the ownerId and the amount to withdraw
+    :param request: Request object
+    :return: UpdateUserCreditResponse
+    """
+    _withdraw = Withdrawal.read(ownerId=context.ownerId)
+    if not _withdraw:
+        return BaseResponse(success=False, error="Withdrawal not found")
+    _approval = Approval.create(
+       status="approved", approvedById=request.user.id
+    )
+    if not _approval:
+        return BaseResponse(success=False, error="Could not approve withdrawal")
+    _updated = Balance.update(
+        ownerId=context.ownerId, balance=Balance.balance - Withdrawal.amount
+    )
+    return UpdateUserCreditResponse(success=True, response=_updated)
+
+
+@router.post("/manage/reject_withdraw", response_model=UpdateUserCreditResponse)
+async def reject_withdraw(context: UpdateUserCredit, request: Request):
+
+    _withdraw = Withdrawal.read(ownerId=context.ownerId)
+    if not _withdraw:
+        return BaseResponse(success=False, error="Withdrawal not found")
+    _approval = Approval.create(
+        withdrawId=Withdrawal.id, status="rejected", approvedBy=request.user.id
+    )
+    return (
+        UpdateUserCreditResponse(success=True, response=_withdraw)
+        if _approval
+        else BaseResponse(success=False, error="Could not reject withdrawal")
+    )
+
+
+@router.post("/manage/get_user_withdrawals", response_model=GetUserWithdrawalsResponse)
+async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
+    """
+    `get_user_withdrawals` gets all the withdrawals for a user
+    :param context: GetUserWithdrawals
+    :param request: Request
+    :return: GetUserWithdrawalsResponse
+    """
+    withdrawals = Withdrawal.read_all(**context.dict(exclude_unset=True))
+    return GetUserWithdrawalsResponse(
+        success=True, response=withdrawals
+    )
+
+
+@router.post("/manage/get_user_deposits", response_model=GetUserDepositsResponse)
+async def get_user_deposits(context: GetUserDeposits, request: Request):
+    """
+    `get_user_deposits` gets all the deposits for a user
+    :param context: GetUserDeposits
+    :param request: Request
+    :return: GetUserDepositsResponse
+    """
+    deposits = Deposit.read_all(**context.dict(exclude_unset=True))
+    return GetUserDepositsResponse(
+        success=True, response=deposits
     )
