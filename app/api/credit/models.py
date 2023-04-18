@@ -128,7 +128,7 @@ class Withdrawal(ModelMixin):
     status = relationship(
         "Status",
         foreign_keys="Withdrawal.statusId",
-        backref=backref("status", single_parent=True, uselist=False),
+        backref=backref("withdrawalStatus", single_parent=True, uselist=False),
     )
     ownerId = Column(
         UUID(as_uuid=True),
@@ -161,7 +161,7 @@ class Deposit(ModelMixin):
     status = relationship(
         "Status",
         foreign_keys="Deposit.statusId",
-        backref=backref("status", single_parent=True, uselist=False),
+        backref=backref("depositStatus", single_parent=True, uselist=False),
     )
     ownerId = Column(
         UUID(as_uuid=True),

@@ -234,8 +234,10 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     :return: GetUserWithdrawalsResponse
     """
     withdrawals = Withdrawal.read_all(**context.dict(exclude_unset=True))
-    return GetUserWithdrawalsResponse(
-        success=True, response=withdrawals
+    return (
+        GetUserWithdrawalsResponse(success=True, response=withdrawals)
+        if withdrawals
+        else BaseResponse(success=False, error="Withdrawals not found")
     )
 
 
@@ -247,7 +249,9 @@ async def get_user_deposits(context: GetUserDeposits, request: Request):
     :param request: Request
     :return: GetUserDepositsResponse
     """
-    deposits = Deposit.read_all(**context.dict(exclude_unset=True))
-    return GetUserDepositsResponse(
-        success=True, response=deposits
+    deposits = Deposit.read_all(**context.context.filter.dict(exclude_unset=True))
+    return (
+        GetUserDepositsResponse(success=True, response=deposits)
+        if deposits
+        else BaseResponse(success=False, error="Deposits not found")
     )

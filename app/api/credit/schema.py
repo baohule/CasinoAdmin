@@ -125,15 +125,6 @@ class UpdateAgentQuota(CamelModel):
     balance: float
 
 
-class ApprovalStatus(str, Enum):
-    """
-    `ApprovalStatus` is a class that is used to represent a user approval status
-    """
-
-    PENDING = "Pending"
-    APPROVED = "Approved"
-    REJECTED = "rejected"
-
 
 class Status(ORMCamelModel):
     """
@@ -141,7 +132,7 @@ class Status(ORMCamelModel):
     """
 
     approvedById: Optional[UUID]
-    approval: ApprovalStatus = Field(default=ApprovalStatus.PENDING)
+    approval: str = Field(default="Pending")
 
 
 class Deposit(ORMCamelModel):
@@ -152,7 +143,7 @@ class Deposit(ORMCamelModel):
     id: Optional[UUID]
     amount: float
     owner: Optional[User]
-    approval: Optional[Status]
+    status: Optional[Status]
 
 
 class DepositResponse(BaseResponse):
@@ -171,7 +162,7 @@ class Withdrawal(ORMCamelModel):
     id: Optional[UUID]
     amount: float = Field(default=0)
     owner: Optional[User]
-    approval: Optional[Status]
+    status: Optional[Status]
 
 
 class WithdrawalResponse(BaseResponse):
@@ -187,7 +178,7 @@ class WithdrawalContext(CamelModel):
     `WithdrawalContext` is a class that is used to represent a context
     """
     ownerId: Optional[UUID]
-    approvalStatus: Optional[ApprovalStatus]
+    status: Optional[str]
 
 
 class WithdrawalFilter(Filter):
@@ -219,7 +210,7 @@ class GetUserDepositsResponse(BaseResponse):
     `GetUserWithdrawalsResponse` is a class that is used to represent a response
     """
 
-    response: GetUserDepositPages
+    response: Optional[GetUserDepositPages]
 
 
 class GetUserWithdrawalsResponse(BaseResponse):
@@ -227,7 +218,7 @@ class GetUserWithdrawalsResponse(BaseResponse):
     `GetUserWithdrawalsResponse` is a class that is used to represent a response
     """
 
-    response: GetUserWithdrawalPages
+    response: Optional[GetUserWithdrawalPages]
 
 
 class DepositContext(CamelModel):
@@ -235,7 +226,7 @@ class DepositContext(CamelModel):
     `WithdrawalContext` is a class that is used to represent a context
     """
     ownerId: Optional[UUID]
-    approvalStatus: Optional[ApprovalStatus]
+    status: Optional[str]
 
 
 class DepositFilter(Filter):
