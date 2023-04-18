@@ -125,7 +125,6 @@ class UpdateAgentQuota(CamelModel):
     balance: float
 
 
-
 class Status(ORMCamelModel):
     """
     `Approval` is a class that is used to represent a user approval
@@ -141,7 +140,7 @@ class Deposit(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    amount: float
+    amount: Optional[float]
     owner: Optional[User]
     status: Optional[Status]
 
@@ -160,9 +159,60 @@ class Withdrawal(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    amount: float = Field(default=0)
+    amount: Optional[float] = Field(default=0)
     owner: Optional[User]
     status: Optional[Status]
+
+
+class GetWithdrawal(CamelModel):
+    """
+    `GetWithdrawal` is a class that is used to represent a request
+    """
+
+    ownerId: Optional[UUID]
+    id: Optional[UUID]
+
+
+class GetDeposit(CamelModel):
+    """
+    `GetDeposit` is a class that is used to represent a request
+    """
+
+    ownerId: Optional[UUID]
+    id: Optional[UUID]
+
+
+class ApproveDeposit(CamelModel):
+    """
+    `ApproveDeposit` is a class that is used to represent a request
+    """
+    id: Optional[UUID]
+    approvedById: Optional[UUID]
+
+
+class ApproveWithdrawal(CamelModel):
+    """
+    `ApproveWithdrawal` is a class that is used to represent a request
+    """
+
+    id: Optional[UUID]
+    approvedById: Optional[UUID]
+
+
+class ChangeDepositStatusResponse(BaseResponse):
+    """
+    `ApproveDepositResponse` is a class that is used to represent a response
+    """
+
+    response: Optional[Deposit]
+
+
+class ChangeWithdrawalStatusResponse(BaseResponse):
+    """
+    `ApproveWithdrawalResponse` is a class that is used to represent a response
+    """
+
+    response: Optional[Withdrawal]
 
 
 class WithdrawalResponse(BaseResponse):
