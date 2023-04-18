@@ -15,7 +15,7 @@ from sqlalchemy import (
     Text,
     Float,
     ForeignKey,
-    Integer,
+    Integer, Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
@@ -70,4 +70,106 @@ class Quota(ModelMixin):
         "Agent",
         foreign_keys="Quota.agentId",
         backref=backref("agentQuota", single_parent=True, uselist=False),
+    )
+
+
+class Deposit(ModelMixin):
+    """
+    Deposit is a table that stores the deposit of a user.
+    """
+
+    __tablename__ = "Deposit"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    amount = Column(Integer)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    approvalId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("Approval.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    approval = relationship(
+        "Approval",
+        foreign_keys="Withdrawal.approvalId",
+        backref=backref("approval", single_parent=True, uselist=False),
+    )
+    ownerId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    user = relationship(
+        "User",
+        foreign_keys="Deposit.ownerId",
+        backref=backref("deposit", single_parent=True, uselist=False),
+    )
+
+
+class StatusEnum(str, Enum):
+    """
+    Status is a table that stores the status of a user.
+    """
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+    @classmethod
+    def has_value(cls, value):
+        return value in cls._value2member_map_
+
+
+class Status(ModelMixin):
+    """
+    Approval is a table that stores the approval of a user.
+    """
+
+    __tablename__ = "Status"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    approval = Column(Enum(StatusEnum), default="pending")
+    approvedById = Column(
+        UUID(as_uuid=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    approvedBy = relationship(
+        "User",
+        foreign_keys="Approval.ownerId",
+        backref=backref("approvedBy", single_parent=True, uselist=False),
+    )
+
+
+class Withdrawal(ModelMixin):
+    """
+    Withdrawal is a table that stores the withdrawal of a user.
+    """
+
+    __tablename__ = "Withdrawal"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    amount = Column(Integer)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    updatedAt = Column(DateTime)
+    approvalId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("Approval.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    approval = relationship(
+        "Approval",
+        foreign_keys="Withdrawal.approvalId",
+        backref=backref("approval", single_parent=True, uselist=False),
+    )
+    ownerId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+    )
+    user = relationship(
+        "User",
+        foreign_keys="Withdrawal.ownerId",
+        backref=backref("withdrawal", single_parent=True, uselist=False),
     )
