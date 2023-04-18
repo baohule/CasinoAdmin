@@ -117,7 +117,7 @@ async def deposit(context: UpdateUserCredit, request: Request):
     if (
             _ := Deposit.read_all(ownerId=context.ownerId)
                     .join(Status, isouter=True)
-                    .filter(Status.status == "Pending")
+                    .filter(Status.approval == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
@@ -179,7 +179,7 @@ async def withdraw(context: UpdateUserCredit, request: Request):
     if (
             _ := Withdrawal.where(ownerId=context.ownerId)
                     .join(Status, isouter=True)
-                    .filter(Status.status == "Pending")
+                    .filter(Status.approval == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
