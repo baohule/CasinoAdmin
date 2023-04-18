@@ -14,7 +14,7 @@ from app.api.credit.schema import (
     GetUserCreditResponse,
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
@@ -170,7 +170,7 @@ async def reject_deposit(context: GetDeposit, request: Request):
 
 
 @router.post("/manage/withdraw", response_model=WithdrawalResponse)
-async def withdraw(context: Withdrawal, request: Request):
+async def withdraw(context: MakeWithdrawal, request: Request):
     """
     `withdraw` withdraws money from a user's account
     :param context: contains the ownerId and the amount to withdraw
@@ -178,7 +178,7 @@ async def withdraw(context: Withdrawal, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Withdrawal.where(ownerId=context.ownerId)
+            _ := Withdrawal.where(ownerId=context.owner.id)
                     .join(Status, isouter=True)
                     .filter(Status.approval == "Pending")
                     .first()
