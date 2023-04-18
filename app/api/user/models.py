@@ -38,6 +38,7 @@ class User(ModelMixin):
     active = Column(Boolean, default=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+    token = Column(String(255), nullable=True)
     accessToken = Column(String(255), nullable=True)
     # gameSessionId = Column(
     #     UUID(as_uuid=True),
