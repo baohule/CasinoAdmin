@@ -99,11 +99,11 @@ class Status(ModelMixin):
     approval = Column(Text, default="Pending")
     approvedById = Column(
         UUID(as_uuid=True),
-        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
     approvedBy = relationship(
-        "User",
+        "Agent",
         foreign_keys="Status.approvedById",
         backref=backref("approvedBy", single_parent=True, uselist=False),
     )
