@@ -145,6 +145,24 @@ class MakeDeposit(ORMCamelModel):
     status: Optional[Status]
 
 
+class BalanceDeposit(CamelModel):
+    """
+    `BalanceDeposit` is a class that is used to represent a request
+    """
+
+    ownerId: Optional[UUID]
+    amount: Optional[float]
+
+
+class BalanceWithdrawal(CamelModel):
+    """
+    `BalanceWithdrawal` is a class that is used to represent a request
+    """
+
+    ownerId: Optional[UUID]
+    amount: Optional[float]
+
+
 class DepositResponse(BaseResponse):
     """
     `Deposit` is a class that is used to represent a user deposit
