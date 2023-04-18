@@ -116,13 +116,14 @@ async def deposit(context: BalanceDeposit, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Deposit.read_all(ownerId=context.owner.id)
+            _ := Deposit.read_all(ownerId=context.ownerId)
                     .join(Status, isouter=True)
                     .filter(Status.approval == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
-    _deposit = Deposit.create(**context.dict())
+    _status = Status.create(status="Pending")
+    _deposit = Deposit.create(statusId=_status.id, **context.dict())
     return UpdateUserCreditResponse(success=True, response=_deposit)
 
 
@@ -138,7 +139,9 @@ async def approve_deposit(context: GetDeposit, request: Request):
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
-        status="Approved", approvedBy=request.user.id
+        id=_deposit.status.id,
+        status="Approved",
+        approvedBy=request.user.id
     )
     if not _Status:
         return BaseResponse(success=False, error="Could not approve deposit")
@@ -160,7 +163,9 @@ async def reject_deposit(context: GetDeposit, request: Request):
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
-        status="Rejected", approvedBy=request.user.id
+        id=_deposit.status.id,
+        status="Rejected",
+        approvedBy=request.user.id
     )
     return (
         ChangeDepositStatusResponse(success=True, response=_deposit)
@@ -201,6 +206,7 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
+        id=_withdraw.status.id,
        status="Approved", approvedById=request.user.id
     )
     if not _Status:
@@ -218,6 +224,7 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
+        id=_withdraw.status.id,
         approval="Rejected", approvedBy=request.user.id
     )
     return (
