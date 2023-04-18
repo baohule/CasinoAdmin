@@ -13,7 +13,8 @@ from app.api.credit.schema import (
     GetUserCredit,
     GetUserCreditResponse,
     UpdateUserCreditResponse,
-    UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits,
+    UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ApproveDeposit, ApproveDepositResponse, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
@@ -106,8 +107,8 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     )
 
 
-@router.post("/manage/deposit", response_model=UpdateUserCreditResponse)
-async def deposit(context: UpdateUserCredit, request: Request):
+@router.post("/manage/deposit", response_model=DepositResponse)
+async def deposit(context: Deposit, request: Request):
     """
     `deposit` deposits money into a user's account
     :param context: contains the ownerId and the amount to deposit
@@ -125,15 +126,15 @@ async def deposit(context: UpdateUserCredit, request: Request):
     return UpdateUserCreditResponse(success=True, response=_deposit)
 
 
-@router.post("/manage/approve_deposit", response_model=UpdateUserCreditResponse)
-async def approve_deposit(context: UpdateUserCredit, request: Request):
+@router.post("/manage/approve_deposit", response_model=ApproveDepositResponse)
+async def approve_deposit(context: GetDeposit, request: Request):
     """
     `approve_deposit` approves a deposit request
     :param context: contains the ownerId and the amount to deposit
     :param request: Request object
     :return: UpdateUserCreditResponse
     """
-    _deposit = Deposit.read(ownerId=context.ownerId)
+    _deposit = Deposit.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.create(
@@ -142,20 +143,20 @@ async def approve_deposit(context: UpdateUserCredit, request: Request):
     if not _Status:
         return BaseResponse(success=False, error="Could not approve deposit")
     _updated = Balance.update(
-        ownerId=context.ownerId, balance=_deposit.balance + context.balance
+        ownerId=_deposit.ownerId, balance=_deposit.balance + _deposit.owner.balance.balance
     )
-    return UpdateUserCreditResponse(success=True, response=_updated)
+    return ApproveDepositResponse(success=True, response=_updated)
 
 
-@router.post("/manage/reject_deposit", response_model=UpdateUserCreditResponse)
-async def reject_deposit(context: UpdateUserCredit, request: Request):
+@router.post("/manage/reject_deposit", response_model=ChangeDepositStatusResponse)
+async def reject_deposit(context: GetDeposit, request: Request):
     """
     `reject_deposit` rejects a deposit request
     :param context: contains the ownerId and the amount to deposit
     :param request: Request object
     :return: UpdateUserCreditResponse
     """
-    _deposit = Deposit.read(ownerId=context.ownerId)
+    _deposit = Deposit.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.create(
@@ -168,8 +169,8 @@ async def reject_deposit(context: UpdateUserCredit, request: Request):
     )
 
 
-@router.post("/manage/withdraw", response_model=UpdateUserCreditResponse)
-async def withdraw(context: UpdateUserCredit, request: Request):
+@router.post("/manage/withdraw", response_model=WithdrawalResponse)
+async def withdraw(context: Withdrawal, request: Request):
     """
     `withdraw` withdraws money from a user's account
     :param context: contains the ownerId and the amount to withdraw
@@ -187,15 +188,15 @@ async def withdraw(context: UpdateUserCredit, request: Request):
     return UpdateUserCreditResponse(success=True, response=_withdraw)
 
 
-@router.post("/manage/approve_withdraw", response_model=UpdateUserCreditResponse)
-async def approve_withdraw(context: UpdateUserCredit, request: Request):
+@router.post("/manage/approve_withdraw", response_model=ChangeWithdrawalStatusResponse)
+async def approve_withdraw(context: GetWithdrawal, request: Request):
     """
     `approve_withdraw` approves a withdrawal request
     :param context: contains the ownerId and the amount to withdraw
     :param request: Request object
     :return: UpdateUserCreditResponse
     """
-    _withdraw = Withdrawal.read(ownerId=context.ownerId)
+    _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.create(
@@ -204,15 +205,15 @@ async def approve_withdraw(context: UpdateUserCredit, request: Request):
     if not _Status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
     _updated = Balance.update(
-        ownerId=context.ownerId, balance=Balance.balance - Withdrawal.amount
+        ownerId=context.ownerId, balance=Balance.balance - _withdraw.amount
     )
     return UpdateUserCreditResponse(success=True, response=_updated)
 
 
-@router.post("/manage/reject_withdraw", response_model=UpdateUserCreditResponse)
-async def reject_withdraw(context: UpdateUserCredit, request: Request):
+@router.post("/manage/reject_withdraw", response_model=ChangeWithdrawalStatusResponse)
+async def reject_withdraw(context: GetWithdrawal, request: Request):
 
-    _withdraw = Withdrawal.read(ownerId=context.ownerId)
+    _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.create(
