@@ -134,7 +134,7 @@ class Status(ORMCamelModel):
     approval: str = Field(default="Pending")
 
 
-class Deposit(ORMCamelModel):
+class MakeDeposit(ORMCamelModel):
     """
     `Deposit` is a class that is used to represent a user deposit
     """
@@ -150,10 +150,10 @@ class DepositResponse(BaseResponse):
     `Deposit` is a class that is used to represent a user deposit
     """
 
-    response: Optional[Deposit]
+    response: Optional[MakeDeposit]
 
 
-class Withdrawal(ORMCamelModel):
+class MakeWithdrawal(ORMCamelModel):
     """
     `Withdrawal` is a class that is used to represent a user withdrawal
     """
@@ -204,7 +204,7 @@ class ChangeDepositStatusResponse(BaseResponse):
     `ApproveDepositResponse` is a class that is used to represent a response
     """
 
-    response: Optional[Deposit]
+    response: Optional[MakeDeposit]
 
 
 class ChangeWithdrawalStatusResponse(BaseResponse):
@@ -212,7 +212,7 @@ class ChangeWithdrawalStatusResponse(BaseResponse):
     `ApproveWithdrawalResponse` is a class that is used to represent a response
     """
 
-    response: Optional[Withdrawal]
+    response: Optional[MakeWithdrawal]
 
 
 class WithdrawalResponse(BaseResponse):
@@ -220,7 +220,7 @@ class WithdrawalResponse(BaseResponse):
     `Withdrawal` is a class that is used to represent a user withdrawal
     """
 
-    response: Optional[Withdrawal]
+    response: Optional[MakeWithdrawal]
 
 
 class WithdrawalContext(CamelModel):
@@ -244,7 +244,7 @@ class GetUserDepositPages(PagedResponse):
     `GetUserDepositPages` is a class that is used to represent a request
     """
 
-    items: Optional[List[Deposit]]
+    items: Optional[List[MakeDeposit]]
 
 
 class GetUserWithdrawalPages(PagedResponse):
@@ -252,7 +252,7 @@ class GetUserWithdrawalPages(PagedResponse):
     `GetUserWithdrawalPages` is a class that is used to represent a request
     """
 
-    items: Optional[List[Withdrawal]]
+    items: Optional[List[MakeWithdrawal]]
 
 
 class GetUserDepositsResponse(BaseResponse):
