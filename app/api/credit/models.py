@@ -138,7 +138,7 @@ class Withdrawal(ModelMixin):
     user = relationship(
         "User",
         foreign_keys="Withdrawal.ownerId",
-        backref=backref("user", single_parent=True, uselist=False),
+        backref=backref("userWithdrawals", single_parent=True, uselist=False),
     )
 
 
@@ -171,5 +171,5 @@ class Deposit(ModelMixin):
     user = relationship(
         "User",
         foreign_keys="Deposit.ownerId",
-        backref=backref("user", single_parent=True, uselist=False),
+        backref=backref(" userDeposits", single_parent=True, uselist=False),
     )
