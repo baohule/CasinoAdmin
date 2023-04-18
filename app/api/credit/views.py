@@ -116,8 +116,8 @@ async def deposit(context: UpdateUserCredit, request: Request):
     """
     if (
             _ := Deposit.read_all(ownerId=context.ownerId)
-                    .join(Approval, isouter=True)
-                    .filter(Approval.status == "Pending")
+                    .join(Status, isouter=True)
+                    .filter(Status.status == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
@@ -136,10 +136,10 @@ async def approve_deposit(context: UpdateUserCredit, request: Request):
     _deposit = Deposit.read(ownerId=context.ownerId)
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
-    _approval = Approval.create(
+    _Status = Status.create(
         depositId=_deposit.id, status="approved", approvedBy=request.user.id
     )
-    if not _approval:
+    if not _Status:
         return BaseResponse(success=False, error="Could not approve deposit")
     _updated = Balance.update(
         ownerId=context.ownerId, balance=_deposit.balance + context.balance
@@ -158,12 +158,12 @@ async def reject_deposit(context: UpdateUserCredit, request: Request):
     _deposit = Deposit.read(ownerId=context.ownerId)
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
-    _approval = Approval.create(
+    _Status = Status.create(
         depositId=_deposit.id, status="rejected", approvedBy=request.user.id
     )
     return (
         UpdateUserCreditResponse(success=True, response=_deposit)
-        if _approval
+        if _Status
         else BaseResponse(success=False, error="Could not reject deposit")
     )
 
@@ -178,8 +178,8 @@ async def withdraw(context: UpdateUserCredit, request: Request):
     """
     if (
             _ := Withdrawal.where(ownerId=context.ownerId)
-                    .join(Approval, isouter=True)
-                    .filter(Approval.status == "Pending")
+                    .join(Status, isouter=True)
+                    .filter(Status.status == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
@@ -198,10 +198,10 @@ async def approve_withdraw(context: UpdateUserCredit, request: Request):
     _withdraw = Withdrawal.read(ownerId=context.ownerId)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
-    _approval = Approval.create(
+    _Status = Status.create(
        status="approved", approvedById=request.user.id
     )
-    if not _approval:
+    if not _Status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
     _updated = Balance.update(
         ownerId=context.ownerId, balance=Balance.balance - Withdrawal.amount
@@ -215,12 +215,12 @@ async def reject_withdraw(context: UpdateUserCredit, request: Request):
     _withdraw = Withdrawal.read(ownerId=context.ownerId)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
-    _approval = Approval.create(
+    _Status = Status.create(
         withdrawId=Withdrawal.id, status="rejected", approvedBy=request.user.id
     )
     return (
         UpdateUserCreditResponse(success=True, response=_withdraw)
-        if _approval
+        if _Status
         else BaseResponse(success=False, error="Could not reject withdrawal")
     )
 
