@@ -40,17 +40,17 @@ class User(ModelMixin):
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     token = Column(String(255), nullable=True)
     accessToken = Column(String(255), nullable=True)
-    # gameSessionId = Column(
-    #     UUID(as_uuid=True),
-    #     ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
-    #     index=True,
-    #     nullable=True,
-    # )
-    # gameSession = relationship(
-    #     "GameSession",
-    #     foreign_keys="User.gameSessionId",
-    #     backref=backref("userGameSession", single_parent=True, uselist=False),
-    # )
+    gameSessionId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=True,
+    )
+    gameSession = relationship(
+        "GameSession",
+        foreign_keys="User.gameSessionId",
+        backref=backref("userGameSession", single_parent=True, uselist=False),
+    )
     agentId = Column(
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
