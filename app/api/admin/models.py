@@ -24,7 +24,7 @@ class Admin(ModelMixin):
     email = Column(String(255), unique=True)
     password = Column(String(255), nullable=False)
     name = Column(String(255), nullable=False)
-    token = Column(String(255), nullable=False)
+    token = Column(String(255), nullable=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, nullable=True)
     accessToken = Column(String(255), nullable=True)
