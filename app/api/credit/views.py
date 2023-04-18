@@ -233,7 +233,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     :param request: Request
     :return: GetUserWithdrawalsResponse
     """
-    withdrawals = Withdrawal.read_all(**context.dict(exclude_unset=True))
+    withdrawals = Withdrawal.read_all(**context.context.filter.dict(exclude_unset=True))
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
         if withdrawals
