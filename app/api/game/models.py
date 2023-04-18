@@ -19,52 +19,52 @@ from app.api.game.schema import (
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.page_schema import PagedResponse
 
-#
-# class GameSession(ModelMixin):
-#     """
-#     GameSession is a table that stores the game session.
-#     """
-#     __tablename__ = "GameSession"
-#
-#     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
-#     gameId = Column(Integer, nullable=False)
-#     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
-#
-#
-# class PlayerSession(ModelMixin):
-#     """
-#     PlayerSession is a table that stores the player session.
-#     """
-#     __tablename__ = "PlayerSession"
-#
-#     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
-#     gameSessionId = Column(
-#         UUID(as_uuid=True),
-#         ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
-#         index=True,
-#         nullable=True,
-#     )
-#     gameSession = relationship(
-#         "GameSession",
-#         foreign_keys="PlayerSession.gameSessionId",
-#         backref=backref("gameSession", single_parent=True, uselist=False),
-#     )
-#     userId = Column(
-#         UUID(as_uuid=True),
-#         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
-#         index=True,
-#         nullable=False,
-#     )
-#     user = relationship(
-#         "User",
-#         foreign_keys="PlayerSession.userId",
-#         backref=backref("sessionUser", single_parent=True, uselist=False),
-#     )
-#     betAmount = Column(Integer, nullable=False)
-#     betLines = Column(Integer, nullable=True)
-#     betResult = Column(Integer, nullable=False, default=0)
-#     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
-#
+
+class GameSession(ModelMixin):
+    """
+    GameSession is a table that stores the game session.
+    """
+    __tablename__ = "GameSession"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
+    gameId = Column(Integer, nullable=False)
+    createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
+
+
+class PlayerSession(ModelMixin):
+    """
+    PlayerSession is a table that stores the player session.
+    """
+    __tablename__ = "PlayerSession"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
+    gameSessionId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=True,
+    )
+    gameSession = relationship(
+        "GameSession",
+        foreign_keys="PlayerSession.gameSessionId",
+        backref=backref("gameSession", single_parent=True, uselist=False),
+    )
+    userId = Column(
+        UUID(as_uuid=True),
+        ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=False,
+    )
+    user = relationship(
+        "User",
+        foreign_keys="PlayerSession.userId",
+        backref=backref("sessionUser", single_parent=True, uselist=False),
+    )
+    betAmount = Column(Integer, nullable=False)
+    betLines = Column(Integer, nullable=True)
+    betResult = Column(Integer, nullable=False, default=0)
+    createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
+
 
 class GameList(ModelMixin):
     """
