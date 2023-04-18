@@ -178,7 +178,7 @@ class WithdrawalContext(CamelModel):
     `WithdrawalContext` is a class that is used to represent a context
     """
     ownerId: Optional[UUID]
-    status: Optional[str]
+    status: Optional[Status]
 
 
 class WithdrawalFilter(Filter):
@@ -226,7 +226,7 @@ class DepositContext(CamelModel):
     `WithdrawalContext` is a class that is used to represent a context
     """
     ownerId: Optional[UUID]
-    status: Optional[str]
+    status: Optional[Status]
 
 
 class DepositFilter(Filter):
