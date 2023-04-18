@@ -14,7 +14,7 @@ from app.api.credit.schema import (
     GetUserCreditResponse,
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
@@ -108,7 +108,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
 
 
 @router.post("/manage/deposit", response_model=DepositResponse)
-async def deposit(context: MakeDeposit, request: Request):
+async def deposit(context: BalanceDeposit, request: Request):
     """
     `deposit` deposits money into a user's account
     :param context: contains the ownerId and the amount to deposit
@@ -137,8 +137,8 @@ async def approve_deposit(context: GetDeposit, request: Request):
     _deposit = Deposit.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
-    _Status = Status.create(
-        depositId=_deposit.id, status="approved", approvedBy=request.user.id
+    _Status = Status.update(
+        status="Approved", approvedBy=request.user.id
     )
     if not _Status:
         return BaseResponse(success=False, error="Could not approve deposit")
@@ -159,8 +159,8 @@ async def reject_deposit(context: GetDeposit, request: Request):
     _deposit = Deposit.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
-    _Status = Status.create(
-        depositId=_deposit.id, status="rejected", approvedBy=request.user.id
+    _Status = Status.update(
+        status="Rejected", approvedBy=request.user.id
     )
     return (
         ChangeDepositStatusResponse(success=True, response=_deposit)
@@ -170,7 +170,7 @@ async def reject_deposit(context: GetDeposit, request: Request):
 
 
 @router.post("/manage/withdraw", response_model=WithdrawalResponse)
-async def withdraw(context: MakeWithdrawal, request: Request):
+async def withdraw(context: BalanceWithdrawal, request: Request):
     """
     `withdraw` withdraws money from a user's account
     :param context: contains the ownerId and the amount to withdraw
@@ -178,13 +178,14 @@ async def withdraw(context: MakeWithdrawal, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Withdrawal.where(ownerId=context.owner.id)
+            _ := Withdrawal.where(ownerId=context.ownerId)
                     .join(Status, isouter=True)
                     .filter(Status.approval == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
-    _withdraw = Withdrawal.create(**context.dict())
+    _status = Status.create(approval="Pending")
+    _withdraw = Withdrawal.create(statusId=_status.id, **context.dict())
     return WithdrawalResponse(success=True, response=_withdraw)
 
 
@@ -199,8 +200,8 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
-    _Status = Status.create(
-       status="approved", approvedById=request.user.id
+    _Status = Status.update(
+       status="Approved", approvedById=request.user.id
     )
     if not _Status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
@@ -216,8 +217,8 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
     _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
-    _Status = Status.create(
-        withdrawId=Withdrawal.id, status="rejected", approvedBy=request.user.id
+    _Status = Status.update(
+        approval="Rejected", approvedBy=request.user.id
     )
     return (
         ChangeWithdrawalStatusResponse(success=True, response=_withdraw)
