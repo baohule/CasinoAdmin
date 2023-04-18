@@ -14,7 +14,7 @@ from app.api.credit.schema import (
     GetUserCreditResponse,
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ApproveDeposit, ApproveDepositResponse, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
