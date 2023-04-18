@@ -14,7 +14,7 @@ from app.api.credit.schema import (
     GetUserCreditResponse,
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit,
 )
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
@@ -108,7 +108,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
 
 
 @router.post("/manage/deposit", response_model=DepositResponse)
-async def deposit(context: Deposit, request: Request):
+async def deposit(context: MakeDeposit, request: Request):
     """
     `deposit` deposits money into a user's account
     :param context: contains the ownerId and the amount to deposit
@@ -116,7 +116,7 @@ async def deposit(context: Deposit, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Deposit.read_all(ownerId=context.ownerId)
+            _ := Deposit.read_all(ownerId=context.owner.id)
                     .join(Status, isouter=True)
                     .filter(Status.approval == "Pending")
                     .first()
@@ -126,7 +126,7 @@ async def deposit(context: Deposit, request: Request):
     return UpdateUserCreditResponse(success=True, response=_deposit)
 
 
-@router.post("/manage/approve_deposit", response_model=ApproveDepositResponse)
+@router.post("/manage/approve_deposit", response_model=ChangeDepositStatusResponse)
 async def approve_deposit(context: GetDeposit, request: Request):
     """
     `approve_deposit` approves a deposit request
@@ -145,7 +145,7 @@ async def approve_deposit(context: GetDeposit, request: Request):
     _updated = Balance.update(
         ownerId=_deposit.ownerId, balance=_deposit.balance + _deposit.owner.balance.balance
     )
-    return ApproveDepositResponse(success=True, response=_updated)
+    return ChangeDepositStatusResponse(success=True, response=_updated)
 
 
 @router.post("/manage/reject_deposit", response_model=ChangeDepositStatusResponse)
@@ -163,7 +163,7 @@ async def reject_deposit(context: GetDeposit, request: Request):
         depositId=_deposit.id, status="rejected", approvedBy=request.user.id
     )
     return (
-        UpdateUserCreditResponse(success=True, response=_deposit)
+        ChangeDepositStatusResponse(success=True, response=_deposit)
         if _Status
         else BaseResponse(success=False, error="Could not reject deposit")
     )
@@ -185,7 +185,7 @@ async def withdraw(context: Withdrawal, request: Request):
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
     _withdraw = Withdrawal.create(**context.dict())
-    return UpdateUserCreditResponse(success=True, response=_withdraw)
+    return WithdrawalResponse(success=True, response=_withdraw)
 
 
 @router.post("/manage/approve_withdraw", response_model=ChangeWithdrawalStatusResponse)
@@ -207,7 +207,7 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     _updated = Balance.update(
         ownerId=context.ownerId, balance=Balance.balance - _withdraw.amount
     )
-    return UpdateUserCreditResponse(success=True, response=_updated)
+    return ChangeWithdrawalStatusResponse(success=True, response=_updated)
 
 
 @router.post("/manage/reject_withdraw", response_model=ChangeWithdrawalStatusResponse)
@@ -220,7 +220,7 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
         withdrawId=Withdrawal.id, status="rejected", approvedBy=request.user.id
     )
     return (
-        UpdateUserCreditResponse(success=True, response=_withdraw)
+        ChangeWithdrawalStatusResponse(success=True, response=_withdraw)
         if _Status
         else BaseResponse(success=False, error="Could not reject withdrawal")
     )
