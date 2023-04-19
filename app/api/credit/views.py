@@ -202,19 +202,22 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     :param request: Request object
     :return: UpdateUserCreditResponse
     """
-    _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
+    context_data = context.dict(exclude_unset=True, exclude_none=True)
+    _withdraw = Withdrawal.read(**context_data)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
-    _Status = Status.update(
+    _status = Status.update(
         id=_withdraw.status.id,
-       status="Approved", approvedById=request.user.id
+        approval="Approved",
+        approvedById=context.approvedById
     )
-    if not _Status:
+    if not _status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
-    _updated = Balance.update(
+    _updated_balance = Balance.update(
         ownerId=context.ownerId, balance=Balance.balance - _withdraw.amount
     )
-    return ChangeWithdrawalStatusResponse(success=True, response=_updated)
+    response = MakeWithdrawal(**dict(withdrawal=_withdraw, status=_status, balance=_updated_balance))
+    return ChangeWithdrawalStatusResponse(success=True, response=response)
 
 
 @router.post("/manage/reject_withdraw", response_model=ChangeWithdrawalStatusResponse)
@@ -225,7 +228,8 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
         id=_withdraw.status.id,
-        approval="Rejected", approvedBy=request.user.id
+        approval="Rejected",
+        approvedBy=request.user.id
     )
     return (
         ChangeWithdrawalStatusResponse(success=True, response=_withdraw)

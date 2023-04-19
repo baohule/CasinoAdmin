@@ -177,7 +177,7 @@ class MakeWithdrawal(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    amount: Optional[float] = Field(default=0)
+    amount: Optional[float]
     owner: Optional[User]
     status: Optional[Status]
 
@@ -189,6 +189,7 @@ class GetWithdrawal(CamelModel):
 
     ownerId: Optional[UUID]
     id: Optional[UUID]
+    approvedById: Optional[UUID]
 
 
 class GetDeposit(CamelModel):
@@ -198,6 +199,7 @@ class GetDeposit(CamelModel):
 
     ownerId: Optional[UUID]
     id: Optional[UUID]
+    approvedById: Optional[UUID]
 
 
 class ApproveDeposit(CamelModel):

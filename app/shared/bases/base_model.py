@@ -350,7 +350,8 @@ class ModelMixin(Base):
             kwargs.pop(key)
         kwargs["updatedAt"] = datetime.now(pytz.utc)
         try:
-            updated_data = cls.where(**filters).update(kwargs)
+            updated_data = cls.where(**filters)
+            updated_data.update(kwargs)
             cls.session.commit()
             return updated_data
         except Exception as e:
