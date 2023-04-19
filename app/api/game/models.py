@@ -62,7 +62,7 @@ class PlayerSession(ModelMixin):
     )
     betAmount = Column(Integer, nullable=False)
     betLines = Column(Integer, nullable=True)
-    betResult = Column(Integer, nullable=False, default=0)
+    betResult = Column(Boolean, nullable=False)
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
 
 

@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+from app.api.game.models import PlayerSession
 from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
 from fastapi import APIRouter, Depends, Request
 
@@ -77,3 +78,24 @@ async def get_payment_history_(context: GetPaymentHistory, request: Request):
         if history
         else GetPaymentHistoryResponse(success=False, error="No history found")
     )
+#
+# @router.post("/stats/bet", response_model=GetBetHistoryResponse):
+# async def get_bet_stats(context: GetBetHistory, request: Request):
+#     """
+#     > This function returns the bet history of a user
+#
+#     :param context: GetBetHistory - this is the request object that is passed to the function
+#     :type context: GetBetHistory
+#     :param request: Request - this is the request object that is passed to the function
+#     :type request: Request
+#     :return: GetBetHistoryResponse
+#     """
+#     history = PlayerSession.read_all(**context.dict())
+#
+#     total_profit = sum([bet.betAmount for bet in history if bet.betResult])
+#
+#     return (
+#         GetBetHistoryResponse(success=True, response=history)
+#         if history
+#         else GetBetHistoryResponse(success=False, error="No history found")
+#     )
