@@ -191,7 +191,7 @@ async def withdraw(context: BalanceWithdrawal, request: Request):
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
-    _status = Status.create(approval="Pending", ownerId=context.ownerId)
+    _status = Status.create(approval="Pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
     _withdraw = Withdrawal.create(statusId=_status.id, **context.dict())
