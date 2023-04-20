@@ -116,13 +116,13 @@ async def deposit(context: BalanceDeposit, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Deposit.read_all(ownerId=context.ownerId)
+            _ := Deposit.where(ownerId=context.ownerId)
                     .join(Status, isouter=True)
                     .filter(Status.approval == "Pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
-    _status = Status.create(status="Pending")
+    _status = Status.create(approval="pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
     _deposit = Deposit.create(statusId=_status.id, **context.dict())
@@ -142,7 +142,7 @@ async def approve_deposit(context: GetDeposit, request: Request):
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
         id=_deposit.status.id,
-        status="Approved",
+        status="approved",
         approvedBy=request.user.id
     )
     if not _Status:
@@ -166,7 +166,7 @@ async def reject_deposit(context: GetDeposit, request: Request):
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
         id=_deposit.status.id,
-        status="Rejected",
+        status="rejected",
         approvedBy=request.user.id
     )
     return (
