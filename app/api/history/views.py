@@ -1,6 +1,14 @@
 """
 @author: Kuro
 """
+from typing import Tuple
+
+from pydantic import BaseModel
+from sqlalchemy import func, and_, subquery, select, case
+from sqlalchemy.orm import aliased
+from sqlalchemy.sql import Select
+from sqlalchemy.sql.operators import is_
+
 from app.api.game.models import PlayerSession
 from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
 from fastapi import APIRouter, Depends, Request
@@ -11,10 +19,11 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss,
 )
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
+import logging
 
 router = APIRouter(
     prefix="/api/history",
@@ -78,24 +87,64 @@ async def get_payment_history_(context: GetPaymentHistory, request: Request):
         if history
         else GetPaymentHistoryResponse(success=False, error="No history found")
     )
-#
-# @router.post("/stats/bet", response_model=GetBetHistoryResponse):
-# async def get_bet_stats(context: GetBetHistory, request: Request):
-#     """
-#     > This function returns the bet history of a user
-#
-#     :param context: GetBetHistory - this is the request object that is passed to the function
-#     :type context: GetBetHistory
-#     :param request: Request - this is the request object that is passed to the function
-#     :type request: Request
-#     :return: GetBetHistoryResponse
-#     """
-#     history = PlayerSession.read_all(**context.dict())
-#
-#     total_profit = sum([bet.betAmount for bet in history if bet.betResult])
-#
-#     return (
-#         GetBetHistoryResponse(success=True, response=history)
-#         if history
-#         else GetBetHistoryResponse(success=False, error="No history found")
-#     )
+
+
+@router.post("/stats/total_win_loss", response_model=TotalWinLossResponse)
+async def get_bet_stats(context: GetWinLoss, request: Request):
+    """
+    > This function returns the win/loss history of a an optional date range
+
+    :param context: GetWinLoss - this is the request object that is passed to the function
+    :param request: Request - this is the request object that is passed to the function
+    :return: TotalWinLossResponse
+    """
+    if total := PlayerSession.session.query(
+        select([
+                func.sum(PlayerSession.betResult).label("wins"),
+                func.count(PlayerSession.betResult).label("win_count")
+            ]).filter(
+                *PlayerSession.filter_expr(
+                    betResult__lt=0
+            )).subquery(),
+        select([
+                func.sum(PlayerSession.betResult).label("losses"),
+                func.count(PlayerSession.betResult).label("loss_count")
+            ]).filter(
+                *PlayerSession.filter_expr(
+                    betResult__gt=0
+                )).subquery()
+    ).filter(
+        *PlayerSession.filter_expr(
+            createdAt__ge=context.start_date,
+            createdAt__le=context.end_date,
+        )
+     ).first():
+        logging.debug(total)
+        total_count = total.loss_count + total.win_count
+        response = TotalWinLoss(totalLoss=total.losses, totalWins=total.wins, count=total_count)
+        return TotalWinLossResponse(success=True, response=response)
+    return TotalWinLossResponse(success=False, error="No history found")
+
+@router.post("/stats/game_players", response_model=TotalWinLossResponse)
+async def get_game_players(context: GetWinLoss, request: Request):
+    """
+    > This function returns the win/loss history of a an optional date range
+
+    :param context: GetWinLoss - this is the request object that is passed to the function
+    :param request: Request - this is the request object that is passed to the function
+    :return: TotalWinLossResponse
+    """
+    if total := PlayerSession.session.query(
+        select([
+                func.count(PlayerSession.id).label("players"),
+            ]).filter(
+                *PlayerSession.filter_expr(
+                    createdAt__ge=context.start_date,
+                    createdAt__le=context.end_date,
+                )
+            ).subquery()
+    ).first():
+        logging.debug(total)
+        response = TotalWinLoss(totalLoss=0, totalWins=total.players, count=total.players)
+        return TotalWinLossResponse(success=True, response=response)
+    return TotalWinLossResponse(success=False, error="No history found")

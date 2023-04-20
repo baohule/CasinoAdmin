@@ -62,14 +62,14 @@ def jwt_login(
     """
     model = admin and Admin or agent and Agent or User
     claim: UserClaim = model.user_claims(**context.dict())
+    if not claim:
+        return TokenResponse(success=False, error="Wrong login details")
     try:
         claim.admin = admin
         claim.agent = agent
     except Exception as e:
         model.session.rollback()
         print(e)
-    if not claim:
-        return TokenResponse(success=False, error="Wrong login details")
     signed_jwt: TokenResponse = sign_jwt(claim)
     return signed_jwt
 
