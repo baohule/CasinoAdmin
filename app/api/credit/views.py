@@ -125,7 +125,7 @@ async def deposit(context: BalanceDeposit, request: Request):
     _status = Status.create(approval="pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
-    _deposit = Deposit.create(statusId=_status.id, **context.dict())
+    _deposit = Deposit.create(statusId=_status.id, ownerId=context.ownerId, amount=context.amount)
     return UpdateUserCreditResponse(success=True, response=_deposit)
 
 
@@ -194,7 +194,7 @@ async def withdraw(context: BalanceWithdrawal, request: Request):
     _status = Status.create(approval="pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
-    _withdraw = Withdrawal.create(statusId=_status.id, **context.dict())
+    _withdraw = Withdrawal.create(statusId=_status.id, ownerId=context.ownerId, amount=context.amount)
     return WithdrawalResponse(success=True, response=_withdraw)
 
 
