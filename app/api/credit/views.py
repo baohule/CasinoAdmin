@@ -213,7 +213,7 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
         return BaseResponse(success=False, error="Withdrawal not found")
     _status = Status.update(
         id=_withdraw.status.id,
-        approval="Approved",
+        approval="approved",
         approvedById=context.approvedById
     )
     if not _status:
@@ -233,7 +233,7 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
         id=_withdraw.status.id,
-        approval="Rejected",
+        approval="rejected",
         approvedBy=request.user.id
     )
     return (
