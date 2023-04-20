@@ -6,7 +6,7 @@ from typing import Tuple
 from pydantic import BaseModel
 from sqlalchemy import func, and_, subquery, select, case, Column
 from sqlalchemy.orm import aliased, load_only
-from sqlalchemy.sql import Select
+from sqlalchemy.sql import Select, Alias
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.operators import is_
 
@@ -145,6 +145,10 @@ async def get_game_players(context: GetPlayerStats, request: Request):
             func.count(PlayerSession.id).label("players"),
             func.sum(PlayerSession.betResult).label("winnings"),
 
+    ).group_by(
+                PlayerSession.gameSessionId,
+                aliased(
+                PlayerSession.gameSession, alias='anon_2.gameSession')
     ).filter(
             *PlayerSession.filter_expr(
                 createdAt__ge=context.start_date,

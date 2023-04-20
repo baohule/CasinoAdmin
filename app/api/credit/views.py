@@ -254,7 +254,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
 
     filters = dict(
         status___approval=context.context.filter.status.approval,
-        ownerId=context.context.filter.ownerId,
+        email=context.context.filter.email,
         approvedById=context.context.filter.status.approvedById
     )
     filters = {k: v for k, v in filters.items() if v}
@@ -277,12 +277,12 @@ async def get_user_deposits(context: GetUserDeposits, request: Request):
     """
     filters = dict(
         status___approval=context.context.filter.status.approval,
-        ownerId=context.context.filter.ownerId,
+        email=context.context.filter.email,
         approvedById=context.context.filter.status.approvedById
     )
     filters = {k: v for k, v in filters.items() if v}
 
-    deposits = Deposit.read_all(**filters)
+    deposits = paginate(Deposit.where(**filters), context.params.page, context.params.size)
     return (
         GetUserDepositsResponse(success=True, response=deposits)
         if deposits
