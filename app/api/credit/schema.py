@@ -247,7 +247,7 @@ class WithdrawalContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
-    ownerId: Optional[UUID]
+    email: Optional[str]
     status: Optional[Status]
 
 
@@ -295,7 +295,7 @@ class DepositContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
-    ownerId: Optional[UUID]
+    email: Optional[str]
     status: Optional[Status]
 
 
@@ -317,7 +317,8 @@ class GetUserDeposits(GetOptionalContextPages):
 
 class GetUserWithdrawals(GetOptionalContextPages):
     """
-    `GetUserWithdrawals` is a class that is used to represent a request
+    `GetUserWithdrawals` i
+    s a class that is used to represent a request
     """
 
     context: Optional[WithdrawalFilter]
