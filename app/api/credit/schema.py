@@ -122,7 +122,7 @@ class UpdateAgentQuota(CamelModel):
     """
 
     agentId: UUID
-    balance: float
+    balance: int
 
 
 class Status(ORMCamelModel):
@@ -140,7 +140,7 @@ class MakeDeposit(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    amount: Optional[float]
+    amount: Optional[int]
     owner: Optional[User]
     status: Optional[Status]
 
@@ -151,7 +151,7 @@ class BalanceDeposit(CamelModel):
     """
 
     ownerId: Optional[UUID]
-    amount: Optional[float]
+    amount: Optional[int]
 
 
 class BalanceWithdrawal(CamelModel):
@@ -177,7 +177,7 @@ class MakeWithdrawal(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    amount: Optional[float]
+    amount: Optional[int]
     owner: Optional[User]
     status: Optional[Status]
 
