@@ -208,7 +208,7 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     :return: UpdateUserCreditResponse
     """
     context_data = context.dict(exclude_unset=True, exclude_none=True)
-    approval = context_data.pop("approvedById")
+    approval = context_data.pop("approvedById", None)
     _withdraw = Withdrawal.read(**context_data)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
