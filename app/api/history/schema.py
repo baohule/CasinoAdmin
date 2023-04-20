@@ -107,6 +107,20 @@ class GetPaymentHistory(BaseModel):
     ownerId: UUID
 
 
+class TotalWinLoss(ORMCamelModel):
+    totalWins: Optional[int]
+    totalLoss: Optional[int]
+    count: Optional[int]
+
+
+class TotalWinLossResponse(BaseResponse):
+    response: Optional[TotalWinLoss]
+
+
+class GetWinLoss(BaseModel):
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+
 class GetBetHistoryResponse(BaseResponse):
     """
     `GetBetHistoryResponse` is a class that is
