@@ -187,9 +187,9 @@ class GetWithdrawal(CamelModel):
     `GetWithdrawal` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID]
-    id: Optional[UUID]
-    approvedById: Optional[UUID]
+    ownerId: Optional[UUID] = Field(default=None, description="optional")
+    id: Optional[UUID] = Field(default=None, description="optional")
+    approvedById: Optional[UUID] = Field(default=None, description="optional")
 
 
 class GetDeposit(CamelModel):
@@ -197,9 +197,10 @@ class GetDeposit(CamelModel):
     `GetDeposit` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID]
-    id: Optional[UUID]
-    approvedById: Optional[UUID]
+    ownerId: Optional[UUID] = Field(default=None, description="optional")
+    id: Optional[UUID] = Field(default=None, description="optional")
+    approvedById: Optional[UUID] = Field(default=None, description="optional")
+
 
 
 class ApproveDeposit(CamelModel):

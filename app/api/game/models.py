@@ -40,7 +40,7 @@ class GameSession(ModelMixin):
     )
 
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
-
+    updatedAt = Column(DateTime, nullable=True)
 
 class PlayerSession(ModelMixin):
     """
