@@ -101,7 +101,7 @@ class Status(ModelMixin):
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
-        null=True
+        nullable=True
     )
     approvedBy = relationship(
         "Agent",
