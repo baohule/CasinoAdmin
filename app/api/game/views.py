@@ -20,7 +20,7 @@ from app.shared.middleware.auth import JWTBearer
 router = APIRouter(
     prefix="/api/game",
     dependencies=[Depends(JWTBearer())],
-    tags=["Game"],
+    tags=["game"],
 )
 
 

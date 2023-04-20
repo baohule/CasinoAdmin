@@ -20,7 +20,7 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game,
 )
 from app.api.user.models import User
 from app.shared.middleware.auth import JWTBearer
@@ -137,24 +137,30 @@ async def get_game_players(context: GetPlayerStats, request: Request):
     :param request: Request - this is the request object that is passed to the function
     :return: TotalWinLossResponse
     """
+    session_query = PlayerSession.session.query(
+        PlayerSession.gameSessionId.label("game_session_id"),
+        select([GameSession.gameId]).label("game_id"),
+    ).join(
+        GameList,
+        and_(
+            GameSession.id == PlayerSession.gameSessionId,
+            GameList.id == GameSession.gameId
+        )
+    ).filter_by(gameSessionId=PlayerSession.gameSessionId)
     if total := PlayerSession.session.query(
-            select([PlayerSession.gameSession]).options(
-                load_only("gameSessionId"),
-                joinedload("gameSession")
-            ).subquery(),
+
+            session_query.subquery(with_labels=True),
             func.count(PlayerSession.id).label("players"),
             func.sum(PlayerSession.betResult).label("winnings"),
 
     ).group_by(
-                PlayerSession.gameSessionId,
-                aliased(
-                PlayerSession.gameSession, alias='anon_2.gameSession')
+        PlayerSession.gameSessionId
     ).filter(
-            *PlayerSession.filter_expr(
-                createdAt__ge=context.start_date,
-                createdAt__le=context.end_date,
-                gameSessionId=PlayerSession.gameSessionId
-            )
+        *PlayerSession.filter_expr(
+            createdAt__ge=context.start_date,
+            createdAt__le=context.end_date,
+            gameSessionId=PlayerSession.gameSessionId
+        )
     ):
         print(total)
         response = [
@@ -164,7 +170,8 @@ async def get_game_players(context: GetPlayerStats, request: Request):
                 game_name=total.game_session.game.eGameName,
                 players=total.players,
                 winnings=total.winnings
-            ) for total in total
+            )
+            for total in total
         ]
         return GetPlayerStatsResponse(success=True, response=response)
     return GetPlayerStatsResponse(success=False, error="No history found")
