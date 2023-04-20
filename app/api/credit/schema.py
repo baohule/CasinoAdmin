@@ -160,7 +160,7 @@ class BalanceWithdrawal(CamelModel):
     """
 
     ownerId: Optional[UUID]
-    amount: Optional[float]
+    amount: Optional[int]
 
 
 class DepositResponse(BaseResponse):
