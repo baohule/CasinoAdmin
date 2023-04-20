@@ -150,13 +150,13 @@ async def get_game_players(context: GetPlayerStats, request: Request):
             gameSessionId=PlayerSession.gameSessionId
         )
     ):
-        game = GameList.where(gameSession___id=total.game_session_id).options(joinedload("gameSession")).first()
+        game = lambda _total: GameList.where(gameSession___id=_total.game_session_id).options(joinedload("gameSession")).first()
         print(game)
         response = [
             StatsData(
                 game_session=total.game_session_id,
-                game_id=game.id,
-                game_name=game.eGameName,
+                game_id=game(total).id,
+                game_name=game(total).eGameName,
                 players=total.players,
                 winnings=total.winnings
             )
