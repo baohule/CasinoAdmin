@@ -4,12 +4,13 @@
 from typing import Tuple
 
 from pydantic import BaseModel
-from sqlalchemy import func, and_, subquery, select, case
-from sqlalchemy.orm import aliased
+from sqlalchemy import func, and_, subquery, select, case, Column
+from sqlalchemy.orm import aliased, load_only
 from sqlalchemy.sql import Select
+from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.operators import is_
 
-from app.api.game.models import PlayerSession
+from app.api.game.models import PlayerSession, GameSession, GameList
 from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
 from fastapi import APIRouter, Depends, Request
 
@@ -19,8 +20,9 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData,
 )
+from app.api.user.models import User
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
 import logging
@@ -99,14 +101,14 @@ async def get_bet_stats(context: GetWinLoss, request: Request):
     :return: TotalWinLossResponse
     """
     if total := PlayerSession.session.query(
-        select([
+            select([
                 func.sum(PlayerSession.betResult).label("wins"),
                 func.count(PlayerSession.betResult).label("win_count")
             ]).filter(
                 *PlayerSession.filter_expr(
                     betResult__lt=0
-            )).subquery(),
-        select([
+                )).subquery(),
+            select([
                 func.sum(PlayerSession.betResult).label("losses"),
                 func.count(PlayerSession.betResult).label("loss_count")
             ]).filter(
@@ -118,15 +120,16 @@ async def get_bet_stats(context: GetWinLoss, request: Request):
             createdAt__ge=context.start_date,
             createdAt__le=context.end_date,
         )
-     ).first():
+    ).first():
         logging.debug(total)
         total_count = total.loss_count + total.win_count
         response = TotalWinLoss(totalLoss=total.losses, totalWins=total.wins, count=total_count)
         return TotalWinLossResponse(success=True, response=response)
     return TotalWinLossResponse(success=False, error="No history found")
 
-@router.post("/stats/game_players", response_model=TotalWinLossResponse)
-async def get_game_players(context: GetWinLoss, request: Request):
+
+@router.post("/stats/game_players", response_model=GetPlayerStatsResponse)
+async def get_game_players(context: GetPlayerStats, request: Request):
     """
     > This function returns the win/loss history of a an optional date range
 
@@ -135,16 +138,29 @@ async def get_game_players(context: GetWinLoss, request: Request):
     :return: TotalWinLossResponse
     """
     if total := PlayerSession.session.query(
-        select([
-                func.count(PlayerSession.id).label("players"),
-            ]).filter(
-                *PlayerSession.filter_expr(
-                    createdAt__ge=context.start_date,
-                    createdAt__le=context.end_date,
-                )
-            ).subquery()
-    ).first():
-        logging.debug(total)
-        response = TotalWinLoss(totalLoss=0, totalWins=total.players, count=total.players)
-        return TotalWinLossResponse(success=True, response=response)
-    return TotalWinLossResponse(success=False, error="No history found")
+            select([PlayerSession.gameSession]).options(
+                load_only("gameSessionId"),
+                joinedload("gameSession")
+            ).subquery(),
+            func.count(PlayerSession.id).label("players"),
+            func.sum(PlayerSession.betResult).label("winnings"),
+
+    ).filter(
+            *PlayerSession.filter_expr(
+                createdAt__ge=context.start_date,
+                createdAt__le=context.end_date,
+                gameSessionId=PlayerSession.gameSessionId
+            )
+    ):
+        print(total)
+        response = [
+            StatsData(
+                game_session=total.game_session,
+                game_id=total.game_session.game.id,
+                game_name=total.game_session.game.eGameName,
+                players=total.players,
+                winnings=total.winnings
+            ) for total in total
+        ]
+        return GetPlayerStatsResponse(success=True, response=response)
+    return GetPlayerStatsResponse(success=False, error="No history found")

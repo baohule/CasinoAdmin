@@ -121,6 +121,26 @@ class GetWinLoss(BaseModel):
     start_date: Optional[datetime]
     end_date: Optional[datetime]
 
+
+class StatsData(ORMCamelModel):
+    game_session: Optional[UUID]
+    game_name: Optional[str]
+    game_id: Optional[int]
+    players: Optional[int]
+    winnings: Optional[int]
+
+
+class GetPlayerStats(BaseModel):
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    game_id: Optional[UUID]
+    user_id: Optional[UUID]
+
+
+class GetPlayerStatsResponse(BaseResponse):
+    response: Optional[List[StatsData]]
+
+
 class GetBetHistoryResponse(BaseResponse):
     """
     `GetBetHistoryResponse` is a class that is

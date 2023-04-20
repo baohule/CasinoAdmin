@@ -27,7 +27,18 @@ class GameSession(ModelMixin):
     __tablename__ = "GameSession"
 
     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
-    gameId = Column(Integer, nullable=False)
+    gameId = Column(
+        Integer,
+        ForeignKey("GameList.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=False,
+    )
+    game = relationship(
+        "GameList",
+        foreign_keys="GameSession.gameId",
+        backref=backref("gameSession", single_parent=True, uselist=False)
+    )
+
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
 
 

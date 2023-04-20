@@ -16,6 +16,7 @@ from app.api.credit.schema import (
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
     WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal,
 )
+from app.shared.bases.base_model import Page, paginate
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
@@ -258,7 +259,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     )
     filters = {k: v for k, v in filters.items() if v}
 
-    withdrawals = Withdrawal.read_all(**filters)
+    withdrawals = paginate(Withdrawal.where(**filters), context.params.page, context.params.size)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
         if withdrawals
