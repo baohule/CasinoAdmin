@@ -96,7 +96,7 @@ class Status(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
-    approval = Column(Text, default="Pending")
+    approval = Column(Text, default="pending")
     approvedById = Column(
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
