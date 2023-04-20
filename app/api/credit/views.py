@@ -208,13 +208,14 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     :return: UpdateUserCreditResponse
     """
     context_data = context.dict(exclude_unset=True, exclude_none=True)
+    approval = context_data.pop("approvedById")
     _withdraw = Withdrawal.read(**context_data)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _status = Status.update(
         id=_withdraw.status.id,
         approval="approved",
-        approvedById=context.approvedById
+        approvedById=approval
     )
     if not _status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
@@ -228,7 +229,8 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
 @router.post("/manage/reject_withdraw", response_model=ChangeWithdrawalStatusResponse)
 async def reject_withdraw(context: GetWithdrawal, request: Request):
 
-    _withdraw = Withdrawal.read(**context.dict(exclude_unset=True, exclude_none=True))
+    context_data = context.dict(exclude_unset=True, exclude_none=True)
+    _withdraw = Withdrawal.read(**context_data)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
@@ -255,7 +257,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     filters = dict(
         status___approval=context.context.filter.status.approval,
         email=context.context.filter.email,
-        status___approvedById=context.context.filter.status.approvedById
+        approvedById=context.context.filter.status.approvedById
     )
     filters = {k: v for k, v in filters.items() if v}
 
@@ -278,7 +280,7 @@ async def get_user_deposits(context: GetUserDeposits, request: Request):
     filters = dict(
         status___approval=context.context.filter.status.approval,
         email=context.context.filter.email,
-        status___approvedById=context.context.filter.status.approvedById
+        approvedById=context.context.filter.status.approvedById
     )
     filters = {k: v for k, v in filters.items() if v}
 
