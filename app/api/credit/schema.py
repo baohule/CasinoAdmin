@@ -131,7 +131,7 @@ class Status(ORMCamelModel):
     """
 
     approvedById: Optional[UUID]
-    approval: str = Field(default="Pending")
+    approval: str = Field(default="pending")
 
 
 class MakeDeposit(ORMCamelModel):

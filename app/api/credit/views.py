@@ -119,7 +119,7 @@ async def deposit(context: BalanceDeposit, request: Request):
     if (
             _ := Deposit.where(ownerId=context.ownerId)
                     .join(Status, isouter=True)
-                    .filter(Status.approval == "Pending")
+                    .filter(Status.approval == "pending")
                     .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
