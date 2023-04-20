@@ -137,22 +137,10 @@ async def get_game_players(context: GetPlayerStats, request: Request):
     :param request: Request - this is the request object that is passed to the function
     :return: TotalWinLossResponse
     """
-    session_query = PlayerSession.session.query(
-        PlayerSession.gameSessionId.label("game_session_id"),
-        select([GameSession.gameId]).label("game_id"),
-    ).join(
-        GameList,
-        and_(
-            GameSession.id == PlayerSession.gameSessionId,
-            GameList.id == GameSession.gameId
-        )
-    ).filter_by(gameSessionId=PlayerSession.gameSessionId)
     if total := PlayerSession.session.query(
-
-            session_query.subquery(with_labels=True),
+            PlayerSession.gameSessionId.label("game_session_id"),
             func.count(PlayerSession.id).label("players"),
             func.sum(PlayerSession.betResult).label("winnings"),
-
     ).group_by(
         PlayerSession.gameSessionId
     ).filter(
@@ -162,12 +150,13 @@ async def get_game_players(context: GetPlayerStats, request: Request):
             gameSessionId=PlayerSession.gameSessionId
         )
     ):
-        print(total)
+        game = GameList.where(gameSession___id=total.game_session_id).options(joinedload("gameSession")).first()
+        print(game)
         response = [
             StatsData(
-                game_session=total.game_session,
-                game_id=total.game_session.game.id,
-                game_name=total.game_session.game.eGameName,
+                game_session=total.game_session_id,
+                game_id=game.id,
+                game_name=game.eGameName,
                 players=total.players,
                 winnings=total.winnings
             )
