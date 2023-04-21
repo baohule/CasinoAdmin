@@ -143,9 +143,9 @@ class Withdrawal(ModelMixin):
     )
 
     @classmethod
-    def get_user_withdrawals(cls, page: int, limit: int, **kwargs):
+    def get_user_withdrawals(cls, page: int, size: int, **kwargs):
         try:
-            return paginate(Withdrawal.where(**kwargs), page, limit)
+            return paginate(Withdrawal.where(**kwargs), page, size)
         except Exception as e:
             print(e)
             return
