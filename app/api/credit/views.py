@@ -262,7 +262,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     )
     filters = {k: v for k, v in filters.items() if v}
 
-    withdrawals = Withdrawal.get_user_withdrawals(**filters)
+    withdrawals = Withdrawal.get_user_withdrawals(**context.params.dict(), **filters)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
         if withdrawals
