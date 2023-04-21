@@ -105,7 +105,7 @@ class ModelMixin(Base):
                 cls.session.commit()
                 return _object
         except Exception as e:
-            cls.sesison.rollback()
+            cls.session.rollback()
             print(e)
             return
 
@@ -324,7 +324,6 @@ class ModelMixin(Base):
             cls.session.rollback()
             return
 
-
     @classmethod
     def update(cls, *_, **kwargs) -> ModelType:
         """
@@ -509,8 +508,8 @@ class DataSeeder:
         for route in APIPrefix.include:
             with contextlib.suppress(ImportError, AttributeError):
                 module = __import__(f"app.api.{route}.models", fromlist=[table_name])
-                class_name = DataSeeder.snake_to_pascal_case(table_name)
-                return getattr(module, class_name)
+                # class_name = DataSeeder.snake_to_pascal_case(table_name)
+                return getattr(module, table_name)
 
     def get_model_metadata(self):
         # import metadata for all routes to build the registry
@@ -615,7 +614,8 @@ class DataSeeder:
 
         # loop through models in registry
         for model, table in list(self.get_model_metadata()):
-
+            if table.name in self.exclude_list:
+                continue
             for _ in range(self.number_of_records):
                 row_data = self.generate_fake_row_data(table)
                 self.save_model(model, row_data)
