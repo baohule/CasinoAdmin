@@ -142,6 +142,14 @@ class Withdrawal(ModelMixin):
         backref=backref("userWithdrawals", single_parent=True, uselist=False),
     )
 
+    @classmethod
+    def get_user_withdrawals(cls, page: int, limit: int, **kwargs):
+        try:
+            return paginate(Withdrawal.where(**kwargs), page, limit)
+        except Exception as e:
+            print(e)
+            return
+
 
 class Deposit(ModelMixin):
     """

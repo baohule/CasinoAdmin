@@ -262,7 +262,7 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
     )
     filters = {k: v for k, v in filters.items() if v}
 
-    withdrawals = paginate(Withdrawal.where(**filters), context.params.page, context.params.size)
+    withdrawals = Withdrawal.get_user_withdrawals(**filters)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
         if withdrawals
