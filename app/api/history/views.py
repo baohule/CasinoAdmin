@@ -20,7 +20,7 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game, GetPlayerStatsData,
 )
 from app.api.user.models import User
 from app.shared.middleware.auth import JWTBearer
@@ -152,15 +152,19 @@ async def get_game_players(context: GetPlayerStats, request: Request):
     ):
         game = lambda _total: GameList.where(gameSession___id=_total.game_session_id).options(joinedload("gameSession")).first()
         print(game)
-        response = [
-            StatsData(
-                game_session=total.game_session_id,
-                game_id=game(total).id,
-                game_name=game(total).eGameName,
-                players=total.players,
-                winnings=total.winnings
-            )
-            for total in total
-        ]
+        response = GetPlayerStatsData(
+            total_winnings=sum(total.winnings for total in total),
+            total_players=sum(total.players for total in total),
+            game_data=[
+                StatsData(
+                    game_session=total.game_session_id,
+                    game_id=game(total).id,
+                    game_name=game(total).eGameName,
+                    players=total.players,
+                    winnings=total.winnings,
+                )
+                for total in total
+            ],
+        )
         return GetPlayerStatsResponse(success=True, response=response)
     return GetPlayerStatsResponse(success=False, error="No history found")
