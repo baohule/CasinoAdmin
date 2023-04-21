@@ -237,7 +237,7 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
     _Status = Status.update(
         id=_withdraw.status.id,
         approval="rejected",
-        approvedBy=approved_id
+        approvedById=approved_id
     )
     return (
         ChangeWithdrawalStatusResponse(success=True, response=_withdraw)
