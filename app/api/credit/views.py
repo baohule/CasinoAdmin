@@ -230,13 +230,14 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
 async def reject_withdraw(context: GetWithdrawal, request: Request):
 
     context_data = context.dict(exclude_unset=True, exclude_none=True)
+    approved_id = context_data.pop("approvedById", None)
     _withdraw = Withdrawal.read(**context_data)
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
         id=_withdraw.status.id,
         approval="rejected",
-        approvedBy=request.user.id
+        approvedBy=approved_id
     )
     return (
         ChangeWithdrawalStatusResponse(success=True, response=_withdraw)
