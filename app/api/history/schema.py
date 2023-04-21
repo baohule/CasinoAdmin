@@ -137,8 +137,13 @@ class GetPlayerStats(BaseModel):
     user_id: Optional[UUID]
 
 
+class GetPlayerStatsData(ORMCamelModel):
+    game_data: Optional[List[StatsData]]
+    total_winnings: Optional[int]
+    total_players: Optional[int]
+
 class GetPlayerStatsResponse(BaseResponse):
-    response: Optional[List[StatsData]]
+    response: GetPlayerStatsData
 
 
 class GetBetHistoryResponse(BaseResponse):
