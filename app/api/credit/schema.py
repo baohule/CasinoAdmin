@@ -131,7 +131,7 @@ class Status(ORMCamelModel):
     """
 
     approvedById: Optional[UUID]
-    approval: str = Field(default="pending")
+    approval: Optional[str] = Field(default=None)
 
 
 class MakeDeposit(ORMCamelModel):
@@ -248,8 +248,8 @@ class WithdrawalContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
-    email: Optional[str]
-    status: Optional[Status]
+    email: Optional[str] = Field(default=None, description="optional")
+    status: Optional[Status] = Field(default=None, description="optional")
 
 
 class WithdrawalFilter(Filter):
