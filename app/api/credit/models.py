@@ -136,7 +136,7 @@ class Withdrawal(ModelMixin):
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
-    user = relationship(
+    owner = relationship(
         "User",
         foreign_keys="Withdrawal.ownerId",
         backref=backref("userWithdrawals", single_parent=True, uselist=False),
@@ -169,8 +169,8 @@ class Deposit(ModelMixin):
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
-    user = relationship(
+    owner = relationship(
         "User",
         foreign_keys="Deposit.ownerId",
-        backref=backref(" userDeposits", single_parent=True, uselist=False),
+        backref=backref("userDeposits", single_parent=True, uselist=False),
     )
