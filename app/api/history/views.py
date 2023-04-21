@@ -1,7 +1,8 @@
 """
 @author: Kuro
 """
-from typing import Tuple
+from operator import or_
+from typing import Tuple, List, Union, Iterator
 
 from pydantic import BaseModel
 from sqlalchemy import func, and_, subquery, select, case, Column
@@ -20,10 +21,10 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game, GetPlayerStatsData, GetPlayerStatsPage,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsData, GetPlayerStatsPage, GetPlayerStatsPages,
 )
 from app.api.user.models import User
-from app.shared.bases.base_model import paginate
+from app.shared.bases.base_model import paginate, Page
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
 import logging
@@ -152,28 +153,53 @@ async def get_game_players(context: GetPlayerStatsPage, request: Request):
             PlayerSession.gameSessionId
         ).filter(
             *PlayerSession.filter_expr(
-                createdAt__ge=context.start_date,
-                createdAt__le=context.end_date,
+                createdAt__ge=context.context.filter.start_date,
+                createdAt__le=context.context.filter.end_date,
                 gameSessionId=PlayerSession.gameSessionId
             )
         ):
-            game = lambda _total: GameList.where(gameSession___id=_total.game_session_id).options(joinedload("gameSession")).first()
-            print(game)
-            response = GetPlayerStatsData(
+            game = lambda _total: GameList.where(
+                gameSession___id=_total.game_session_id
+            ).options(
+                joinedload(
+                    "gameSession"
+                )
+            ).first()
+            item_pages = None
+
+            def _build_item_data(items):
+                for item in items:
+                    yield StatsData(
+                        game_session=item.game_session_id,
+                        game_id=game(item).id,
+                        game_name=game(item).eGameName,
+                        players=item.players,
+                        winnings=item.winnings,
+                    )
+
+            pages: Union[Page, List[Iterator[StatsData]]] = (
+                paginate(total, context.params.page, context.params.size)
+                if bool(context.context.paginate)
+                else list(_build_item_data(total))
+            )
+            response = GetPlayerStatsPages(
+
+
                 total_winnings=sum(total.winnings for total in total),
                 total_players=sum(total.players for total in total),
-                game_data=[
-                    StatsData(
-                        game_session=total.game_session_id,
-                        game_id=game(total).id,
-                        game_name=game(total).eGameName,
-                        players=total.players,
-                        winnings=total.winnings,
-                    )
-                    for total in total
-                ],
+                **pages.as_dict() if isinstance(
+                    pages, Page
+                ) else dict(
+                    items=pages if isinstance(pages, list) else pages.items,
+                    page=0,
+                    pages=0,
+                    pageSize=len(pages),
+                    total=len(pages)
+                )
+
             )
-            return GetPlayerStatsResponse(success=True, response=paginate(response, context.page, context.page_size))
+
+            return GetPlayerStatsResponse(success=True, response=response)
         return GetPlayerStatsResponse(success=False, error="No history found")
     except Exception as e:
         logging.error(e)

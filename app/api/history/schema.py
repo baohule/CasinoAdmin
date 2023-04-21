@@ -6,11 +6,11 @@ from typing import Optional, Union, List
 from uuid import UUID
 
 import pytz
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.agent.schema import AgentUser
 from app.api.admin.schema import Admin
-from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Filter, GetPages
 
@@ -134,9 +134,10 @@ class StatsData(ORMCamelModel):
 
 
 class GetPlayerStatsData(ORMCamelModel):
-    game_data: Optional[List[StatsData]]
+    items: Optional[List[StatsData]]
     total_winnings: Optional[int]
     total_players: Optional[int]
+
 
 class StatsPageFilter(BaseModel):
     start_date: Optional[datetime]
@@ -147,17 +148,18 @@ class StatsPageFilter(BaseModel):
 
 class GetPlayerStatsContext(Filter):
     filter: Optional[StatsPageFilter]
+    paginate: Optional[bool] = Field(default=True)
 
 class GetPlayerStatsPage(GetOptionalContextPages):
     context: Optional[GetPlayerStatsContext]
 
-
 class GetPlayerStatsPages(PagedResponse):
-    items: Optional[GetPlayerStatsData]
+    items: Optional[List[StatsData]]
+    total_winnings: Optional[int]
+    total_players: Optional[int]
 
-
-class GetPlayerStatsResponse(BaseResponse):
-    response: Optional[GetPlayerStatsPages]
+class GetPlayerStatsResponse(PagedBaseResponse):
+    response: Union[Optional[GetPlayerStatsPages], Optional[GetPlayerStatsData]]
 
 
 class GetBetHistoryResponse(BaseResponse):
