@@ -135,6 +135,7 @@ if __name__ == "__main__":
 
     ModelMixin.metadata.reflect(engine)
     prisma = ""
+    print(ModelMixin)
     for model in ModelMixin.metadata.tables:
         prisma.join(prisma_generator(model.__class__, "public"))
     # with open(path, 'w') as f:

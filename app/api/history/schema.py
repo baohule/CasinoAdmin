@@ -12,6 +12,7 @@ from app.api.agent.schema import AgentUser
 from app.api.admin.schema import Admin
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Filter, GetPages
 
 
 class Game(ORMCamelModel):
@@ -130,11 +131,6 @@ class StatsData(ORMCamelModel):
     winnings: Optional[int]
 
 
-class GetPlayerStats(BaseModel):
-    start_date: Optional[datetime]
-    end_date: Optional[datetime]
-    game_id: Optional[UUID]
-    user_id: Optional[UUID]
 
 
 class GetPlayerStatsData(ORMCamelModel):
@@ -142,8 +138,26 @@ class GetPlayerStatsData(ORMCamelModel):
     total_winnings: Optional[int]
     total_players: Optional[int]
 
+class StatsPageFilter(BaseModel):
+    start_date: Optional[datetime]
+    end_date: Optional[datetime]
+    game_id: Optional[UUID]
+    user_id: Optional[UUID]
+
+
+class GetPlayerStatsContext(Filter):
+    filter: Optional[StatsPageFilter]
+
+class GetPlayerStatsPage(GetOptionalContextPages):
+    context: Optional[GetPlayerStatsContext]
+
+
+class GetPlayerStatsPages(PagedResponse):
+    items: Optional[GetPlayerStatsData]
+
+
 class GetPlayerStatsResponse(BaseResponse):
-    response: GetPlayerStatsData
+    response: Optional[GetPlayerStatsPages]
 
 
 class GetBetHistoryResponse(BaseResponse):
