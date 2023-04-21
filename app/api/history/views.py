@@ -20,9 +20,10 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game, GetPlayerStatsData,
+    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, GetPlayerStats, StatsData, Game, GetPlayerStatsData, GetPlayerStatsPage,
 )
 from app.api.user.models import User
+from app.shared.bases.base_model import paginate
 from app.shared.middleware.auth import JWTBearer
 from fastapi.exceptions import HTTPException
 import logging
@@ -134,7 +135,7 @@ async def get_bet_stats(context: GetWinLoss, request: Request):
 
 
 @router.post("/stats/game_players", response_model=GetPlayerStatsResponse)
-async def get_game_players(context: GetPlayerStats, request: Request):
+async def get_game_players(context: GetPlayerStatsPage, request: Request):
     """
     > This function returns the win/loss history of a an optional date range
 
@@ -172,7 +173,7 @@ async def get_game_players(context: GetPlayerStats, request: Request):
                     for total in total
                 ],
             )
-            return GetPlayerStatsResponse(success=True, response=response)
+            return GetPlayerStatsResponse(success=True, response=paginate(response, context.page, context.page_size))
         return GetPlayerStatsResponse(success=False, error="No history found")
     except Exception as e:
         logging.error(e)
