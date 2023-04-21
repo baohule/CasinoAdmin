@@ -100,32 +100,37 @@ async def get_bet_stats(context: GetWinLoss, request: Request):
     :param request: Request - this is the request object that is passed to the function
     :return: TotalWinLossResponse
     """
-    if total := PlayerSession.session.query(
-            select([
-                func.sum(PlayerSession.betResult).label("wins"),
-                func.count(PlayerSession.betResult).label("win_count")
-            ]).filter(
-                *PlayerSession.filter_expr(
-                    betResult__lt=0
-                )).subquery(),
-            select([
-                func.sum(PlayerSession.betResult).label("losses"),
-                func.count(PlayerSession.betResult).label("loss_count")
-            ]).filter(
-                *PlayerSession.filter_expr(
-                    betResult__gt=0
-                )).subquery()
-    ).filter(
-        *PlayerSession.filter_expr(
-            createdAt__ge=context.start_date,
-            createdAt__le=context.end_date,
-        )
-    ).first():
-        logging.debug(total)
-        total_count = total.loss_count + total.win_count
-        response = TotalWinLoss(totalLoss=total.losses, totalWins=total.wins, count=total_count)
-        return TotalWinLossResponse(success=True, response=response)
-    return TotalWinLossResponse(success=False, error="No history found")
+    try:
+        if total := PlayerSession.session.query(
+                select([
+                    func.sum(PlayerSession.betResult).label("wins"),
+                    func.count(PlayerSession.betResult).label("win_count")
+                ]).filter(
+                    *PlayerSession.filter_expr(
+                        betResult__lt=0
+                    )).subquery(),
+                select([
+                    func.sum(PlayerSession.betResult).label("losses"),
+                    func.count(PlayerSession.betResult).label("loss_count")
+                ]).filter(
+                    *PlayerSession.filter_expr(
+                        betResult__gt=0
+                    )).subquery()
+        ).filter(
+            *PlayerSession.filter_expr(
+                createdAt__ge=context.start_date,
+                createdAt__le=context.end_date,
+            )
+        ).first():
+            logging.debug(total)
+            total_count = total.loss_count + total.win_count
+            response = TotalWinLoss(totalLoss=total.losses, totalWins=total.wins, count=total_count)
+            return TotalWinLossResponse(success=True, response=response)
+        return TotalWinLossResponse(success=False, error="No history found")
+    except Exception as e:
+        logging.error(e)
+        PlayerSession.session.rollback()
+        return TotalWinLossResponse(success=False, error="No history found")
 
 
 @router.post("/stats/game_players", response_model=GetPlayerStatsResponse)
@@ -137,34 +142,39 @@ async def get_game_players(context: GetPlayerStats, request: Request):
     :param request: Request - this is the request object that is passed to the function
     :return: TotalWinLossResponse
     """
-    if total := PlayerSession.session.query(
-            PlayerSession.gameSessionId.label("game_session_id"),
-            func.count(PlayerSession.id).label("players"),
-            func.sum(PlayerSession.betResult).label("winnings"),
-    ).group_by(
-        PlayerSession.gameSessionId
-    ).filter(
-        *PlayerSession.filter_expr(
-            createdAt__ge=context.start_date,
-            createdAt__le=context.end_date,
-            gameSessionId=PlayerSession.gameSessionId
-        )
-    ):
-        game = lambda _total: GameList.where(gameSession___id=_total.game_session_id).options(joinedload("gameSession")).first()
-        print(game)
-        response = GetPlayerStatsData(
-            total_winnings=sum(total.winnings for total in total),
-            total_players=sum(total.players for total in total),
-            game_data=[
-                StatsData(
-                    game_session=total.game_session_id,
-                    game_id=game(total).id,
-                    game_name=game(total).eGameName,
-                    players=total.players,
-                    winnings=total.winnings,
-                )
-                for total in total
-            ],
-        )
-        return GetPlayerStatsResponse(success=True, response=response)
-    return GetPlayerStatsResponse(success=False, error="No history found")
+    try:
+        if total := PlayerSession.session.query(
+                PlayerSession.gameSessionId.label("game_session_id"),
+                func.count(PlayerSession.id).label("players"),
+                func.sum(PlayerSession.betResult).label("winnings"),
+        ).group_by(
+            PlayerSession.gameSessionId
+        ).filter(
+            *PlayerSession.filter_expr(
+                createdAt__ge=context.start_date,
+                createdAt__le=context.end_date,
+                gameSessionId=PlayerSession.gameSessionId
+            )
+        ):
+            game = lambda _total: GameList.where(gameSession___id=_total.game_session_id).options(joinedload("gameSession")).first()
+            print(game)
+            response = GetPlayerStatsData(
+                total_winnings=sum(total.winnings for total in total),
+                total_players=sum(total.players for total in total),
+                game_data=[
+                    StatsData(
+                        game_session=total.game_session_id,
+                        game_id=game(total).id,
+                        game_name=game(total).eGameName,
+                        players=total.players,
+                        winnings=total.winnings,
+                    )
+                    for total in total
+                ],
+            )
+            return GetPlayerStatsResponse(success=True, response=response)
+        return GetPlayerStatsResponse(success=False, error="No history found")
+    except Exception as e:
+        logging.error(e)
+        PlayerSession.session.rollback()
+        return GetPlayerStatsResponse(success=False, error="No history found")
