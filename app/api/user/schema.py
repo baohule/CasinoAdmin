@@ -66,17 +66,6 @@ class AgentUserCreateResponse(BaseResponse):
     response: Optional[Union[BaseUser, TokenDetail]]
 
 
-class AgentUserCreate(CamelModel):
-    """
-    `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
-    """
-
-    email: EmailStr
-    password: str
-    name: str
-    balance: Optional[float]
-
-
 class AdminUserCreateResponse(TokenResponse):
     """
     `AdminUserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
@@ -94,7 +83,19 @@ class AdminUserCreate(CamelModel):
     email: EmailStr
     password: str
     name: str
+
+
+
+class AgentUserCreate(CamelModel):
+    """
+    `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
+    """
+
+    email: EmailStr
+    password: str
+    name: str
     quota: Optional[int]
+
 
 
 class UserLogin(CamelModel):
