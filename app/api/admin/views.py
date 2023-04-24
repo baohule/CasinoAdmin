@@ -17,7 +17,7 @@ from app.api.credit.models import Quota
 from app.api.user.models import User
 from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
-from app.api.user.schema import AdminUserCreate, AdminUserCreateResponse
+from app.api.user.schema import AdminUserCreate, AdminUserCreateResponse, AgentUserCreate
 from app.api.admin.models import Admin
 from fastapi.exceptions import HTTPException
 
@@ -57,7 +57,7 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
 
 @router.post("/manage/create_agent", response_model=AgentCreateResponse)
-async def create_agent(context: AdminUserCreate, request: Request):
+async def create_agent(context: AgentUserCreate, request: Request):
     """
     > This function creates an agent with the given details
 
