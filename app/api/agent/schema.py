@@ -35,6 +35,7 @@ class AgentUser(ORMCamelModel):
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     quota: Optional[AgentQuota]
+    active: Optional[bool]
 
 
 class GetAgent(CamelModel):

@@ -131,7 +131,7 @@ async def list_agents(context: GetUserList, request: Request):
     :return: ListAdminUserResponse
     """
     agent_pages = Agent.list_all_agents(context.params.page, context.params.size)
-
+    agent_pages.items = sorted(agent_pages.items, key=lambda x: x.quota.balance, reverse=True)
     return ListAdminUserResponse(success=True, response=agent_pages)
 
 
