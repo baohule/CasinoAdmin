@@ -81,7 +81,7 @@ async def update_credit(context: UpdateUserCredit, request: Request):
         return BaseResponse(success=False, error="User Has no Credit Account")
     _updated = Balance.update(**context.dict())
     _agent_updated = Agent.update(
-        id=agent.id, agent_quota=agent.quota.balance - context.balance
+        id=agent.id, quota=agent.quota.balance - context.balance
     )
 
     return UpdateUserCreditResponse(success=True, response=UserCredit(**context.dict()))
