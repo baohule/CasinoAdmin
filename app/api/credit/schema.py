@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi_camelcase import CamelModel
 from pydantic import Field
 
+from app.api.agent.schema import AgentQuota
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 from app.shared.schemas.page_schema import GetOptionalContextPages, Filter, PagedResponse
@@ -122,7 +123,7 @@ class UpdateAgentQuota(CamelModel):
     """
 
     agentId: UUID
-    balance: int
+    quota: AgentQuota
 
 
 class Status(ORMCamelModel):

@@ -71,10 +71,12 @@ async def create_agent(context: AdminUserCreate, request: Request):
     """
 
     context.password = get_password_hash(context.password)
-    agent = Agent.add_agent(**context.dict())
-    quota = Quota.create(agentId=agent.id, quota=context.quota)
+    agent = Agent.create(name=context.name, email=context.email, password=context.password)
+    if not agent:
+        return BaseResponse(success=False, error="Admin not created")
+    quota = Quota.create(agentId=agent.id, balance=context.quota)
     if not agent and quota:
-        return BaseResponse(success=False, response="Admin not created")
+        return BaseResponse(success=False, error="Admin not created")
     return AgentCreateResponse(success=True, response=agent)
 
 
