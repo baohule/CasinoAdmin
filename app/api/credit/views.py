@@ -99,7 +99,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     _updated = Quota.update(agentId=context.agentId, balance=context.quota.balance)
     return (
         UpdateAgentQuotaResponse(
-            success=True, response=_updated)
+            success=True, response=_updated.first())
         if _updated
         else BaseResponse(success=False, error="Could not update agent quota")
     )
