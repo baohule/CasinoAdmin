@@ -1,11 +1,12 @@
-from uuid import UUID
+from uuid import UUID as UUID4
 
+from sqlalchemy.dialects.postgresql import INTEGER, TIMESTAMP, TEXT, JSONB, UUID
 from app import ModelMixin
 from settings import Config
 
 path = 'igor/baohule/config/prisma-config/prisma/prisma/casino-prisma.prisma'
 import os
-from sqlalchemy import create_engine, inspect, UniqueConstraint
+from sqlalchemy import create_engine, inspect, UniqueConstraint, ForeignKey, JSON, DATETIME, BOOLEAN, String, VARCHAR
 
 # Define a mapping of SQLAlchemy types to Prisma types
 type_mapping = {
@@ -48,74 +49,101 @@ from sqlalchemy import inspect
 from sqlalchemy.orm import RelationshipProperty
 from typing import Any, Dict, List
 
+def prisma_generator(model: Any) -> str:
+    if metadata := model.metadata:
+        tables = metadata.sorted_tables
+        prisma = ""
+        for table in tables:
+            prisma += f"model {table.name} {{\n"
+            columns = table.columns
+            for column in columns:
+                column_name = column.name
+                column_type = column.type
 
-def prisma_generator(model: Any, schema_name: str) -> str:
-    metadata = model.metadata
-    inspector = inspect(metadata.bind)
-    table_names = inspector.get_table_names(schema=schema_name)
+                # UUID (primary key)
+                if isinstance(column_type, UUID) and column.primary_key:
+                    prisma += f"    {column_name} String @id @default(uuid()) @db.Uuid\n"
 
-    prisma = ""
-    for table_name in table_names:
-        table = metadata.tables[table_name]
-        prisma += f"model {table_name} {{\n"
-        columns = table.columns
-        for column in columns:
-            column_name = column.name
-            column_type = column.type
-            prisma += f"    {column_name} "
-            if isinstance(column_type, RelationshipProperty):
-                target_table = column_type.mapper.class_.__tablename__
-                prisma += f"{target_table}"
-            elif str(column_type) in type_mapping:
-                prisma += f"{type_mapping[str(column_type)]}"
-            else:
-                prisma += f"{str(column_type)}"
-            if not column.nullable:
-                prisma += " @required"
-            if column.primary_key:
-                prisma += " @id"
-            if column.unique:
-                prisma += " @unique"
-            prisma += "\n"
+                elif isinstance(column_type, UUID):
+                    prisma += f"    {column_name} String @default(uuid()) @db.Uuid"
+                    prisma += "\n"
 
-        constraints = table.constraints
-        for constraint in constraints:
-            if isinstance(constraint, UniqueConstraint):
-                columns = constraint.columns
-                if len(columns) > 1:
-                    columns = "{" + ", ".join([str(col.name) for col in columns]) + "}"
+                elif isinstance(column_type, (String, VARCHAR)):
+
+                    prisma += (
+                        f"    {column_name} String?"
+                        if column.nullable
+                        else f"    {column_name} String"
+                    )
+                    if column.unique:
+                        prisma += f" @unique(map: \"{table.name}_{column_name}\")"
+                    prisma += f" @db.VarChar({column.type.length})\n"
+
+                elif isinstance(column_type, INTEGER):
+
+                    prisma += (
+                        f"    {column_name} Int?"
+                        if column.nullable
+                        else f"    {column_name} Int"
+                    )
+                    if column.unique:
+                        prisma += " @unique"
+                    prisma += "\n"
+
+                elif isinstance(column_type, BOOLEAN):
+                    prisma += f"    {column_name} Boolean @default(true)"
+                    prisma += "\n"
+
+                elif isinstance(column_type, TIMESTAMP):
+                    if column.name == "createdAt":
+                        prisma += f"    {column_name} DateTime? @default(now())"
+                        if not column.nullable:
+                            prisma += f"    {column_name} DateTime @default(now())"
+                    elif column.name == "updatedAt":
+                        prisma += f"    {column_name} DateTime?"
+                    prisma += "\n"
+
+                elif isinstance(column_type, JSON):
+
+                    prisma += (
+                        f"    {column_name} Json?"
+                        if column.nullable
+                        else f"    {column_name} Json"
+                    )
+                    prisma += "\n"
+
+                elif isinstance(column_type, ForeignKey):
+                    target_table = column_type.column.table.name
+                    target_column = column_type.column.name
+                    prisma += f"    {column_name} {target_table} @relation(fields: [{column_name}], references: [{target_column}])\n"
+
                 else:
-                    columns = str(columns[0].name)
-                prisma += f"    @@unique([{columns}])\n"
+                    prisma += f"    {column_name} {str(column_type)}"
+                    if not column.nullable:
+                        prisma += f"    {column_name}? {str(column_type)}"
+                    prisma += "\n"
 
-        indexes = table.indexes
-        for index in indexes:
-            if not index.unique:
-                columns = index.columns
-                if len(columns) > 1:
-                    columns = "{" + ", ".join([str(col.name) for col in columns]) + "}"
-                else:
-                    columns = str(columns[0].name)
-                prisma += f"    @@index([{columns}])\n"
+            constraints = table.constraints
+            for constraint in constraints:
+                if isinstance(constraint, UniqueConstraint):
+                    columns = constraint.columns
+                    if len(columns) > 1:
+                        columns = "{" + ", ".join([str(col.name) for col in columns]) + "}"
+                    else:
+                        columns = str(columns[0].name)
+                    prisma += f"    @@unique([{columns}])\n"
 
-        for column in columns:
-            column_type = column.type
-            if str(column_type).startswith("ENUM"):
-                enum_values = str(column_type)[5:-1].split(",")
-                prisma += f"    {column_name}_enum: Enum {{" + ", ".join([f"{ev.strip()}" for ev in enum_values]) + "}}\n"
+            relationships = table.foreign_keys
+            for relationship in relationships:
+                local_column = relationship.parent
+                foreign_column = relationship.column
+                target_table = foreign_column.table.name
+                target_column = foreign_column.name
+                prisma += f"    {local_column.name.replace('Id', '')} {target_table} @relation(fields: [{local_column.name}], references: [{target_column}])\n"
 
-        relationships = table.foreign_keys
-        for relationship in relationships:
-            local_column = relationship.parent
-            foreign_column = relationship.column
-            target_table = foreign_column.table.name
-            target_column = foreign_column.name
-            prisma += f"    {local_column.name}: {target_table}@relation(fields: [{local_column.name}], references: [{target_column}])\n"
-
-        prisma += "}\n\n"
+            prisma += "}\n\n"
 
     return prisma
-
 
 def is_valid_type(sqlalchemy_type):
     """
@@ -136,8 +164,8 @@ if __name__ == "__main__":
     ModelMixin.metadata.reflect(engine)
     prisma = ""
     print(ModelMixin)
-    for model in ModelMixin.metadata.tables:
-        prisma.join(prisma_generator(model.__class__, "public"))
+    prisma_output = prisma.join(prisma_generator(ModelMixin))
+
     # with open(path, 'w') as f:
         #f.write(prisma)
-    print(prisma)
+    print(prisma_output)
