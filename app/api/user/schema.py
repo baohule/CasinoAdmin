@@ -24,6 +24,9 @@ class UserCredit(ORMCamelModel):
     updatedAt: Optional[datetime]
 
 
+
+
+
 class User(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
@@ -90,6 +93,7 @@ class AdminUserCreate(CamelModel):
     email: EmailStr
     password: str
     name: str
+    quota: Optional[int]
 
 
 class UserLogin(CamelModel):

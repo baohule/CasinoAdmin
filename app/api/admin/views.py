@@ -13,6 +13,7 @@ from app.api.admin.schema import (
     AgentCreateResponse, SearchResults, SearchUser,
 )
 from app.api.agent.models import Agent
+from app.api.credit.models import Quota
 from app.api.user.models import User
 from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
@@ -71,11 +72,11 @@ async def create_agent(context: AdminUserCreate, request: Request):
 
     context.password = get_password_hash(context.password)
     agent = Agent.add_agent(**context.dict())
-    return (
-        AgentCreateResponse(success=True, response=agent)
-        if agent
-        else BaseResponse(success=False, response="Agent not found")
-    )
+    quota = Quota.create(agentId=agent.id, quota=context.quota)
+    if not agent and quota:
+        return BaseResponse(success=False, response="Admin not created")
+    return AgentCreateResponse(success=True, response=agent)
+
 
 
 @router.post("/manage/update_agent", response_model=AgentUpdateResponse)
