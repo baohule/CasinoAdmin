@@ -159,7 +159,7 @@ class GetPlayerStatsPages(PagedResponse):
     total_players: Optional[int]
 
 class GetPlayerStatsResponse(PagedBaseResponse):
-    response: Union[Optional[GetPlayerStatsPages], Optional[GetPlayerStatsData]]
+    response: Optional[Union[Optional[GetPlayerStatsPages], Optional[GetPlayerStatsData]]]
 
 
 class GetBetHistoryResponse(BaseResponse):
