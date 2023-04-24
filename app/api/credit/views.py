@@ -75,13 +75,13 @@ async def update_credit(context: UpdateUserCredit, request: Request):
     agent = Agent.read(id=request.user.id)
     if not agent:
         return BaseResponse(success=False, error="Agent not found")
-    if agent.quota < context.balance:
+    if agent.quota.balance < context.balance:
         return BaseResponse(success=False, error="Agent Quota Exceeded")
     if not balance:
         return BaseResponse(success=False, error="User Has no Credit Account")
     _updated = Balance.update(**context.dict())
     _agent_updated = Agent.update(
-        id=agent.id, agent_quota=agent.agent_quota - context.balance
+        id=agent.id, agent_quota=agent.quota.balance - context.balance
     )
 
     return UpdateUserCreditResponse(success=True, response=UserCredit(**context.dict()))

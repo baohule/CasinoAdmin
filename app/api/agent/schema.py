@@ -21,8 +21,7 @@ from app.shared.schemas.page_schema import (
 
 
 class AgentQuota(ORMCamelModel):
-    balance: Optional[float]
-    updatedAt: Optional[datetime]
+    balance: Optional[int]
 
 
 class AgentUser(ORMCamelModel):
