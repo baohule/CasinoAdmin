@@ -33,6 +33,8 @@ origins = [
     "http://localhost",
     "http://localhost:80",
     "http://localhost:3000",
+    "http://localhost:3001",
+    "http://localhost:3002",
     "https://baohule-dashboard.vercel.app",
 ]
 app.add_middleware(
