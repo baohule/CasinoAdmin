@@ -177,13 +177,12 @@ async def get_game_players(context: GetPlayerStatsPage, request: Request):
                         winnings=item.winnings,
                     )
 
-            pages: Union[Page, List[Iterator[StatsData]]] = (
-                paginate(total, context.params.page, context.params.size)
-                if bool(context.context.paginate)
-                else list(_build_item_data(total))
-            )
-            response = GetPlayerStatsPages(
+            pages = list(_build_item_data(total))
+            if bool(context.context.paginate):
+                pages = paginate(total, context.params.page, context.params.size)
+                pages.items = _build_item_data(pages.items)
 
+            response = GetPlayerStatsPages(
 
                 total_winnings=sum(total.winnings for total in total),
                 total_players=sum(total.players for total in total),
