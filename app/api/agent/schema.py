@@ -20,6 +20,11 @@ from app.shared.schemas.page_schema import (
 )
 
 
+class AgentQuota(ORMCamelModel):
+    balance: Optional[float]
+    updatedAt: Optional[datetime]
+
+
 class AgentUser(ORMCamelModel):
     """
     `Agent` is a class that is used to represent an agent.
@@ -30,7 +35,7 @@ class AgentUser(ORMCamelModel):
     email: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
-    creditAccount: Optional[UserCredit]
+    quota: Optional[AgentQuota]
 
 
 class GetAgent(CamelModel):

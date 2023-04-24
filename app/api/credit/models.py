@@ -66,10 +66,10 @@ class Quota(ModelMixin):
         index=True,
         unique=True,
     )
-    agent_quota = relationship(
+    quota = relationship(
         "Agent",
         foreign_keys="Quota.agentId",
-        backref=backref("agentQuota", single_parent=True, uselist=False),
+        backref=backref("quota", single_parent=True, uselist=False),
     )
 
 
