@@ -98,7 +98,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     agent = Agent.read(id=request.user.id)
     if not agent:
         return BaseResponse(success=False, error="Agent not found")
-    _updated = Agent.update(**context.dict())
+    _updated = Agent.update(id=context.agentId, quota=context.quota)
     return (
         UpdateAgentQuotaResponse(
             success=True, response=Agent(id=context.agentId, quota=context.quota)
