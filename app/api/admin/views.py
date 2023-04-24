@@ -92,8 +92,12 @@ async def update_agent(context: AgentUpdate, request: Request):
     :type request: Request
     :return: AgentUpdateResponse
     """
-    data = context.dict(exclude_unset=True)
-    agent = Agent.update_agent(**data)
+    agent = Agent.update_agent(
+        id=context.agentId,
+        active=context.active
+    )
+    if context.quota:
+        Quota.update(agentId=context.agentId, balance=context.quota)
     if not agent:
         BaseResponse(success=False, response="Agent not found")
     return AgentUpdateResponse(success=True, response=agent)

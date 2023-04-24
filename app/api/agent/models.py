@@ -108,9 +108,11 @@ class Agent(ModelMixin):
         try:
             agent_user_id = kwargs.pop("id")
             kwargs["updatedAt"] = datetime.datetime.now(pytz.utc)
-            updated = cls.where(id=agent_user_id).update(kwargs)
-            cls.session.commit()
-            return updated
+            if updated := cls.where(id=agent_user_id):
+                updated.update(kwargs)
+                cls.session.commit()
+                return updated
+            return
         except Exception as e:
             cls.session.rollback()
             print(e)

@@ -83,7 +83,7 @@ class AdminPagedResponse(PagedResponse):
     used to return a list of users
     """
 
-    items: List[BaseUserResponse]
+    items: List[AgentUser]
 
 
 class ListAdminUserResponse(PagedBaseResponse):
@@ -92,7 +92,7 @@ class ListAdminUserResponse(PagedBaseResponse):
     used to return a list of users
     """
 
-    response: AdminPagedResponse
+    response: Optional[AdminPagedResponse]
 
 
 class ListUserResponse(PagedResponse):
@@ -210,7 +210,7 @@ class AgentCreateResponse(BaseResponse):
 
 
 class AgentUpdate(CamelModel):
-    id: UUID
+    agentId: UUID
     quota: Optional[int]
     active: Optional[bool]
 
