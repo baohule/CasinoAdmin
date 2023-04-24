@@ -46,6 +46,7 @@ class BaseUser(ORMCamelModel):
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     creditAccount: Optional[UserCredit]
+    active: Optional[bool]
 
 
 class LoadUserResponse(BaseResponse):

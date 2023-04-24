@@ -106,7 +106,6 @@ class AgentQuta(ORMCamelModel):
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     balance: Optional[float]
-    quota: Optional[User] = Field(alias='agent')
 
 
 class UpdateAgentQuotaResponse(BaseResponse):
