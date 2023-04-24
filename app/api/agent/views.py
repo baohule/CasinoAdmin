@@ -108,7 +108,6 @@ async def update_user(context: UpdateUser, request: Request):
 async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
     """
     `Remove the user with the given id.`
-
     :param context: RemoveUser - this is the context object that is passed to the function.
     It contains the id of the user to be removed
     :type context: RemoveUser
@@ -118,21 +117,6 @@ async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
     """
     remove_agent = Agent.remove_agent(id=context.id)
     return BaseResponse(success=True, response=remove_agent)
-
-
-@router.post("/list_agents", response_model=PagedBaseResponse)
-async def list_agents(context: GetAgentList, request: Request) -> PagedBaseResponse:
-    """
-    The list_all_agents function returns a list of all agents in the system.
-
-    This function requires admin privileges to run.
-
-    :param context:schema.GetUserList: Used to Pass in the request object.
-    :param request:Request: Used to Pass in the current request.
-    :return: A list of users.
-    """
-    paged_response = Agent.list_all_agents(context.params.page, context.params.size)
-    return PagedBaseResponse(success=True, response=paged_response)
 
 
 @router.post("/get_agent", response_model=GetAgentResponse)
