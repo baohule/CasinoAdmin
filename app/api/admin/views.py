@@ -170,6 +170,6 @@ async def search_users(context: SearchUser, request: Request):
         model = Admin
     if context.type == 'user':
         model = User
-    result = model.search(**context.dict(exclude_none=True))
+    result = model.search(**context.dict(exclude_none=True)) or []
     return SearchResults(success=True, response=result)
 
