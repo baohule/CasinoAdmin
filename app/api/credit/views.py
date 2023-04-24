@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, Request
 
 from app.api.agent.models import Agent
 from app.api.credit import schema
-from app.api.credit.models import Balance, Deposit, Status, Withdrawal
+from app.api.credit.models import Balance, Deposit, Status, Withdrawal, Quota
 from app.api.credit.schema import (
     CreateUserCreditResponse,
     CreateUserCredit,
@@ -15,6 +15,7 @@ from app.api.credit.schema import (
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
     WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal,
+    AgentQuta,
 )
 from app.shared.bases.base_model import Page, paginate
 from app.shared.middleware.auth import JWTBearer
@@ -95,14 +96,10 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     :param request: Request
     :return:  UpdateAgentQuotaResponse
     """
-    agent = Agent.read(id=request.user.id)
-    if not agent:
-        return BaseResponse(success=False, error="Agent not found")
-    _updated = Agent.update(id=context.agentId, quota=context.quota.dict())
+    _updated = Quota.update(agentId=context.agentId, balance=context.quota.balance)
     return (
         UpdateAgentQuotaResponse(
-            success=True, response=Agent(id=context.agentId, quota=context.quota.dict())
-        )
+            success=True, response=_updated)
         if _updated
         else BaseResponse(success=False, error="Could not update agent quota")
     )
