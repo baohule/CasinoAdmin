@@ -159,7 +159,7 @@ class Agent(ModelMixin):
         )
 
 
-        return paginate(users, page, num_items),
+        return paginate(users, page, num_items)
 
     @classmethod
     def get(cls, *_, **kwargs) -> ModelType:
