@@ -20,6 +20,7 @@ from app.api.agent.schema import (
 )
 from app.api.credit.models import Balance
 from app.api.user.models import User
+from app.api.user.schema import GetUserListResponse, GetAllUsers, GetUserListItems
 from app.shared.auth.password_handler import get_password_hash
 from app.shared.middleware.auth import JWTBearer
 from app.shared.auth.password_generator import generate_password
@@ -47,8 +48,11 @@ async def create_user(context: AgentCreateUser, request: Request):
     :return: A user object
     """
 
-    def make_user(context, password):
-        user_data = context.dict(exclude_unset=True)
+    def _make_user(_context, _password):
+        user_data = context.dict(
+            exclude_unset=True,
+            exclude_none=True
+        ) and context.dict(exclude_unset=True, exclude_none=True).update(dict(password=_password))
         hashed_password = get_password_hash(password)
         user_data['password'] = hashed_password
         credit_account = user_data.pop("credit_account")
@@ -64,16 +68,8 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     if not request.user:
         return BaseResponse(success=False, error="You are not logged in")
-    password = generate_password(16)
-    agent = Agent.read(id=request.user.id)
-    if not agent:
-        user_response = make_user(context, password)
-        if user_response:
-            send_password_email(user_response.email, user_response.name, password)
-            return AgentCreateUserResponse(success=True, response=user_response)
-        return BaseResponse(success=False, error="User not created")
-
-    user_response = make_user(context, password)
+    password = generate_password()
+    user_response = _make_user(context, password)
     if user_response:
         send_password_email(user_response.email, user_response.name, password)
         return AgentCreateUserResponse(success=True, response=user_response)
@@ -154,3 +150,22 @@ async def get_agent_users(
         context.context.filter.id, context.params.page, context.params.size
     )
     return GetAgentUsersResponse(success=True, response=agent_users)
+
+
+@router.post("/list_all_users", response_model=GetUserListResponse)
+async def list_all_users(context: GetAllUsers):
+    """
+    This function lists all users in a paged format.
+
+    :param context: The context parameter is an object of type GetAllUsers,
+    which likely contains additional information or context needed to execute the list_all_users function. This
+    could include things like authentication credentials, request headers, or other metadata
+    :type context: GetAllUsers
+    :return: The function `list_all_users` returns an instance of `GetUserListResponse`
+    with a boolean `success` attribute set to `True` and a `response` attribute containing a paged
+    list of users obtained from the `User` model's `get_all_users` method.
+    """
+    paged_users: GetUserListItems = User.get_all_users(context.params.page, context.params.size)
+    return GetUserListResponse(success=True, response=paged_users)
+
+
