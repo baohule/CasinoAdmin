@@ -165,7 +165,6 @@ async def get_game_players(context: GetPlayerStatsPage, request: Request):
                     "gameSession"
                 )
             ).first()
-            item_pages = None
 
             def _build_item_data(items):
                 for item in items:

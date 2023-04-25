@@ -3,6 +3,7 @@
 """
 import uuid
 from datetime import datetime
+from typing import List
 
 import pytz
 from sqlalchemy import (
@@ -15,7 +16,8 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer
 
-from app.shared.bases.base_model import ModelMixin, ModelType
+from app.api.user.schema import GetUserListItems
+from app.shared.bases.base_model import ModelMixin, ModelType, Page
 from app.shared.bases.base_model import paginate
 from app.shared.schemas.page_schema import PagedResponse
 
@@ -82,7 +84,7 @@ class User(ModelMixin):
         return paginate(users, page, items)
 
     @classmethod
-    def get_all_users(cls, page_cursor: int, num_items: int) -> dict:
+    def get_all_users(cls, page_cursor: int, num_items: int) -> GetUserListItems:
         """
         > This function returns a list of users, paginated by the `pages_cursor` and `num_items` parameters
 
