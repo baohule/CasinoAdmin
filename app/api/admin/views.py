@@ -10,12 +10,13 @@ from app.api.admin.schema import (
     GetUserList,
     GetAgent,
     RemoveUser,
-    AgentCreateResponse, SearchResults, SearchUser,
+    AgentCreateResponse, SearchResults, SearchUser, AdminPagedResponse,
 )
 from app.api.agent.models import Agent
 from app.api.credit.models import Quota
 from app.api.user.models import User
 from app.shared.auth.password_handler import get_password_hash
+from app.shared.bases.base_model import Page
 from app.shared.middleware.auth import JWTBearer
 from app.api.user.schema import AdminUserCreate, AdminUserCreateResponse, AgentUserCreate
 from app.api.admin.models import Admin
@@ -131,8 +132,8 @@ async def list_agents(context: GetUserList, request: Request):
     :return: ListAdminUserResponse
     """
     agent_pages = Agent.list_all_agents(context.params.page, context.params.size)
-    agent_pages.items = sorted(agent_pages.items, key=lambda x: x.quota.balance, reverse=True)
-    return ListAdminUserResponse(success=True, response=agent_pages)
+
+    return ListAdminUserResponse(success=True, response=AdminPagedResponse(**agent_pages.as_dict()))
 
 
 @router.post("/get_agent", response_model=BaseResponse)
