@@ -132,7 +132,7 @@ class Agent(ModelMixin):
         """
         try:
             agent_user_id = kwargs.get("id")
-            agent = cls.where(id=agent_user_id).delete()
+            agent = cls.where(id=agent_user_id).delete().save()
             return agent.id
         except Exception as e:
             cls.session.rollback()
