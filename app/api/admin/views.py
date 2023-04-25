@@ -52,7 +52,7 @@ async def create_admin(user: AdminUserCreate, request: Request):
     return (
         AdminUserCreateResponse(success=True, response=admin)
         if admin
-        else BaseResponse(success=False, response="Admin not found")
+        else BaseResponse(success=False, error="Admin not created")
     )
 
 
