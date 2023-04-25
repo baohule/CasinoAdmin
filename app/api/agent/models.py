@@ -4,16 +4,17 @@
 import datetime
 import uuid
 import pytz
-from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String
+from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String, select, func, desc, asc
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, joinedload, lazyload, defer
+from sqlalchemy.orm import relationship, backref, joinedload, lazyload, defer, eagerload, load_only
+from sqlalchemy.orm.strategy_options import contains_eager
+
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse, BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
 
 
 class Agent(ModelMixin):
-
     __tablename__ = "Agent"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
@@ -62,7 +63,7 @@ class Agent(ModelMixin):
         #         )
         #     )
 
-        return   # paginate(users, page_num, num_items)
+        return  # paginate(users, page_num, num_items)
 
     @classmethod
     def add_agent(cls, *_, **kwargs) -> ModelType:
@@ -118,7 +119,6 @@ class Agent(ModelMixin):
             print(e)
             return
 
-
     @classmethod
     def remove_agent(cls, *_, **kwargs) -> UUID:
         """
@@ -140,15 +140,26 @@ class Agent(ModelMixin):
             return
 
     @classmethod
-    def list_all_agents(cls, page, num_items) -> PagedResponse:
+    def list_all_agents(cls, page, num_items):
         """
         The list_all_agent_users function returns a list of all agent users in the database.
 
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where().options(defer("password"))
-        return paginate(users, page, num_items)
+        users = cls.where().options(
+            defer("password"),
+
+            joinedload(
+                "quota", innerjoin=True
+            ).options(
+                    load_only("balance"),
+
+            )
+        )
+
+
+        return paginate(users, page, num_items),
 
     @classmethod
     def get(cls, *_, **kwargs) -> ModelType:

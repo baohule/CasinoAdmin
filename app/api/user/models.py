@@ -11,10 +11,10 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey,
+    ForeignKey, desc,
 )
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, defer
+from sqlalchemy.orm import relationship, backref, defer, joinedload, load_only
 
 from app.api.agent.schema import RemoveUser
 from app.api.user.schema import GetUserListItems
@@ -101,7 +101,15 @@ class User(ModelMixin):
         :param num_items: The number of items to return per page
         :return: A dictionary of the paginated results.
         """
-        query = cls.where().options(defer("password"))
+        query = cls.where().options(
+            defer("password"),
+
+            joinedload(
+                "creditAccount", innerjoin=True
+            ).options(
+                    load_only("balance"),
+
+            ))
         return paginate(query, page_cursor, num_items)
 
     @classmethod
