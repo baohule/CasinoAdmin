@@ -38,6 +38,13 @@ class AgentUser(ORMCamelModel):
     active: Optional[bool]
 
 
+
+
+class RemoveUser(CamelModel):
+    id: UUID
+    email: Optional[str]
+
+
 class GetAgent(CamelModel):
     """
     `GetAgent` is a class that is used to represent a request
@@ -72,14 +79,21 @@ class UpdateUserResponse(BaseResponse):
 
     response: Optional[User]
 
-
-class RemoveUser(CamelModel):
+class RemovedUser(BaseModel):
     """
-    It's a model that is used to remove a user from the database.
+    It's a model that represents a user that is being updated.
     """
 
     id: UUID
+    email: Optional[str]
 
+
+class RemoveUserResponse(BaseResponse):
+    """
+    It's a model that represents a user that is being updated.
+    """
+
+    response: Optional[RemovedUser]
 
 
 

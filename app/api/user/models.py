@@ -3,7 +3,7 @@
 """
 import uuid
 from datetime import datetime
-from typing import List
+from typing import List, Type, Union, Optional
 
 import pytz
 from sqlalchemy import (
@@ -16,6 +16,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer
 
+from app.api.agent.schema import RemoveUser
 from app.api.user.schema import GetUserListItems
 from app.shared.bases.base_model import ModelMixin, ModelType, Page
 from app.shared.bases.base_model import paginate
@@ -23,6 +24,13 @@ from app.shared.schemas.page_schema import PagedResponse
 
 
 # from app.shared.helper.logger import StandardizedLogger
+
+
+class Nullable(Type):
+    """
+    Nullable is a class that is used to define the nullable type of a variable.
+    """
+    __self__: Optional[Union[bool, None]]
 
 
 class User(ModelMixin):
@@ -97,7 +105,7 @@ class User(ModelMixin):
         return paginate(query, page_cursor, num_items)
 
     @classmethod
-    def remove_user(cls, *_, **kwargs) -> dict:
+    def remove_user(cls, *_, **kwargs) -> Optional[RemoveUser]:
         """
         The remove_user function removes a user from the database.
         It takes one argument, which is the id of the user to be removed.
@@ -112,7 +120,11 @@ class User(ModelMixin):
         :return: A dictionary with the key 'success' and a boolean value of true.
         """
         try:
-            return cls.where(**kwargs).delete().save()
+            if user := cls.where(**kwargs):
+                user.delete()
+                cls.session.commit()
+                return RemoveUser(**kwargs)
+
         except Exception as e:
             cls.session.rollback()
             print(e)

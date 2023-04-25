@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+from types import SimpleNamespace
 
 from fastapi import APIRouter, Depends, Request
 
@@ -9,14 +10,13 @@ from app.api.agent.schema import (
     CreateAgent,
     RemoveUser,
     UpdateUser,
-    GetUserList,
     AgentCreateUser,
     AgentCreateUserResponse,
     UpdateUserResponse,
     GetAgentUsersResponse,
     GetAgentUsers,
     GetAgentResponse,
-    GetAgent, GetAgentList,
+    GetAgent, RemoveUserResponse
 )
 from app.api.credit.models import Balance
 from app.api.user.models import User
@@ -31,7 +31,9 @@ from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 # from app.shared.helper.logger import StandardizedLogger
 
 router = APIRouter(
-    prefix="/api/agent", dependencies=[Depends(JWTBearer(admin=True))], tags=["agent"]
+    prefix="/api/agent",
+    dependencies=[Depends(JWTBearer(admin=True))],
+    tags=["agent"]
 )
 
 
@@ -49,30 +51,25 @@ async def create_user(context: AgentCreateUser, request: Request):
     """
 
     def _make_user(_context, _password):
-        user_data = context.dict(
-            exclude_unset=True,
-            exclude_none=True
-        ) and context.dict(exclude_unset=True, exclude_none=True).update(dict(password=_password))
-        hashed_password = get_password_hash(password)
-        user_data['password'] = hashed_password
-        credit_account = user_data.pop("credit_account")
-        _user_response = User.create(**user_data)
-        if not _user_response:
-            return
-        balance = Balance.create(
-            ownerId=_user_response.id, balance=credit_account.get("balance", 0)
-        )
-        if not balance:
-            return
-        return _user_response
+        if user_data := context.dict(
+                exclude_unset=True,
+                exclude_none=True
+        ) | dict(password=get_password_hash(_password)):
+            credit_account = SimpleNamespace(**user_data.pop("credit_account"))
+            _user = User.create(**user_data)
+            if not _user:
+                return
+            balance = Balance.create(
+                ownerId=_user.id, balance=credit_account.balance
+            )
+            if not balance:
+                return
+            return _user
 
-    if not request.user:
-        return BaseResponse(success=False, error="You are not logged in")
     password = generate_password()
-    user_response = _make_user(context, password)
-    if user_response:
-        send_password_email(user_response.email, user_response.name, password)
-        return AgentCreateUserResponse(success=True, response=user_response)
+    if user := _make_user(context, password):
+        send_password_email(user.email, user.name, password)
+        return AgentCreateUserResponse(success=True, response=user)
     return BaseResponse(success=False, error="User not created")
 
 
@@ -100,8 +97,8 @@ async def update_user(context: UpdateUser, request: Request):
     )
 
 
-@router.post("/manage/remove_user", response_model=BaseResponse)
-async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
+@router.post("/manage/remove_user", response_model=RemoveUserResponse)
+async def remove_user(context: RemoveUser, request: Request):
     """
     `Remove the user with the given id.`
     :param context: RemoveUser - this is the context object that is passed to the function.
@@ -111,8 +108,16 @@ async def remove_user(context: RemoveUser, request: Request) -> BaseResponse:
     :type request: Request
     :return: The agent is being returned.
     """
+    return RemoveUserResponse(success=True, response=User.remove_user(id=context.id))
+
+
+@router.post("/manage/remove_agent", response_model=BaseResponse)
+def remove_agent(context: RemoveUser, request: Request) -> BaseResponse:
+    """
     remove_agent = Agent.remove_agent(id=context.id)
     return BaseResponse(success=True, response=remove_agent)
+    """
+    return BaseResponse(success=True, response=Agent.remove_agent(id=context.id))
 
 
 @router.post("/get_agent", response_model=GetAgentResponse)
@@ -167,5 +172,3 @@ async def list_all_users(context: GetAllUsers):
     """
     paged_users: GetUserListItems = User.get_all_users(context.params.page, context.params.size)
     return GetUserListResponse(success=True, response=paged_users)
-
-
