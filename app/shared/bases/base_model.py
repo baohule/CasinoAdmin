@@ -17,7 +17,6 @@ from typing import TypeVar
 import pytz
 from faker import Faker
 from fastapi.exceptions import HTTPException
-from fastapi_pagination import Page
 from pydantic import BaseModel
 from sqlalchemy import (
     func,
@@ -628,7 +627,7 @@ class Page(Generic[T]):
     Pagination class to allow for paging of database data
     """
 
-    def __init__(self, items: list = None, page: Page = 1, page_size: str = 10, total: int = 0):
+    def __init__(self, items: list, page: int = 1, page_size: int = 10, total: int = 0):
         self.items = items
         self.dict_items = [
             isinstance(_item, Row) and _item._asdict() or _item for _item in items
