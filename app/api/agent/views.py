@@ -51,16 +51,16 @@ async def create_user(context: AgentCreateUser, request: Request):
     """
 
     def _make_user(_context, _password):
-        if user_data := context.dict(
-                exclude_unset=True,
-                exclude_none=True
-        ) | dict(password=get_password_hash(_password)):
-            credit_account = SimpleNamespace(**user_data.pop("credit_account"))
+        if user_data := dict(
+                email=context.email.lower(),
+                password=get_password_hash(_password),
+                name=context.name.lower(),
+        ):
             _user = User.create(**user_data)
             if not _user:
                 return
             balance = Balance.create(
-                ownerId=_user.id, balance=credit_account.balance
+                ownerId=_user.id, balance=context.credit_account.balance
             )
             if not balance:
                 return
