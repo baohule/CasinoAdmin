@@ -24,6 +24,7 @@ from app.api.history.schema import (
     GetActionHistoryResponse,
     GetCreditHistory,
     GetCreditHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsData, GetPlayerStatsPage, GetPlayerStatsPages,
+    CreditHistory,
 )
 from app.api.user.models import User
 from app.shared.bases.base_model import paginate, Page
@@ -89,28 +90,34 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
     """
     # deposits = Deposit.where(ownerId=context.ownerId)
     history = User.where(id=context.ownerId).first()
-    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: x.status == 'pending')
-    deposits = Enumerable(history.userDeposits).take_while(lambda x: x.status == 'pending')
+    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: x.status.approval == 'approved')
+    deposits = Enumerable(history.userDeposits).take_while(lambda x: x.status.approval == 'approved')
 
-    for item in withdrawals.intersect(deposits):
-        balance = item.user.creditAccount.balance
-        availableCredit = balance - item.amount
-        recordType = 'Withdrawal'
-        if isinstance(item, Deposit):
-            availableCredit = balance + item.amount
-            recordType = 'Deposit'
+    def generate_response() -> Iterator[CreditHistory]:
+        for base in [deposits, withdrawals]:
+            for item in base:
+                balance = item.owner.creditAccount.balance
 
-        dict(
-            transactionId=item.id,
-            amount=item.amount,
-            availableCredit=availableCredit,
-            createdAt=item.createdAt,
-            recordType=recordType
-    )
+                availableCredit = balance - item.amount
+                recordType = 'Withdrawal'
 
+                if isinstance(item, Deposit):
+                    availableCredit = balance + item.amount
+                    recordType = 'Deposit'
+
+                yield CreditHistory(
+                    **dict(
+                        transactionId=item.id,
+                        amount=item.amount,
+                        availableCredit=availableCredit,
+                        createdAt=item.createdAt,
+                        recordType=recordType,
+                        owner=history
+                    )
+                )
 
     return (
-        GetCreditHistoryResponse(success=True, response=history)
+        GetCreditHistoryResponse(success=True, response=list(generate_response()))
         if history
         else GetCreditHistoryResponse(success=False, error="No history found")
     )

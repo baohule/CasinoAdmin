@@ -51,19 +51,17 @@ class BetHistory(ORMCamelModel):
     owner: User
 
 
-class PaymentHistory(ORMCamelModel):
+class CreditHistory(ORMCamelModel):
     """
     `PaymentHistory` is a class that is
     used to represent a payment history
     """
-
-    beforeScore: Optional[int]
-    changeScore: Optional[int]
-    newScore: Optional[int]
-    approval: Optional[bool]
+    transactionId: Optional[UUID]
+    amount: Optional[int]
+    availableCredit: Optional[int]
     createdAt: Optional[datetime]
-    approvedAt: Optional[datetime]
-    owner: User
+    recordType: Optional[str]
+    owner: Optional[User]
 
 
 class ActionHistory(ORMCamelModel):
@@ -186,4 +184,4 @@ class GetCreditHistoryResponse(BaseResponse):
     is used to represent a response
     """
 
-    response: Optional[List[PaymentHistory]]
+    response: Optional[List[CreditHistory]]
