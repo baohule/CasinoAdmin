@@ -90,8 +90,9 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
     """
     # deposits = Deposit.where(ownerId=context.ownerId)
     history = User.where(id=context.ownerId).first()
-    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: x.status.approval == 'approved')
-    deposits = Enumerable(history.userDeposits).take_while(lambda x: x.status.approval == 'approved')
+    get_status = lambda x: x.status.approval == context.status if context.status != 'all' else x.status.approval != context.status
+    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: get_status(x))
+    deposits = Enumerable(history.userDeposits).take_while(lambda x: get_status(x))
 
     def generate_response() -> Iterator[CreditHistory]:
         for base in [deposits, withdrawals]:
@@ -112,6 +113,7 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
                         availableCredit=availableCredit,
                         createdAt=item.createdAt,
                         recordType=recordType,
+                        status=item.status.approval,
                         owner=history
                     )
                 )
