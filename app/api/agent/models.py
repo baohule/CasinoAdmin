@@ -131,22 +131,15 @@ class Agent(ModelMixin):
             return
 
     @classmethod
-    def list_all_agents(cls, page, num_items):
+    def list_all_agents(cls, page: int = 1, num_items: int = 1, **kwargs):
         """
         The list_all_agent_users function returns a list of all agent users in the database.
 
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where().options(
-            defer("password"),
-
-            joinedload(
-                "quota", innerjoin=True
-            ).options(
-                load_only("balance"),
-
-            )
+        users = cls.where(**kwargs).options(
+            defer("password")
         )
 
         return paginate(users, page, num_items)

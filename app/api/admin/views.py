@@ -131,7 +131,11 @@ async def list_agents(context: GetUserList, request: Request):
     :type request: Request
     :return: ListAdminUserResponse
     """
-    agent_pages = Agent.list_all_agents(context.params.page, context.params.size)
+    agent_pages = Agent.list_all_agents(
+        context.params.page,
+        context.params.size,
+        active=context.context.filter.active
+    )
 
     return ListAdminUserResponse(success=True, response=AdminPagedResponse(**agent_pages.as_dict()))
 

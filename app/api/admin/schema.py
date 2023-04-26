@@ -12,7 +12,7 @@ from app.api.agent.schema import AgentUser
 from app.api.credit.schema import UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any
+from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any, Filter
 
 
 class UpdateUser(CamelModel):
@@ -104,13 +104,33 @@ class ListUserResponse(PagedResponse):
     items: List[BaseUserResponse]
 
 
-class GetUserList(GetOptionalContextPages):
+class GetUserlistQueryOptions(CamelModel):
     """
-    GetUserList is a model that is used to get a list of users.
+    GetUserlistQueryOptions is a model that is used to get a list of users.
+    """
+    active: Optional[bool] = Field(
+        Default=True,
+        description="Filter by active status"
+    )
+
+
+
+class OptionalContextPagesFilter(Filter):
+    """
+    OptionalContextPagesFilter is a model that is used to get a list of users.
     that is used in the `/list` endpoint.
     """
 
-    __self__: GetOptionalContextPages
+    filter: Optional[GetUserlistQueryOptions]
+
+
+class GetUserList(GetOptionalContextPages):
+    """
+    OptionalContextPages is a model that is used to get a list of users.
+    that is used in the `/list` endpoint.
+    """
+    context: Optional[OptionalContextPagesFilter]
+
 
 
 class BatchUsers(CamelModel):
