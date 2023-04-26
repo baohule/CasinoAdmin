@@ -66,7 +66,7 @@ async def create_user(context: AgentCreateUser, request: Request):
             if not _user:
                 return
             balance = Balance.create(
-                ownerId=_user.id, balance=context.credit_account.balance
+                ownerId=_user.id, balance=context.creditAccount.balance
             )
             if not balance:
                 return
