@@ -32,7 +32,7 @@ class User(ORMCamelModel):
     email: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
-    balance: Optional[UserCredit] = Field(default=UserCredit(balance=0))
+    balance: Optional[UserCredit]
     username: Optional[str]
     createdAt: Optional[datetime]
     active: Optional[bool]
