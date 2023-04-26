@@ -19,6 +19,8 @@ from fastapi.logger import logger
 class DBUser(BaseUser):
     def __init__(self, user_id: str) -> None:
         self.id = user_id
+        self.agent = False
+        self.admin = False
 
     @property
     def is_authenticated(self) -> bool:
@@ -32,6 +34,8 @@ class DBUser(BaseUser):
 class AdminUser(BaseUser):
     def __init__(self, user_id: str) -> None:
         self.id: str = user_id
+        self.agent: bool = True
+        self.admin: bool = True
 
     @property
     def is_authenticated(self) -> bool:
@@ -45,6 +49,8 @@ class AdminUser(BaseUser):
 class AgentUser(BaseUser):
     def __init__(self, user_id: str) -> None:
         self.id: str = user_id
+        self.agent: bool = True
+        self.admin: bool = False
 
     @property
     def is_authenticated(self) -> bool:

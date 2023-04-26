@@ -56,7 +56,12 @@ async def create_user(context: AgentCreateUser, request: Request):
                 email=context.email.lower(),
                 password=get_password_hash(_password),
                 username=context.username.lower(),
+                headImage=context.headImage
+
         ):
+            user_data.update(
+                request.user.agent and dict(agentId=request.user.id)
+            )
             _user = User.create(**user_data)
             if not _user:
                 return
