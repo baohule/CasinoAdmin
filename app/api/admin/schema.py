@@ -8,7 +8,7 @@ from uuid import UUID
 from fastapi_camelcase import CamelModel
 from pydantic import BaseModel, EmailStr, Field
 
-from app.api.agent.schema import AgentUser
+from app.api.agent.schema import AgentUser, AgentQuota
 from app.api.credit.schema import UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
@@ -66,10 +66,11 @@ class BaseUserResponse(ORMCamelModel):
     id: UUID
     email: Optional[str]
     username: Optional[str]
-    username: Optional[str]
+    firstName: Optional[str]
+    lastName: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
-    quota: Optional[int]
+    quota: Optional[AgentQuota]
     creditAccount: Optional[UserCredit]
     active: Optional[bool]
     createdByAdmin: Optional[AgentUser]

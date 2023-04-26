@@ -42,7 +42,7 @@ class Balance(ModelMixin):
         index=True,
         unique=True,
     )
-    credit_account = relationship(
+    creditAccount = relationship(
         "User",
         foreign_keys="Balance.ownerId",
         backref=backref("creditAccount", single_parent=True, uselist=False),
