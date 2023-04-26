@@ -30,7 +30,7 @@ class User(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    name: Optional[str]
+    username: Optional[str]
     email: Optional[str]
 
 
@@ -104,7 +104,7 @@ class GetActionHistory(BaseModel):
         arbitrary_types_allowed = True
 
 
-class GetPaymentHistory(BaseModel):
+class GetCreditHistory(BaseModel):
     ownerId: UUID
 
 
@@ -180,9 +180,9 @@ class GetActionHistoryResponse(BaseResponse):
     response: Optional[List[ActionHistory]]
 
 
-class GetPaymentHistoryResponse(BaseResponse):
+class GetCreditHistoryResponse(BaseResponse):
     """
-    `GetPaymentHistoryResponse` is a class that
+    `GetCreditHistoryResponse` is a class that
     is used to represent a response
     """
 

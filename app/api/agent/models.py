@@ -3,15 +3,13 @@
 """
 import datetime
 import uuid
+
 import pytz
-from sqlalchemy import Column, Boolean, Text, ForeignKey, DateTime, Integer, String, select, func, desc, asc
+from sqlalchemy import Column, Boolean, ForeignKey, DateTime, String
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import relationship, backref, joinedload, lazyload, defer, eagerload, load_only
-from sqlalchemy.orm.strategy_options import contains_eager
+from sqlalchemy.orm import relationship, backref, joinedload, defer, load_only
 
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
-from app.shared.schemas.ResponseSchemas import PagedBaseResponse, BaseResponse
-from app.shared.schemas.page_schema import PagedResponse
 
 
 class Agent(ModelMixin):
@@ -20,7 +18,9 @@ class Agent(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False)
     password = Column(String(255), nullable=False)
-    name = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=True)
+    firstName = Column(String(255), nullable=True)
+    lastName = Column(String(255), nullable=True)
     active = Column(Boolean, default=True)
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
@@ -51,17 +51,8 @@ class Agent(ModelMixin):
         :type num_items: int
         :return: A paginated list of users
         """
-        if user := cls.where(id=agent_id).join("users"):
+        if user := cls.where(id=agent_id):
             return paginate(user, page_num, num_items)
-        # agent_user = cls.where(id=agent_id).options(
-        #     joinedload(
-        #         "users"
-        #     ).options(
-        #         joinedload(
-        #             "creditAccount",
-        #         ).load_only("balance")
-        #         )
-        #     )
 
         return  # paginate(users, page_num, num_items)
 
@@ -153,11 +144,10 @@ class Agent(ModelMixin):
             joinedload(
                 "quota", innerjoin=True
             ).options(
-                    load_only("balance"),
+                load_only("balance"),
 
             )
         )
-
 
         return paginate(users, page, num_items)
 

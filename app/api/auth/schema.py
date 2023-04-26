@@ -211,7 +211,7 @@ class UserClaim(ORMCamelModel):
 
     id: Optional[UUID]
     email: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
     admin: Optional[bool]
     agent: Optional[bool]
     expires: Optional[str]

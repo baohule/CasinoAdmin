@@ -72,7 +72,7 @@ async def create_agent(context: AgentUserCreate, request: Request):
     """
 
     context.password = get_password_hash(context.password)
-    agent = Agent.create(name=context.name, email=context.email, password=context.password)
+    agent = Agent.create(email=context.email, password=context.password)
     if not agent:
         return BaseResponse(success=False, error="Admin not created")
     quota = Quota.create(agentId=agent.id, balance=context.quota)
@@ -164,7 +164,7 @@ async def search_users(context: SearchUser, request: Request):
 
      Phone number can be any form as long as it exists in the db.
 
-    :param query:schema.SearchUsers: Used to Pass the data to the function.
+    :param context: SearchUsers: Used to Pass the data to the function.
     :param request:Request: Used to Access the user object.
     :return: A list of users that match the search criteria.
     """

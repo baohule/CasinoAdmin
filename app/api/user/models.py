@@ -3,7 +3,7 @@
 """
 import uuid
 from datetime import datetime
-from typing import List, Type, Union, Optional
+from typing import Optional
 
 import pytz
 from sqlalchemy import (
@@ -11,26 +11,18 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey, desc,
-)
+    ForeignKey, )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer, joinedload, load_only
 
 from app.api.agent.schema import RemoveUser
 from app.api.user.schema import GetUserListItems
-from app.shared.bases.base_model import ModelMixin, ModelType, Page
+from app.shared.bases.base_model import ModelMixin, ModelType
 from app.shared.bases.base_model import paginate
 from app.shared.schemas.page_schema import PagedResponse
 
 
 # from app.shared.helper.logger import StandardizedLogger
-
-
-class Nullable(Type):
-    """
-    Nullable is a class that is used to define the nullable type of a variable.
-    """
-    __self__: Optional[Union[bool, None]]
 
 
 class User(ModelMixin):
@@ -42,8 +34,10 @@ class User(ModelMixin):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False, unique=True)
-    name = Column(String(255), nullable=False, unique=True)
+    username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=False)
+    firstName = Column(String(255), nullable=True)
+    lastName = Column(String(255), nullable=True)
     headImage = Column(String(255), nullable=True, unique=False)
     active = Column(Boolean, default=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))

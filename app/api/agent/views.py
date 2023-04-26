@@ -22,6 +22,7 @@ from app.api.credit.models import Balance
 from app.api.user.models import User
 from app.api.user.schema import GetUserListResponse, GetAllUsers, GetUserListItems
 from app.shared.auth.password_handler import get_password_hash
+from app.shared.bases.base_model import paginate
 from app.shared.middleware.auth import JWTBearer
 from app.shared.auth.password_generator import generate_password
 from app.shared.email.mailgun import send_password_email
@@ -54,9 +55,9 @@ async def create_user(context: AgentCreateUser, request: Request):
         if user_data := dict(
                 email=context.email.lower(),
                 password=get_password_hash(_password),
-                name=context.name.lower(),
+                username=context.username.lower(),
         ):
-            _user = User.create(**user_data)
+            _user = User.create(**user_data, adminId=request.user.id)
             if not _user:
                 return
             balance = Balance.create(
@@ -68,7 +69,7 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     password = generate_password()
     if user := _make_user(context, password):
-        send_password_email(user.email, user.name, password)
+        send_password_email(user.email, User.username, password)
         return AgentCreateUserResponse(success=True, response=user)
     return BaseResponse(success=False, error="User not created")
 
@@ -151,8 +152,12 @@ async def get_agent_users(
     :type request: Request
     :return: GetAgentUsersResponse
     """
-    agent_users = Agent.agent_users(
-        context.context.filter.id, context.params.page, context.params.size
+    agent_users = paginate(
+        User.where(
+            agentId=context.context.filter.id
+        ),
+        context.params.page,
+        context.params.size
     )
     return GetAgentUsersResponse(success=True, response=agent_users)
 

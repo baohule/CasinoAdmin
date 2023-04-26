@@ -22,7 +22,7 @@ class UpdateUser(CamelModel):
 
     id: UUID
     password: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
 
 
 class RemoveUser(CamelModel):
@@ -55,7 +55,7 @@ class BaseUser(ORMCamelModel):
 class Admin(ORMCamelModel):
     id: UUID
     email: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
 
 
 class BaseUserResponse(ORMCamelModel):
@@ -65,8 +65,8 @@ class BaseUserResponse(ORMCamelModel):
 
     id: UUID
     email: Optional[str]
-    name: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
+    username: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     quota: Optional[int]
@@ -127,7 +127,7 @@ class AdminRoleCreate(BaseModel):
     It's a model that represents the data required to create an Admin Role.
     """
 
-    name: str
+    username: str
     parameters: Optional[Dict]
 
 
@@ -151,24 +151,6 @@ class SetUserRoleResponse(BaseResponse):
     error: Optional[str]
 
 
-class SetPerms(CamelModel):
-    """
-    It's a model that is used to set a user's permissions.
-    """
-
-    id: UUID
-    can_list_users: Optional[bool]
-    can_get_user: Optional[bool]
-    can_create_user: Optional[bool]
-    can_create_admin: Optional[bool]
-    can_delete_user: Optional[bool]
-    can_alter_user: Optional[bool]
-    can_search_users: Optional[bool]
-    can_batch_alter_users: Optional[bool]
-    can_set_perms: Optional[bool]
-    bypass_auth: Optional[bool]
-
-
 class SetPermsResponse(BaseResponse):
     """
     SetPermsResponse is a model that is used to return a
@@ -186,10 +168,17 @@ class SearchUser(CamelModel):
     """
 
     email: Optional[str]
-    name: Optional[str]
-    type: str = Field(..., example="agent | admin | user")
+    username: Optional[str]
+    firstName: Optional[str]
+    type: str
 
 
+    class Config:
+        schema_extra = {
+            "example": {
+                "pick one: email | username | firstName": "John123@gmail.com | John123 | John",
+                "type": "agent | admin | user"
+            }}
 
 
 class SearchResults(BaseResponse):
@@ -223,7 +212,7 @@ class AgentUpdateResponse(BaseResponse):
 
 
 class AdminUserUpdateName(CamelModel):
-    name: str
+    username: str
 
 
 # It's a model that is used to return a response from updating a user's name.  It is used in the `/admin` endpoint.

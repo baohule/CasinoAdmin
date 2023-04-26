@@ -18,7 +18,7 @@ from app.shared.schemas.page_schema import GetOptionalContextPages, Filter, Page
 class User(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
 
 
 class UserCredit(ORMCamelModel):
