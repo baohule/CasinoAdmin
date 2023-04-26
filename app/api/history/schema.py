@@ -61,6 +61,7 @@ class CreditHistory(ORMCamelModel):
     availableCredit: Optional[int]
     createdAt: Optional[datetime]
     recordType: Optional[str]
+    status: Optional[str]
     owner: Optional[User]
 
 
@@ -104,6 +105,7 @@ class GetActionHistory(BaseModel):
 
 class GetCreditHistory(BaseModel):
     ownerId: UUID
+    status: Optional[str] = Field(default='all')
 
 
 class TotalWinLoss(ORMCamelModel):
