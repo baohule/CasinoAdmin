@@ -57,7 +57,7 @@ async def create_user(context: AgentCreateUser, request: Request):
                 password=get_password_hash(_password),
                 username=context.username.lower(),
         ):
-            _user = User.create(**user_data, adminId=request.user.id)
+            _user = User.create(**user_data)
             if not _user:
                 return
             balance = Balance.create(
