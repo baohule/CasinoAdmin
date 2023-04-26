@@ -18,6 +18,7 @@ from app.api.credit.schema import (
     AgentQuta,
 )
 from app.shared.bases.base_model import Page, paginate
+from app.shared.bases.base_response import AgentQuotaExceeded, AuthenticationScopeMismatch, NoUserBalanceObject, QuotaNotUpdated
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
@@ -74,12 +75,14 @@ async def update_credit(context: UpdateUserCredit, request: Request):
     """
     balance = Balance.read(ownerId=context.ownerId)
     agent = Agent.read(id=request.user.id)
+
     if not agent:
-        return BaseResponse(success=False, error="Agent not found")
+        return AuthenticationScopeMismatch(success=False)
     if agent.quota.balance < context.balance:
-        return BaseResponse(success=False, error="Agent Quota Exceeded")
+        return AgentQuotaExceeded(success=False)
     if not balance:
-        return BaseResponse(success=False, error="User Has no Credit Account")
+        return NoUserBalanceObject(success=False)
+
     _updated = Balance.update(**context.dict())
     _agent_updated = Agent.update(
         id=agent.id, quota=agent.quota.balance - context.balance
@@ -101,11 +104,11 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
         UpdateAgentQuotaResponse(
             success=True, response=_updated)
         if _updated
-        else BaseResponse(success=False, error="Could not update agent quota")
+        else QuotaNotUpdated(success=False)
     )
 
 
-@router.post("/manage/deposit", response_model=DepositResponse)
+@ router.post("/manage/deposit", response_model=DepositResponse)
 async def deposit(context: BalanceDeposit, request: Request):
     """
     `deposit` deposits money into a user's account
@@ -225,7 +228,6 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
 
 @router.post("/manage/reject_withdraw", response_model=ChangeWithdrawalStatusResponse)
 async def reject_withdraw(context: GetWithdrawal, request: Request):
-
     context_data = context.dict(exclude_unset=True, exclude_none=True)
     approved_id = context_data.pop("approvedById", None)
     _withdraw = Withdrawal.read(**context_data)

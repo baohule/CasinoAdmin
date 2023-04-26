@@ -30,9 +30,12 @@ class UserCredit(ORMCamelModel):
 class User(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
+    firstName: Optional[str]
+    lastName: Optional[str]
     balance: Optional[UserCredit]
-    name: Optional[str]
+    username: Optional[str]
     createdAt: Optional[datetime]
+    active: Optional[bool]
 
 
 class BaseUser(ORMCamelModel):
@@ -42,7 +45,8 @@ class BaseUser(ORMCamelModel):
 
     id: Optional[UUID]
     email: Optional[str]
-    name: Optional[str]
+    firstName: Optional[str]
+    lastName: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     creditAccount: Optional[UserCredit]
@@ -82,7 +86,7 @@ class AdminUserCreate(CamelModel):
 
     email: EmailStr
     password: str
-    name: str
+    username: str
 
 
 
@@ -93,7 +97,6 @@ class AgentUserCreate(CamelModel):
 
     email: EmailStr
     password: str
-    name: str
     quota: Optional[int]
 
 
@@ -162,8 +165,8 @@ class AdminBaseResponse(ORMCamelModel):
     success: bool
     error: Optional[str]
     response: Optional[UUID]
-    name: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
+    username: Optional[str]
     createdAt: Optional[datetime]
     response: Optional[UUID]
 
@@ -174,7 +177,7 @@ class AdminUpdateName(CamelModel):
 
     """
 
-    name: str
+    username: str
 
 
 class AdminUpdateNameResponse(BaseResponse):

@@ -300,7 +300,7 @@ class ModelMixin(Base):
         user_email = kwargs.get("email")
         user_lookup: ModelType = cls.read(email=user_email)
         if user_lookup and verify_password(password, user_lookup.password):
-            return UserClaim(id=user_lookup.id, email=user_email, name=user_lookup.name)
+            return UserClaim(id=user_lookup.id, email=user_email, username=user_lookup.username)
 
     @classmethod
     def create(cls, *_, **kwargs) -> ModelType:
@@ -443,7 +443,10 @@ class ModelMixin(Base):
                 if results := cls.where().filter(cls.email.ilike(f"%{email}%")).all():
                     return results
             if username := kwargs.get("name"):
-                if results := cls.where().filter(cls.name.ilike(f"%{username}%")).all():
+                if results := cls.where().filter(cls.username.ilike(f"%{username}%")).all():
+                    return results
+            if firstName := kwargs.get("firstName"):
+                if results := cls.where().filter(cls.firstName.ilike(f"%{firstName}%")).all():
                     return results
         except Exception as e:
             print(e)

@@ -60,7 +60,7 @@ class PlayerSession(ModelMixin):
     gameSession = relationship(
         "GameSession",
         foreign_keys="PlayerSession.gameSessionId",
-        backref=backref("gameSession", single_parent=True, uselist=False),
+        backref=backref("gameSession", single_parent=True),
     )
     userId = Column(
         UUID(as_uuid=True),
@@ -71,7 +71,7 @@ class PlayerSession(ModelMixin):
     user = relationship(
         "User",
         foreign_keys="PlayerSession.userId",
-        backref=backref("sessionUser", single_parent=True, uselist=False),
+        backref=backref("userSessions", single_parent=True),
     )
     betAmount = Column(Integer, nullable=False)
     betLines = Column(Integer, nullable=True)

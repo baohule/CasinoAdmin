@@ -30,8 +30,9 @@ class AgentUser(ORMCamelModel):
     """
 
     id: Optional[UUID]
-    name: Optional[str]
     email: Optional[str]
+    firstName: Optional[str]
+    lastName: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
     quota: Optional[AgentQuota]
@@ -79,6 +80,7 @@ class UpdateUserResponse(BaseResponse):
 
     response: Optional[User]
 
+
 class RemovedUser(BaseModel):
     """
     It's a model that represents a user that is being updated.
@@ -107,9 +109,9 @@ class BaseUser(CamelModel):
 
     id: UUID
     email: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
     password: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
     qa_bypass: Optional[bool]
 
     class Config:
@@ -117,10 +119,9 @@ class BaseUser(CamelModel):
             "example": {
                 "id": "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26",
                 "email": "test@test.com",
-                "phone": "+14801234567",
-                "name": "some name",
-                "name": "newuser27",
-                "qaBypass": True,
+                "firstName": "some name",
+                "lastName": "some last name",
+                "username": "newuser27",
             }
             # It's a model that is used to represent a user that is being returned from the database.
         }
@@ -133,7 +134,7 @@ class BaseUserResponse(ORMCamelModel):
 
     id: UUID
     email: Optional[str]
-    name: Optional[str]
+    username: Optional[str]
     active: Optional[bool]
     credit_account: Optional[UserCredit]
 
@@ -197,7 +198,7 @@ class AgentRoleCreate(BaseModel):
     It's a model that represents the data required to create an Agent Role.
     """
 
-    name: str
+    username: str
     parameters: Optional[Dict]
 
 
@@ -265,7 +266,7 @@ class Agent(BaseModel):
 
     id: Optional[UUID]
     email: EmailStr
-    name: Optional[str]
+    username: Optional[str]
     password: Optional[str]
     quota: Optional[float]
     active: Optional[str]
@@ -297,7 +298,7 @@ class CreateUser(BaseModel):
 
     email: EmailStr
     password: str
-    name: str
+    username: str
 
 
 class AgentCreateUser(BaseModel):
@@ -306,7 +307,7 @@ class AgentCreateUser(BaseModel):
     """
 
     email: EmailStr
-    name: Optional[str]
+    username: Optional[str]
     headImage: Optional[str]
     credit_account: Optional[Balance] = Field(title="CreditAccount")
 
@@ -318,7 +319,7 @@ class CreateAgent(CamelModel):
 
     email: EmailStr
     password: str
-    name: str
+    username: str
 
 
 class SearchResults(BaseModel):
@@ -341,7 +342,7 @@ class Response(ORMCamelModel):
 
 
 class AgentUserUpdateName(CamelModel):
-    name: str
+    username: str
 
 
 class AgentUserUpdateNameResponse(BaseResponse):

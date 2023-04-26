@@ -4,6 +4,7 @@
 from operator import or_
 from typing import Tuple, List, Union, Iterator
 
+from py_linq import Enumerable
 from pydantic import BaseModel
 from sqlalchemy import func, and_, subquery, select, case, Column
 from sqlalchemy.orm import aliased, load_only
@@ -11,6 +12,7 @@ from sqlalchemy.sql import Select, Alias
 from sqlalchemy.orm import joinedload
 from sqlalchemy.sql.operators import is_
 
+from app.api.credit.models import Deposit, Withdrawal
 from app.api.game.models import PlayerSession, GameSession, GameList
 from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
 from fastapi import APIRouter, Depends, Request
@@ -20,8 +22,8 @@ from app.api.history.schema import (
     GetBetHistoryResponse,
     GetActionHistory,
     GetActionHistoryResponse,
-    GetPaymentHistory,
-    GetPaymentHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsData, GetPlayerStatsPage, GetPlayerStatsPages,
+    GetCreditHistory,
+    GetCreditHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsData, GetPlayerStatsPage, GetPlayerStatsPages,
 )
 from app.api.user.models import User
 from app.shared.bases.base_model import paginate, Page
@@ -74,22 +76,28 @@ async def get_action_history_(context: GetActionHistory, request: Request):
     )
 
 
-@router.post("/get_payment_history", response_model=GetPaymentHistoryResponse)
-async def get_payment_history_(context: GetPaymentHistory, request: Request):
+@router.post("/get_credit_history", response_model=GetCreditHistoryResponse)
+async def get_credit_history(context: GetCreditHistory, request: Request):
     """
     > This function reads the payment history of a user from the database and returns it
 
     :param context: GetPaymentHistory - this is the request object that is passed to the function
-    :type context: GetPaymentHistory
+    :type context: GetCreditHistory
     :param request: Request - this is the request object that is passed to the function.
     :type request: Request
-    :return: GetPaymentHistoryResponse
+    :return: GetCreditHistoryResponse
     """
-    history = PaymentHistory.read_all(**context.dict())
+    # deposits = Deposit.where(ownerId=context.ownerId)
+    history = User.where(id=context.ownerId).first()
+    sessions = Enumerable(history.userSessions)
+
+    #def build_session_data(_session):
+        #dict(transactionId=session.id, amount=session.betAmount, betResult=session.betResult, createdAt=session.createdAt)
+    #sessions.select()
     return (
-        GetPaymentHistoryResponse(success=True, response=history)
+        GetCreditHistoryResponse(success=True, response=history)
         if history
-        else GetPaymentHistoryResponse(success=False, error="No history found")
+        else GetCreditHistoryResponse(success=False, error="No history found")
     )
 
 

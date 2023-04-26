@@ -139,7 +139,7 @@ class Withdrawal(ModelMixin):
     owner = relationship(
         "User",
         foreign_keys="Withdrawal.ownerId",
-        backref=backref("userWithdrawals", single_parent=True, uselist=False),
+        backref=backref("userWithdrawals", single_parent=True)
     )
 
     @classmethod
@@ -180,5 +180,5 @@ class Deposit(ModelMixin):
     owner = relationship(
         "User",
         foreign_keys="Deposit.ownerId",
-        backref=backref("userDeposits", single_parent=True, uselist=False),
+        backref=backref("userDeposits", single_parent=True),
     )

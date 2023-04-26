@@ -18,7 +18,7 @@ class Error(BaseModel):
 class AuthenticationScopeMismatch(BaseResponse):
     error: str = Field(
         default="Authentication Scope Mismatch: "
-        "You are probably not logged in as an Agent"
+                "You are probably not logged in as an Agent"
     )
 
 
@@ -37,17 +37,17 @@ class AgentQuotaExceeded(BaseResponse):
 class NoUserBalanceObject(BaseResponse):
     error: Optional[str] = Field(
         default="No User Balance Object Found: "
-        "Please create a balance object for this user "
-        "with the endpoint: "
-        "/api/credit/manage/create_user_credit"
+                "Please create a balance object for this user "
+                "with the endpoint: "
+                "/api/credit/manage/create_user_credit"
     )
 
 
 class QuotaNotUpdated(BaseResponse):
     error: Optional[str] = Field(
         default="Quota Not Updated:"
-        "Due to a unique constraint or the object not existing "
-        "in the database, the quota was not updated and the "
-        "db session was rolled back. The most likely cause is "
-        "that the agent does not exist in the database."
+                "Due to a unique constraint or the object not existing "
+                "in the database, the quota was not updated and the "
+                "db session was rolled back. The most likely cause is "
+                "that the agent does not exist in the database."
     )
