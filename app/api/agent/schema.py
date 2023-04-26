@@ -75,7 +75,7 @@ class UpdateUser(CamelModel):
     id: UUID
     email: Optional[str]
     active: Optional[bool]
-    credit_account: Optional[UserCredit]
+    creditAccount: Optional[UserCredit]
 
 
 class UpdateUserResponse(BaseResponse):
@@ -140,7 +140,7 @@ class BaseUserResponse(ORMCamelModel):
     email: Optional[str]
     username: Optional[str]
     active: Optional[bool]
-    credit_account: Optional[UserCredit]
+    creditAccount: Optional[UserCredit]
 
 
 class AgentPagedResponse(PagedResponse):
@@ -313,7 +313,7 @@ class AgentCreateUser(BaseModel):
     email: EmailStr
     username: Optional[str]
     headImage: Optional[str]
-    credit_account: Optional[Balance] = Field(title="CreditAccount")
+    creditAccount: Optional[Balance]
 
 
 class CreateAgent(CamelModel):

@@ -70,7 +70,7 @@ class BaseUserResponse(ORMCamelModel):
     lastName: Optional[str]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
-    quota: Optional[AgentQuota]
+    quota: Optional[AgentQuota] = Field(default=AgentQuota(balance=0))
     creditAccount: Optional[UserCredit]
     active: Optional[bool]
     createdByAdmin: Optional[AgentUser]
