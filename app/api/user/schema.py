@@ -45,6 +45,7 @@ class BaseUser(ORMCamelModel):
 
     id: Optional[UUID]
     email: Optional[str]
+    username: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
     createdAt: Optional[datetime]

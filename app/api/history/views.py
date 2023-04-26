@@ -89,11 +89,26 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
     """
     # deposits = Deposit.where(ownerId=context.ownerId)
     history = User.where(id=context.ownerId).first()
-    sessions = Enumerable(history.userSessions)
+    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: x.status == 'pending')
+    deposits = Enumerable(history.userDeposits).take_while(lambda x: x.status == 'pending')
 
-    #def build_session_data(_session):
-        #dict(transactionId=session.id, amount=session.betAmount, betResult=session.betResult, createdAt=session.createdAt)
-    #sessions.select()
+    for item in withdrawals.intersect(deposits):
+        balance = item.user.creditAccount.balance
+        availableCredit = balance - item.amount
+        recordType = 'Withdrawal'
+        if isinstance(item, Deposit):
+            availableCredit = balance + item.amount
+            recordType = 'Deposit'
+
+        dict(
+            transactionId=item.id,
+            amount=item.amount,
+            availableCredit=availableCredit,
+            createdAt=item.createdAt,
+            recordType=recordType
+    )
+
+
     return (
         GetCreditHistoryResponse(success=True, response=history)
         if history
