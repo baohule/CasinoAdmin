@@ -1,36 +1,29 @@
 """
 @author: Kuro
 """
-from operator import or_
-from typing import Tuple, List, Union, Iterator
+import logging
+from typing import List, Union, Iterator
 
+from fastapi import APIRouter, Depends, Request
 from py_linq import Enumerable
-from pydantic import BaseModel
-from sqlalchemy import func, and_, subquery, select, case, Column
-from sqlalchemy.orm import aliased, load_only
-from sqlalchemy.sql import Select, Alias
+from sqlalchemy import func, select
 from sqlalchemy.orm import joinedload
-from sqlalchemy.sql.operators import is_
 
 from app.api.credit.models import Deposit, Withdrawal
-from app.api.game.models import PlayerSession, GameSession, GameList
-from app.api.history.models import PaymentHistory, BetDetailHistory, ActionHistory
-from fastapi import APIRouter, Depends, Request
-
+from app.api.game.models import PlayerSession, GameList
+from app.api.history.models import BetDetailHistory, ActionHistory
 from app.api.history.schema import (
     GetBetHistory,
     GetBetHistoryResponse,
     GetActionHistory,
     GetActionHistoryResponse,
     GetCreditHistory,
-    GetCreditHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsData, GetPlayerStatsPage, GetPlayerStatsPages,
+    GetCreditHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsPage, GetPlayerStatsPages,
     CreditHistory,
 )
 from app.api.user.models import User
 from app.shared.bases.base_model import paginate, Page
 from app.shared.middleware.auth import JWTBearer
-from fastapi.exceptions import HTTPException
-import logging
 
 router = APIRouter(
     prefix="/api/history",
@@ -88,39 +81,59 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
     :type request: Request
     :return: GetCreditHistoryResponse
     """
-    # deposits = Deposit.where(ownerId=context.ownerId)
-    history = User.where(id=context.ownerId).first()
-    get_status = lambda x: x.status.approval == context.status if context.status != 'all' else x.status.approval != context.status
-    withdrawals = Enumerable(history.userWithdrawals).take_while(lambda x: get_status(x))
-    deposits = Enumerable(history.userDeposits).take_while(lambda x: get_status(x))
 
-    def generate_response() -> Iterator[CreditHistory]:
-        for base in [deposits, withdrawals]:
-            for item in base:
-                balance = item.owner.creditAccount.balance
+    def _get_status(item: Union[Deposit, Withdrawal]) -> bool:
+        """
+        > This function returns the status of the deposit or withdrawal
+        :param item: Union[Deposit, Withdrawal] - this is the item that is being checked
+        :return: bool
+        """
+        return (
+            item.status.approval == context.status
+            if context.status != 'all'
+            else item.status.approval != context.status
+        )
 
-                availableCredit = balance - item.amount
-                recordType = 'Withdrawal'
+    user = User.where(id=context.ownerId).first()
+    withdrawals = Enumerable(
+        user.userWithdrawals
+    )
+    deposits = Enumerable(
+        user.userDeposits
+    )
+    transactions = deposits.concat(
+        withdrawals
+    ).order_by(
+        lambda x: x.createdAt
+    ).take_while(
+        lambda x: _get_status(x)
+    )
 
-                if isinstance(item, Deposit):
-                    availableCredit = balance + item.amount
-                    recordType = 'Deposit'
+    def _generate_response() -> Iterator[CreditHistory]:
+        """
+        > This function generates the response for the credit history
+        :return: Iterator[CreditHistory]
+        """
+        initial_credit = user.creditAccount.balance
+        for item in transactions:
+            record_type = 'deposit' if isinstance(item, Deposit) else 'withdrawal'
+            initial_credit += item.amount if isinstance(item, Deposit) else -item.amount
 
-                yield CreditHistory(
-                    **dict(
-                        transactionId=item.id,
-                        amount=item.amount,
-                        availableCredit=availableCredit,
-                        createdAt=item.createdAt,
-                        recordType=recordType,
-                        status=item.status.approval,
-                        owner=history
-                    )
+            yield CreditHistory(
+                **dict(
+                    transactionId=item.id,
+                    amount=item.amount,
+                    availableCredit=initial_credit,
+                    createdAt=item.createdAt,
+                    recordType=record_type,
+                    status=item.status.approval,
+                    owner=user
                 )
+            )
 
     return (
-        GetCreditHistoryResponse(success=True, response=list(generate_response()))
-        if history
+        GetCreditHistoryResponse(success=True, response=list(_generate_response()))
+        if user
         else GetCreditHistoryResponse(success=False, error="No history found")
     )
 
