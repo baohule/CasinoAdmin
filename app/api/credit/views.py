@@ -3,6 +3,7 @@
 """
 from fastapi import APIRouter, Depends, Request
 
+from app.api.admin.models import Admin
 from app.api.agent.models import Agent
 from app.api.credit import schema
 from app.api.credit.models import Balance, Deposit, Status, Withdrawal, Quota
@@ -73,22 +74,32 @@ async def update_credit(context: UpdateUserCredit, request: Request):
     :type request: Request
     :return: The updated credit object.
     """
-    balance = Balance.read(ownerId=context.ownerId)
-    agent = Agent.read(id=request.user.id)
 
-    if not agent:
-        return AuthenticationScopeMismatch(success=False)
-    if agent.quota.balance < context.balance:
-        return AgentQuotaExceeded(success=False)
+    admin = Admin.read(id=request.user.id)
+    balance = Balance.read(ownerId=context.ownerId)
+
     if not balance:
         return NoUserBalanceObject(success=False)
 
-    _updated = Balance.update(**context.dict())
-    _agent_updated = Agent.update(
-        id=agent.id, quota=agent.quota.balance - context.balance
-    )
+    if agent := Agent.read(id=request.user.id):
 
-    return UpdateUserCreditResponse(success=True, response=UserCredit(**context.dict()))
+        if not agent or admin:
+            return AuthenticationScopeMismatch(success=False)
+
+        if agent.quota.balance < context.balance:
+            return AgentQuotaExceeded(success=False)
+
+        _agent_updated = Agent.update(
+            id=agent.id,
+            quota=agent.quota.balance - context.balance
+        )
+
+    _updated = Balance.update(**context.dict())
+    return UpdateUserCreditResponse(success=True, response=_updated)
+
+
+
+
 
 
 @router.post("/manage/update_agent_quota", response_model=UpdateAgentQuotaResponse)
@@ -108,7 +119,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     )
 
 
-@ router.post("/manage/deposit", response_model=DepositResponse)
+@router.post("/manage/deposit", response_model=DepositResponse)
 async def deposit(context: BalanceDeposit, request: Request):
     """
     `deposit` deposits money into a user's account
