@@ -22,7 +22,7 @@ from app.shared.schemas.page_schema import (
 
 class AgentQuota(ORMCamelModel):
     """
-
+    `AgentQuota` is a class that is used to represent an agent's quota.
     """
     balance: Optional[int]
 
