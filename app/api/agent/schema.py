@@ -21,6 +21,9 @@ from app.shared.schemas.page_schema import (
 
 
 class AgentQuota(ORMCamelModel):
+    """
+
+    """
     balance: Optional[int]
 
 
@@ -40,9 +43,10 @@ class AgentUser(ORMCamelModel):
     active: Optional[bool]
 
 
-
-
 class RemoveUser(CamelModel):
+    """
+    It's a model that is used to remove a user from the database.
+    """
     id: UUID
     email: Optional[str]
 
@@ -97,7 +101,6 @@ class RemoveUserResponse(BaseResponse):
     """
 
     response: Optional[RemovedUser]
-
 
 
 class BaseUser(CamelModel):
@@ -379,7 +382,6 @@ class AgentCreateResponse(BaseResponse):
 
 class GetAgentUsersItems(PagedResponse):
     items: List[BaseUserResponse]
-
 
 
 class GetAgentUsersResponse(PagedBaseResponse):
