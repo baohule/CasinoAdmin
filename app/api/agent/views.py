@@ -59,9 +59,9 @@ async def create_user(context: AgentCreateUser, request: Request):
                 headImage=context.headImage
 
         ):
-            user_data.update(
-                request.user.agent and dict(agentId=request.user.id)
-            )
+            if request.user.agent:
+                user_data.update(dict(agentId=request.user.id))
+
             _user = User.create(**user_data)
             if not _user:
                 return
