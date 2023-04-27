@@ -132,7 +132,7 @@ async def generate_random_password(context: GeneratePassword):
     object with the newly generated password, and no error message, or a `BaseResponse`
     object with a `success` flag set to `False` and an error message.
     """
-    new_password = generate_password(16)
+    new_password = generate_password()
     hash_password = get_password_hash(new_password)
     if user := User.update_user(id=context.id, password=hash_password):
         send_password_email(user.email, User.username, new_password)
