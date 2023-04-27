@@ -53,12 +53,12 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     def _make_user(_context, _password):
         if not (
-            user_data := dict(
-                email=context.email.lower(),
-                password=get_password_hash(_password),
-                username=context.username.lower(),
-                headImage=context.headImage,
-            )
+                user_data := dict(
+                    email=context.email.lower(),
+                    password=get_password_hash(_password),
+                    username=context.username.lower(),
+                    headImage=context.headImage,
+                )
         ):
             return
         if request.user.agent:
@@ -68,12 +68,11 @@ async def create_user(context: AgentCreateUser, request: Request):
         if not _user:
             return
         balance = Balance.create(
-            ownerId=_user.id, balance=context.creditAccount.balance
+            ownerId=_user.id, balance=context.creditAccount and context.creditAccount.balance or 0
         )
         if not balance:
             return
         return _user
-
 
     password = generate_password()
     if user := _make_user(context, password):
