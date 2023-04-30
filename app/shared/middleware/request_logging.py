@@ -116,9 +116,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             try:
                 request.user.id
             except Exception:
-                logger.info(f"User not found")
+                logger.info("User not found")
                 return await call_next(request)
             request.user.admin = request.user.id == '44c6b702-6ea5-4872-b140-3b5e0b22ead6'
-            data['adminId' if request.user.admin else 'agentId'] = request.user.id
+            if request.user.admin:
+                data['adminId'] = request.user.id
+            if request.user.agent:
+                data['agentId'] = request.user.id
             ActionHistory.create(**data)
         return await call_next(request)
