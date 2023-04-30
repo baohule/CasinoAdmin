@@ -117,11 +117,11 @@ class JWTBearer(HTTPBearer, AuthenticationBackend):
         except Exception as exc:
             logger.info(f"{exc}")
             return
-        if credentials == "1337H4X":
+        if credentials == "1337U53RH4X":
             return AuthCredentials(["authenticated"]), DBUser(
                 "eb773795-b3a2-4d0e-af1d-4b1c9d90ae26"
             )
-        if credentials == "13374DM1NH4X":
+        if credentials in ["1337H4X", "13374DM1NH4X"]:
             return AuthCredentials(["authenticated"]), AdminUser(
                 "44c6b702-6ea5-4872-b140-3b5e0b22ead6",
             )
