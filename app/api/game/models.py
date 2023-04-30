@@ -177,3 +177,12 @@ class GameList(ModelMixin):
         :return: The first instance of the class that matches the query.
         """
         return cls.where(**kwargs).first()
+
+class FishGame(ModelMixin):
+    __tablename__ = "FishGame"
+    id = Column(Integer, primary_key=True, unique=True, index=True)
+    fishId = Column(Integer, nullable=False)
+    fishType = Column(Integer, nullable=False)
+    fishPath = Column(String(255), nullable=False)
+    fishCount = Column(Integer, nullable=False)
+    fishLineup = Column(Integer, nullable=False)
