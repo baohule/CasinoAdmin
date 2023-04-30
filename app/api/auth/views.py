@@ -170,15 +170,14 @@ async def start_otp_login(context: OTPLoginStart):
 
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
-    # sms_sent = send_sms(context.phone_number, otp_response.message)
-    #
-    # if not sms_sent:
-    #     return BaseResponse(success=False, error="OTP not sent")
+    sms_sent = send_sms(context.phone_number, otp_response.message)
+
+    if not sms_sent:
+        return BaseResponse(success=False, error="OTP not sent")
 
     response = LoginStartResponse(
-        message=f"OTP sent to your phone number {otp}",
-        phone_number=context.phone_number
-
+        message="OTP sent to your phone number",
+        phone_number=context.phone_number,
     )
     return OTPLoginStartResponse(success=True, response=response)
 
