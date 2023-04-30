@@ -100,7 +100,10 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
     async def dispatch(self, request, call_next):
         await self.set_body(request)
-        json_body = await request.json()
+        try:
+            json_body = await request.json()
+        except Exception:
+            json_body = await request.body()
         actions = {'create', 'update', 'delete', 'approve', 'reject', 'cancel', 'complete', 'assign', 'unassign'}
         if any(part in actions for action in request.url.path.split('/') for part in action.split('_')):
             logger.info(f"\n{request.method} {request.url.path} \nPayload: {json_body}")
