@@ -192,10 +192,10 @@ async def start_otp_login(context: OTPLoginStart):
         return BaseResponse(success=False, error="User is disabled please contact the user Agent")
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     if (
-        otp_logins.verify_attempts >= 3
+        otp_logins.send_attempts >= 3
         and otp_logins.last_attempt + timedelta(hours=1) < datetime.now()
     ):
-        otp_logins.verify_attempts = 0
+        otp_logins.send_attempts = 0
 
     delta = otp_logins.last_attempt + timedelta(minutes=1)
     if delta > datetime.now() or otp_logins.send_attempts >= 3:
@@ -254,16 +254,16 @@ async def verify_otp_login(context: OTPLoginVerify):
             return response
         return BaseResponse(success=False, error="User not found")
 
-    otp_logins.attempts += 1
-    if otp_logins.attempts == 3:
+    otp_logins.verify_attempts += 1
+    if otp_logins.verify_attempts == 3:
         if user := User.read(phone=context.phone_number):
             logger.info(f"Deactivating user {context.phone_number} for too many failed attempts")
             user.active = False
             user.session.commit()
-            otp_logins.attempts = 0
+            otp_logins.verify_attempts = 0
             return BaseResponse(success=False, error="Phone Disabled for too many attempts")
 
-    if otp_logins.attempts >= 3:
+    if otp_logins.verify_attempts >= 3:
         return BaseResponse(success=False, error="Phone Disabled for too many attempts")
 
     return BaseResponse(success=False, error="OTP not verified")
