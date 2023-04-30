@@ -199,7 +199,7 @@ async def start_otp_login(context: OTPLoginStart):
 
     delta = otp_logins.last_attempt + timedelta(minutes=1)
     if delta > datetime.now() or otp_logins.send_attempts >= 3:
-        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now() if otp_logins.attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()} seconds")
+        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()} seconds")
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
     sms_sent = send_sms(context.phone_number, otp_response.message)
