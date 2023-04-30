@@ -11,7 +11,7 @@ def generate_confirmation_token(data: str):
     return serializer.dumps(data, salt=Config.salt)
 
 
-def confirm_token(token, expiration=10000000):
+def confirm_token(token, expiration=30):
     serializer = URLSafeTimedSerializer(Config.fastapi_key)
     try:
         data = serializer.loads(token, salt=Config.salt, max_age=expiration)

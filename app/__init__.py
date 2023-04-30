@@ -7,6 +7,8 @@ from starlette.middleware.authentication import AuthenticationMiddleware
 from fastapi_sqlalchemy import DBSessionMiddleware, db
 
 from app.shared.bases.base_model import ModelMixin
+from app.shared.middleware.request_logging import LoggingMiddleware
+
 from settings import Config
 
 import sentry_sdk
@@ -26,7 +28,7 @@ from urllib.parse import quote_plus
 # )
 
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 app = FastAPI()
 
 origins = [
@@ -44,7 +46,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.add_middleware(LoggingMiddleware)
 app.add_middleware(AuthenticationMiddleware, backend=JWTBearer())
 app.add_middleware(SentryAsgiMiddleware)
 app.add_middleware(
@@ -56,11 +58,11 @@ with db():
     ModelMixin.set_session(db.session)
 
 
-celery = Celery("tasks", broker=Config.broker_url, backend=Config.redis_host)
-celery.conf.update({"accept_content": ["text/plain", "json"]})
-celery.conf.task_protocol = 1
-celery.autodiscover_tasks(related_name=["tasks", "task", "app"])
-celery.select_queues("posts")
+# celery = Celery("tasks", broker=Config.broker_url, backend=Config.redis_host)
+# celery.conf.update({"accept_content": ["text/plain", "json"]})
+# celery.conf.task_protocol = 1
+# celery.autodiscover_tasks(related_name=["tasks", "task", "app"])
+# celery.select_queues("posts")
 
 # Uncomment this line if you need to NUKE the meilisearch database
 # search.nuke_ms_db()

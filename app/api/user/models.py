@@ -11,7 +11,7 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey, )
+    ForeignKey, Text, )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer, joinedload, load_only
 
@@ -35,7 +35,8 @@ class User(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
-    password = Column(String(255), nullable=False)
+    password = Column(String(255), nullable=True)
+    phone = Column(String(255), nullable=True)
     firstName = Column(String(255), nullable=True)
     lastName = Column(String(255), nullable=True)
     headImage = Column(String(255), nullable=True, unique=False)
@@ -43,7 +44,7 @@ class User(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     token = Column(String(255), nullable=True)
-    accessToken = Column(String(255), nullable=True)
+    accessToken = Column(Text, nullable=True)
     agentId = Column(
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),

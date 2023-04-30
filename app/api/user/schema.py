@@ -226,3 +226,4 @@ class NewPassword(CamelModel):
 
 class GeneratePasswordResponse(BaseResponse):
     response: Optional[NewPassword]
+
