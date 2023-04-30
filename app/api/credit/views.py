@@ -1,6 +1,8 @@
 """
 @author: Kuro
 """
+from app import logging
+
 from fastapi import APIRouter, Depends, Request
 
 from app.api.admin.models import Admin
@@ -28,6 +30,9 @@ router = APIRouter(
     dependencies=[Depends(JWTBearer())],
     tags=["credit"],
 )
+
+logger = logging.getLogger("credit")
+logger.addHandler(logging.StreamHandler())
 
 
 @router.post("/manage/create_user_credit", response_model=CreateUserCreditResponse)

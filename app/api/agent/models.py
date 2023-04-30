@@ -10,7 +10,10 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, joinedload, defer, load_only
 
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
+import logging
 
+logger = logging.getLogger("agent_models")
+logger.addHandler(logging.StreamHandler())
 
 class Agent(ModelMixin):
     __tablename__ = "Agent"
@@ -82,7 +85,7 @@ class Agent(ModelMixin):
             return agent
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
     @classmethod
@@ -107,7 +110,7 @@ class Agent(ModelMixin):
             return
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
     @classmethod
@@ -127,7 +130,7 @@ class Agent(ModelMixin):
             return agent.id
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
     @classmethod

@@ -16,12 +16,17 @@ from app.shared.bases.base_model import ModelType, ModelMixin
 from app.shared.middleware.json_encoders import ModelEncoder
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from settings import Config
-from fastapi.logger import logger
+from fastapi.logger import logger, logging
 
 JWT_SECRET = Config.fastapi_key
 JWT_ALGORITHM = Config.jwt_algo
 ADMIN_SECRET = Config.admin_key
 AGENT_SECRET = Config.agent_key
+
+
+logger.name = "AuthHandler"
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
 
 
 def token_response(token_detail: TokenDetail) -> TokenResponse:
@@ -64,6 +69,7 @@ def sign_jwt(claim: UserClaim) -> TokenResponse:
         secret = ADMIN_SECRET
     if claim.agent:
         secret = AGENT_SECRET
+    logger.info(f"signing jwt with secret {secret}")
     token = generate_main_jwt(claim, secret)
     return token_response(TokenDetail(access_token=token, user_claim=claim))
 
@@ -82,6 +88,11 @@ def decode_jwt(token: str, admin=False, agent=False) -> UserClaim:
     def _get_user_type():
         for secret in [ADMIN_SECRET, AGENT_SECRET, JWT_SECRET]:
             with contextlib.suppress(jwt.exceptions.InvalidSignatureError):
+                logger.info(f"trying secret {secret}")
                 return jwt.decode(token, secret, algorithms=[JWT_ALGORITHM])
 
-    return UserClaim(**_get_user_type()) if _get_user_type() else None
+    logger.info(f"decoded jwt with token {token}")
+
+    if claim := _get_user_type():
+        logger.info(f"decoded {token} with claim {claim}")
+    return UserClaim(**claim or None)

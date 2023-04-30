@@ -1,7 +1,9 @@
 """
 @author: Kuro
 """
-import logging
+from enum import Enum
+
+from app import logging
 from datetime import datetime, timedelta
 
 import pyotp
@@ -25,13 +27,9 @@ from app.shared.twilio.sms import send_sms
 from fastapi import APIRouter
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.twilio.templates.sms_templates import OTPStartMessage
-# from app.shared.helper.logger import StandardizedLogger
 
-# logger = StandardizedLogger(__name__)
-
-from app import logger
-logger.setLevel(logging.DEBUG)
-
+logger = logging.getLogger("auth")
+logger.addHandler(logging.StreamHandler())
 
 router = APIRouter(
     prefix="/api/auth",
@@ -72,17 +70,22 @@ def jwt_login(
     :param agent: bool = False, defaults to False (optional)
     :return: A signed JWT token
     """
+    logger.info(f"Attempting to login {context.email}")
     model = admin and Admin or agent and Agent or User
+    logger.info(f"Model selected is {model}")
     claim: UserClaim = model.user_claims(**context.dict())
+    logger.info(f"Claim is {claim}")
     if not claim:
+        logger.info("No claim found")
         return TokenResponse(success=False, error="Wrong login details")
     try:
         claim.admin = admin
         claim.agent = agent
     except Exception as e:
         model.session.rollback()
-        print(e)
+        logger.error(str(e))
     signed_jwt: TokenResponse = sign_jwt(claim)
+    logger.info(f"Signed JWT is {signed_jwt.response.access_token}")
     return signed_jwt
 
 
@@ -174,6 +177,32 @@ class AttemptedLogin:
         return cls._instance
 
 
+class OTPError:
+    _instance = None
+    time_left = ""
+    NotVerified = "OTP not verified"
+    Expired = "OTP expired"
+    Invalid = "Invalid OTP"
+    MaxAttempts = "Phone disabled for maximum attempts reached"
+    NotSent = "OTP not sent"
+    NotStarted = "OTP not started"
+    UserDisabled = "User is disabled please contact the admin"
+    UserNotFound = "User not found"
+    TooManyRequests = f""
+    DeactivatingUser = f""
+
+    def __init__(self, time_left: timedelta = None, phone_number: str = None):
+        self.time_left = time_left
+        self.TooManyRequests = f"Too many requests please try again in {time_left} seconds"
+        self.DeactivatingUser = f"Deactivating user {phone_number} for too many failed attempts"
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
+
 @router.post("/login/otp/start", response_model=OTPLoginStartResponse)
 async def start_otp_login(context: OTPLoginStart):
     """
@@ -189,7 +218,7 @@ async def start_otp_login(context: OTPLoginStart):
     phone_list = User.session.query(User.phone).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
     if context.phone_number in disabled_list:
-        return BaseResponse(success=False, error="User is disabled please contact the user Agent")
+        return BaseResponse(success=False, error=OTPError.UserDisabled)
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     if (
         otp_logins.send_attempts >= 3
@@ -199,21 +228,21 @@ async def start_otp_login(context: OTPLoginStart):
 
     delta = otp_logins.last_attempt + timedelta(minutes=1)
     if delta > datetime.now() or otp_logins.send_attempts >= 3:
-        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()} seconds")
+        error = OTPError(time_left= delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now())
+        return BaseResponse(success=False, error=error.TooManyRequests)
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
     sms_sent = send_sms(context.phone_number, otp_response.message)
     otp_logins.send_attempts += 1
     otp_logins.last_attempt = datetime.now()
     if not sms_sent:
-        return BaseResponse(success=False, error="OTP not sent")
+        return BaseResponse(success=False, error=OTPError.NotSent)
 
     response = LoginStartResponse(
         message="OTP sent to your phone number",
         phone_number=context.phone_number,
     )
     return OTPLoginStartResponse(success=True, response=response)
-
 
 
 
@@ -235,7 +264,7 @@ async def verify_otp_login(context: OTPLoginVerify):
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
 
     if context.phone_number in disabled_list:
-        return BaseResponse(success=False, error="User Disabled, Please Contact user Agent")
+        return BaseResponse(success=False, error=OTPError.UserDisabled)
     if totp.verify(context.code):
 
         if user := User.read(phone=context.phone_number):
@@ -252,18 +281,19 @@ async def verify_otp_login(context: OTPLoginVerify):
                 accessToken=response.response.access_token
             )
             return response
-        return BaseResponse(success=False, error="User not found")
+        return BaseResponse(success=False, error=OTPError.UserNotFound)
 
     otp_logins.verify_attempts += 1
     if otp_logins.verify_attempts == 3:
         if user := User.read(phone=context.phone_number):
-            logger.info(f"Deactivating user {context.phone_number} for too many failed attempts")
+            error = OTPError(phone_number=context.phone_number)
+            logger.info(error.DeactivatingUser)
             user.active = False
             user.session.commit()
             otp_logins.verify_attempts = 0
-            return BaseResponse(success=False, error="Phone Disabled for too many attempts")
+            return BaseResponse(success=False, error=error.DeactivatingUser)
 
     if otp_logins.verify_attempts >= 3:
-        return BaseResponse(success=False, error="Phone Disabled for too many attempts")
+        return BaseResponse(success=False, error=OTPError.UserDisabled)
 
-    return BaseResponse(success=False, error="OTP not verified")
+    return BaseResponse(success=False, error=OTPError.NotVerified)

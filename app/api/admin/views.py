@@ -1,6 +1,8 @@
 """
 @author: Kuro
 """
+from app import logging
+
 from fastapi import APIRouter, Depends, Request
 
 from app.api.admin.schema import (
@@ -25,15 +27,15 @@ from fastapi.exceptions import HTTPException
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
-from app.shared.middleware.request_logging import LoggingMiddleware
 from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.schemas.page_schema import PagedResponse
 
 router = APIRouter(
     prefix="/api/admin",
     dependencies=[Depends(JWTBearer(admin=True))],
     tags=["admin"],
 )
+logger = logging.getLogger("admin")
+logger.addHandler(logging.StreamHandler())
 
 
 @router.post("/manage/create_admin", response_model=AdminUserCreateResponse)
@@ -50,12 +52,11 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
     """
     user.password = get_password_hash(user.password)
-    admin = Admin.add_admin(**user.dict())
-    return (
-        AdminUserCreateResponse(success=True, response=admin)
-        if admin
-        else BaseResponse(success=False, error="Admin not created")
-    )
+    logger.info(f"Creating admin with email {user.email}")
+    if admin := Admin.add_admin(**user.dict()):
+        logger.info(f"Admin created with email {user.email}")
+        return AdminUserCreateResponse(success=True, response=admin)
+    return AdminUserCreateResponse(error="Admin not created")
 
 
 @router.post("/manage/create_agent", response_model=AgentCreateResponse)
@@ -71,16 +72,18 @@ async def create_agent(context: AgentUserCreate, request: Request):
     :type request: Request
     :return: AgentCreateResponse(success=True, response=agent)
     """
-
+    logger.info(f"Creating agent with email {context.email}")
     context.password = get_password_hash(context.password)
     agent = Agent.create(email=context.email, password=context.password)
     if not agent:
+        logger.info(f"Agent not created with email {context.email}")
         return BaseResponse(success=False, error="Admin not created")
     quota = Quota.create(agentId=agent.id, balance=context.quota)
     if not agent and quota:
+        logger.info(f"Quota not created for user {context.email}")
         return BaseResponse(success=False, error="Admin not created")
+    logger.info(f"Agent and quota created with email {context.email}")
     return AgentCreateResponse(success=True, response=agent)
-
 
 
 @router.post("/manage/update_agent", response_model=AgentUpdateResponse)
@@ -94,6 +97,7 @@ async def update_agent(context: AgentUpdate, request: Request):
     :type request: Request
     :return: AgentUpdateResponse
     """
+    logger.info(f"Updating agent with id {context.agentId}")
     agent = Agent.update_agent(
         id=context.agentId,
         active=context.active
@@ -101,7 +105,9 @@ async def update_agent(context: AgentUpdate, request: Request):
     if context.quota:
         Quota.update(agentId=context.agentId, balance=context.quota)
     if not agent:
+        logger.info(f"Agent not found with id {context.agentId}")
         BaseResponse(success=False, response="Agent not found")
+    logger.info(f"Agent updated with id {context.agentId}")
     return AgentUpdateResponse(success=True, response=agent)
 
 
@@ -117,6 +123,7 @@ async def remove_agent(user: RemoveUser, request: Request):
     :type request: Request
     :return: The response is a BaseResponse object.
     """
+    logger.info(f"Removing agent with id {user.id}")
     return BaseResponse(success=True, response=Agent.remove_agent(id=user.id))
 
 
@@ -132,12 +139,13 @@ async def list_agents(context: GetUserList, request: Request):
     :type request: Request
     :return: ListAdminUserResponse
     """
+    logger.info(f"Listing agents with page {context.params.page} and size {context.params.size}")
     agent_pages = Agent.list_all_agents(
         context.params.page,
         context.params.size,
         active=context.context.filter.active
     )
-
+    logger.info(f"{len(agent_pages.items)} agents found")
     return ListAdminUserResponse(success=True, response=AdminPagedResponse(**agent_pages.as_dict()))
 
 
@@ -152,9 +160,12 @@ async def get_agent(user: GetAgent, request: Request):
     :type request: Request
     :return: BaseResponse(success=True, response=agent)
     """
+    logger.info(f"Getting agent with id {user.id}")
     agent = Agent.get(id=user.id)
     if not agent:
+        logger.info(f"Agent not found with id {user.id}")
         BaseResponse(success=False, response="Agent not found")
+    logger.info(f"Agent found with id {user.id}")
     return BaseResponse(success=True, response=agent)
 
 
@@ -173,6 +184,7 @@ async def search_users(context: SearchUser, request: Request):
     :param request:Request: Used to Access the user object.
     :return: A list of users that match the search criteria.
     """
+    logger.info(f"Searching for {context.type}s")
     model = User
     if context.type == 'agent':
         model = Agent
@@ -180,6 +192,8 @@ async def search_users(context: SearchUser, request: Request):
         model = Admin
     if context.type == 'user':
         model = User
+    logger.info(f"{model} selected for search")
     result = model.search(**context.dict(exclude_none=True)) or []
+    logger.info(f"{len(result)} {context.type}s found")
     return SearchResults(success=True, response=result)
 

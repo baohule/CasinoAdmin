@@ -2,6 +2,7 @@
 @author: Kuro
 """
 import contextlib
+import logging
 import math
 import uuid
 from datetime import datetime, timedelta
@@ -53,6 +54,7 @@ from app.shared.auth.password_handler import get_password_hash, verify_password
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
+logger = logging.getLogger("base_model")
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()
@@ -106,7 +108,7 @@ class ModelMixin(Base):
                 return _object
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.error(e)
             return
 
     @classmethod
@@ -320,7 +322,7 @@ class ModelMixin(Base):
             cls.session.commit()
             return new_object
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
@@ -354,7 +356,7 @@ class ModelMixin(Base):
             cls.session.commit()
             return updated_data
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
@@ -371,7 +373,7 @@ class ModelMixin(Base):
             delete = cls.where(id=object_id).delete()
             return delete
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
@@ -391,7 +393,7 @@ class ModelMixin(Base):
             objects = cls.where()
             return paginate(objects, page, num_items)
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
@@ -418,7 +420,7 @@ class ModelMixin(Base):
         try:
             return cls.where(**kwargs).all()
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
@@ -449,7 +451,7 @@ class ModelMixin(Base):
                 if results := cls.where().filter(cls.firstName.ilike(f"%{firstName}%")).all():
                     return results
         except Exception as e:
-            print(e)
+            logger.error(e)
             cls.session.rollback()
             return
 
