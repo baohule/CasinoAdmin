@@ -212,6 +212,7 @@ class UserClaim(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
     username: Optional[str]
+    phone: Optional[str]
     admin: Optional[bool]
     agent: Optional[bool]
     expires: Optional[str]
@@ -233,3 +234,18 @@ class TokenDetail(ORMCamelModel):
 class TokenResponse(BaseResponse):
     success: bool
     response: Optional[TokenDetail]
+
+
+class OTPLoginStart(CamelModel):
+    phone_number: str = Field(example="+14801234567 - note the +1")
+
+class OTPLoginVerify(CamelModel):
+    phone_number: str
+    code: str = Field(example="123456")
+
+class LoginStartResponse(ORMCamelModel):
+    message: Optional[str]
+    phone_number: Optional[str]
+
+class OTPLoginStartResponse(BaseResponse):
+    response: Optional[LoginStartResponse]

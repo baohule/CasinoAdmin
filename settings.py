@@ -49,3 +49,4 @@ class Config:
         "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5oYnRhZHB3d2RoeXpydXdtaHVzIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY3OTQ4NDA0MiwiZXhwIjoxOTk1MDYwMDQyfQ.mJHxYlM9KaXUFslD4iEw8cpOeihJWgzMzFhE1FKecJA",
     )
     jira_key = os.getenv("JIRA_KEY", "ty66G3lFl6VmnPQh")
+    otp_base = os.getenv("OTP_BASE", "LOG6DLW7LGOGTDLT4A7W4G4K5UFX37IN")

@@ -16,7 +16,7 @@ def send_sms(phone: str, body: str):
     error_details = None
     logger.info(f"Sending SMS to {phone}: {body}")
     try:
-        client.messages.create(to=phone, from_=f"{Config.twilio_phone}", body=body)
+        client.messages.create(to=phone, from_=f'{Config.twilio_phone}', body=body)
         logger.info(f"message sent to {phone}")
     except TwilioRestException as e:
         if e.code in [21614, 21211]:

@@ -1,9 +1,15 @@
 """
 @author: Kuro
 """
+import logging
+
+import pyotp
+from pydantic import BaseModel
+
+import settings
 from app.api.admin.models import Admin
 from app.api.agent.models import Agent
-from app.api.auth.schema import UserClaim
+from app.api.auth.schema import UserClaim, OTPLoginStartResponse, OTPLoginStart, LoginStartResponse, OTPLoginVerify
 from app.api.credit.models import Balance
 from app.api.user import schema as user_schema
 from app.api.user.models import User
@@ -12,20 +18,25 @@ from app.shared.auth.auth_handler import sign_jwt, TokenResponse
 from app.shared.auth.password_handler import get_password_hash
 from typing import Union
 from app.shared.auth.password_generator import generate_password
+from app.shared.auth.token_handler import generate_confirmation_token, confirm_token
 from app.shared.email.mailgun import send_password_email
-
+from app.shared.twilio.sms import send_sms
 from fastapi import APIRouter
-
+from app.shared.schemas.ResponseSchemas import BaseResponse
+from app.shared.twilio.templates.sms_templates import OTPStartMessage
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
-from app.shared.schemas.ResponseSchemas import BaseResponse
+
+from app import logger
+logger.setLevel(logging.DEBUG)
+
 
 router = APIRouter(
     prefix="/api/auth",
     tags=["auth"],
 )
-
+totp = pyotp.TOTP(settings.Config.otp_base, interval=60)
 
 @router.post("/signup", response_model=TokenResponse)
 async def create_user(context: AdminUserCreate) -> TokenResponse:
@@ -140,3 +151,103 @@ async def generate_random_password(context: GeneratePassword):
     return BaseResponse(success=False, error="Email Not Sent")
 
 
+@router.post("/login/otp/start", response_model=OTPLoginStartResponse)
+async def start_otp_login(context: OTPLoginStart):
+    """
+    This function initiates the OTP login process by generating an OTP, storing it in the database,
+    and sending it to the user's email address.
+
+    :param context: The context parameter is an instance of the OTPLoginStart class, which
+    likely contains the user's email address
+    :type context: OTPLoginStart
+    :return: The function `start_otp_login` returns a `OTPLoginStartResponse` object with a
+    `success` flag set to `True` and no error message.
+    """
+    phone_list = User.session.query(User.phone).filter_by(active=False).all()
+    disabled_list = [phone[0] for phone in phone_list if phone[0]]
+    if context.phone_number in disabled_list:
+        return BaseResponse(success=False, error="User is disabled please contact the user Agent")
+
+    otp = totp.now()
+    otp_response = OTPStartMessage(otp=otp)
+    # sms_sent = send_sms(context.phone_number, otp_response.message)
+    #
+    # if not sms_sent:
+    #     return BaseResponse(success=False, error="OTP not sent")
+
+    response = LoginStartResponse(
+        message=f"OTP sent to your phone number {otp}",
+        phone_number=context.phone_number
+
+    )
+    return OTPLoginStartResponse(success=True, response=response)
+
+
+class AttemptedLogin:
+    """
+    This class is used to keep track of the number of times a user has attempted to log in
+    follows singleton pattern
+    """
+    _instance = None
+    attempts = 0
+
+    def __init__(self, phone_number: str):
+        self.phone_number = phone_number
+        self.attempts = self.attempts
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
+@router.post("/login/otp/verify", response_model=TokenResponse)
+async def verify_otp_login(context: OTPLoginVerify):
+    """
+    This function verifies an OTP and returns a JWT token if the OTP is correct.
+
+    :param context: The context parameter is an instance of the OTPLoginVerify class,
+    which likely contains the user's email address and the OTP they entered
+    :type context: OTPLoginVerify
+    :return: The function `verify_otp_login` returns either a `OTPLoginVerifyResponse`
+    object with a `success` flag set to `True`, a `response` field containing a
+    `TokenResponse` object with a JWT token, and no error message, or a `BaseResponse`
+    object with a `success` flag set to `False` and an error message.
+    """
+    otp_logins = AttemptedLogin(phone_number=context.phone_number)
+    phone_list = User.session.query(User.phone).filter_by(active=False).all()
+    disabled_list = [phone[0] for phone in phone_list if phone[0]]
+
+    if context.phone_number in disabled_list:
+        return BaseResponse(success=False, error="User Disabled, Please Contact user Agent")
+    if totp.verify(context.code):
+
+        if user := User.read(phone=context.phone_number):
+            response: TokenResponse = sign_jwt(
+                UserClaim(
+                    id=user.id,
+                    email=user.email,
+                    phone=user.phone,
+                    username=user.username
+                )
+            )
+            User.update(
+                id=user.id,
+                accessToken=response.response.access_token
+            )
+            return response
+        return BaseResponse(success=False, error="User not found")
+
+    otp_logins.attempts += 1
+    if otp_logins.attempts == 3:
+        if user := User.read(phone=context.phone_number):
+            logger.info(f"Deactivating user {context.phone_number} for too many failed attempts")
+            user.active = False
+            user.session.commit()
+            otp_logins.attempts = 0
+            return BaseResponse(success=False, error="Phone Disabled for too many attempts")
+
+    if otp_logins.attempts >= 3:
+        return BaseResponse(success=False, error="Phone Disabled for too many attempts")
+
+    return BaseResponse(success=False, error="OTP not verified")

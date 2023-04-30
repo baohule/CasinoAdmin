@@ -25,6 +25,7 @@ from fastapi.exceptions import HTTPException
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
+from app.shared.middleware.request_logging import LoggingMiddleware
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
 
