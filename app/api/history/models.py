@@ -88,8 +88,8 @@ class ActionHistory(ModelMixin):
     __tablename__ = "ActionHistory"
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     newValueJson = Column(JSONB)
-    path = Column(String(255), nullable=False)
-    ip = Column(String(255), nullable=False)
+    path = Column(String(255), nullable=True)
+    ip = Column(String(255), nullable=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     userId = Column(
         UUID(as_uuid=True),
