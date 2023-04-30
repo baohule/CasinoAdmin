@@ -17,8 +17,9 @@ from app.shared.middleware.auth import JWTBearer
 import app.shared.search.search as search
 
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
-from fastapi.logger import logger, logging
+import logging
 from urllib.parse import quote_plus
+
 #
 # sentry_sdk.init(
 #     Config.sentry_ingestion_url,
@@ -28,7 +29,19 @@ from urllib.parse import quote_plus
 # )
 
 
-logger.setLevel(logging.DEBUG)
+logging.basicConfig(
+    filename='app.log',
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    filemode='a',
+    force=True
+)
+# logger.setLevel(logging.DEBUG)
+
+
+logger = logging.getLogger("backend")
+logger.addHandler(logging.StreamHandler())
 app = FastAPI()
 
 origins = [
@@ -54,10 +67,10 @@ app.add_middleware(
     db_url=f"postgresql+psycopg2://{Config.postgres_connection}",
     engine_args={"pool_size": 100000, "max_overflow": 10000},
 )
+logger.debug("Middleware registered")
 with db():
     ModelMixin.set_session(db.session)
-
-
+logger.debug("Database connection established")
 # celery = Celery("tasks", broker=Config.broker_url, backend=Config.redis_host)
 # celery.conf.update({"accept_content": ["text/plain", "json"]})
 # celery.conf.task_protocol = 1

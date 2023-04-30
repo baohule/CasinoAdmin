@@ -13,10 +13,11 @@ from app.shared.auth.auth_handler import decode_jwt
 from fastapi.requests import Request
 from fastapi.exceptions import HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-import logging
+from fastapi.logger import logging
 
 logger = logging.getLogger("AuthMiddleware")
 logger.setLevel(logging.DEBUG)
+logger.addHandler(logging.StreamHandler())
 
 
 class DBUser(BaseUser):

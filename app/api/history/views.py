@@ -1,7 +1,7 @@
 """
 @author: Kuro
 """
-import logging
+from app import logging
 from typing import List, Union, Iterator
 
 from fastapi import APIRouter, Depends, Request
@@ -30,6 +30,9 @@ router = APIRouter(
     dependencies=[Depends(JWTBearer())],
     tags=["history"],
 )
+
+logger = logging.getLogger("history")
+logger.addHandler(logging.StreamHandler())
 
 
 @router.post("/get_bet_history", response_model=GetBetHistoryResponse)

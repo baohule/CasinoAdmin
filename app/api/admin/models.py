@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+from app import logging
 import uuid
 from datetime import datetime
 
@@ -11,6 +12,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
+
+logger = logging.getLogger("admin_models")
+logger.addHandler(logging.StreamHandler())
 
 
 class Admin(ModelMixin):
@@ -23,7 +27,7 @@ class Admin(ModelMixin):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
     email = Column(String(255), unique=True)
     password = Column(String(255), nullable=False)
-    username = Column(String(255), nullable=False)
+    username = Column(String(255), nullable=False, unique=True)
     firstName = Column(String(255), nullable=True)
     lastName = Column(String(255), nullable=True)
     token = Column(String(255), nullable=True)
@@ -50,14 +54,17 @@ class Admin(ModelMixin):
         try:
             admin_data = cls.rebuild(kwargs)
             if cls.where(email=admin_data["email"]).first():
+                logger.info("Admin already exists")
                 return
             admin = cls(**admin_data)
             cls.session.add(admin)
             cls.session.commit()
+            logger.info("Admin created successfully")
             return admin
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info('Admin not created')
+            logger.error(str(e))
             return
 
     @classmethod
@@ -78,7 +85,7 @@ class Admin(ModelMixin):
             return cls.where(id=admin_user_id).update(**kwargs)
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
     @classmethod

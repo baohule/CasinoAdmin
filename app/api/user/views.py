@@ -1,6 +1,8 @@
 """
 @author: Kuro
 """
+from app import logging
+
 from fastapi import APIRouter, Depends, Request
 from app.api.user import schema
 from app.api.user.models import User
@@ -20,6 +22,9 @@ router = APIRouter(
     dependencies=[Depends(JWTBearer())],
     tags=["user"]
 )
+
+logger = logging.getLogger("user")
+logger.addHandler(logging.StreamHandler())
 
 
 @router.post("/get_user", response_model=LoadUserResponse)

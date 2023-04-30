@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+import logging
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -23,6 +24,7 @@ from app.shared.schemas.page_schema import PagedResponse
 
 
 # from app.shared.helper.logger import StandardizedLogger
+logger = logging.getLogger("user_models")
 
 
 class User(ModelMixin):
@@ -130,7 +132,7 @@ class User(ModelMixin):
 
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
     @classmethod
@@ -151,6 +153,6 @@ class User(ModelMixin):
             return user.first()
         except Exception as e:
             cls.session.rollback()
-            print(e)
+            logger.info(e)
             return
 
