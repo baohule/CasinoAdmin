@@ -2,6 +2,7 @@
 @author: Kuro
 """
 import logging
+from datetime import datetime, timedelta
 
 import pyotp
 from pydantic import BaseModel
@@ -151,6 +152,26 @@ async def generate_random_password(context: GeneratePassword):
     return BaseResponse(success=False, error="Email Not Sent")
 
 
+class AttemptedLogin:
+    """
+    This class is used to keep track of the number of times a user has attempted to log in
+    follows singleton pattern
+    """
+    _instance = None
+    attempts = 0
+    last_attempt = datetime.now()
+
+    def __init__(self, phone_number: str):
+        self.phone_number = phone_number
+        self.attempts = self.attempts
+        self.last_attempt = self.last_attempt
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+
 @router.post("/login/otp/start", response_model=OTPLoginStartResponse)
 async def start_otp_login(context: OTPLoginStart):
     """
@@ -167,11 +188,14 @@ async def start_otp_login(context: OTPLoginStart):
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
     if context.phone_number in disabled_list:
         return BaseResponse(success=False, error="User is disabled please contact the user Agent")
-
+    otp_logins = AttemptedLogin(phone_number=context.phone_number)
+    delta = otp_logins.last_attempt + timedelta(minutes=1)
+    if delta > datetime.now():
+        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now()} seconds")
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
     sms_sent = send_sms(context.phone_number, otp_response.message)
-
+    otp_logins.last_attempt = datetime.now()
     if not sms_sent:
         return BaseResponse(success=False, error="OTP not sent")
 
@@ -182,22 +206,6 @@ async def start_otp_login(context: OTPLoginStart):
     return OTPLoginStartResponse(success=True, response=response)
 
 
-class AttemptedLogin:
-    """
-    This class is used to keep track of the number of times a user has attempted to log in
-    follows singleton pattern
-    """
-    _instance = None
-    attempts = 0
-
-    def __init__(self, phone_number: str):
-        self.phone_number = phone_number
-        self.attempts = self.attempts
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super().__new__(cls)
-        return cls._instance
 
 
 @router.post("/login/otp/verify", response_model=TokenResponse)
