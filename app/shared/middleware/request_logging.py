@@ -118,7 +118,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             except Exception:
                 logger.info("User not found")
                 return await call_next(request)
-            logger.info(f"User: {request.user.id}, AuthInfo: {request.auth}")
+            logger.info(f"User: {request.user.id}, AuthInfo: {request.auth.scopes}")
             if request.user.id == '44c6b702-6ea5-4872-b140-3b5e0b22ead6' or request.user.admin:
                 data['adminId'] = request.user.id
             elif request.user.agent:
