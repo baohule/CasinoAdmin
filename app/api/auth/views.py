@@ -159,7 +159,7 @@ class AttemptedLogin:
     """
     _instance = None
     attempts = 0
-    last_attempt = datetime.now()
+    last_attempt = datetime.now() - timedelta(minutes=1)
 
     def __init__(self, phone_number: str):
         self.phone_number = phone_number
@@ -190,11 +190,12 @@ async def start_otp_login(context: OTPLoginStart):
         return BaseResponse(success=False, error="User is disabled please contact the user Agent")
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     delta = otp_logins.last_attempt + timedelta(minutes=1)
-    if delta > datetime.now():
-        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now()} seconds")
+    if delta > datetime.now() or otp_logins.attempts >= 3:
+        return BaseResponse(success=False, error=f"Too many attempts please try again in {delta - datetime.now() if otp_logins.attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()} seconds")
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
     sms_sent = send_sms(context.phone_number, otp_response.message)
+    otp_logins.attempts += 1
     otp_logins.last_attempt = datetime.now()
     if not sms_sent:
         return BaseResponse(success=False, error="OTP not sent")
