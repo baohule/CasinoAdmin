@@ -144,6 +144,6 @@ class JWTBearer(HTTPBearer, AuthenticationBackend):
             error = "Invalid basic auth credentials"
             logger.info(error)
             return
-        logger.info(f"decoded_user: {decoded_user}")
-        logger.info(f"middleware_user_type: {middleware_user_type}")
+        #logger.info(f"decoded_user: {decoded_user}")
+        #logger.info(f"middleware_user_type: {middleware_user_type}")
         return AuthCredentials(["authenticated"]), middleware_user_type(decoded_user.id)
