@@ -37,6 +37,7 @@ from sqlalchemy.engine import Row
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import registry, sessionmaker
+from sqlalchemy_mixins import AllFeaturesMixin
 from sqlalchemy_mixins.activerecord import ActiveRecordMixin
 from sqlalchemy_mixins.inspection import InspectionMixin
 from sqlalchemy_mixins.smartquery import SmartQueryMixin
@@ -55,14 +56,8 @@ from app.shared.auth.password_handler import get_password_hash, verify_password
 
 # logger = StandardizedLogger(__name__)
 logger = logging.getLogger("base_model")
-
-mapper_registry = registry()
-DeclarativeBase = declarative_base()
-Base = mapper_registry.generate_base(
-    cls=(DeclarativeBase, ActiveRecordMixin, SmartQueryMixin, InspectionMixin)
-)
-ModelType = TypeVar("ModelType", bound=Base)
-
+ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
+Base = AllFeaturesMixin
 
 class UserTypeEnum(Enum):
     """
@@ -74,8 +69,7 @@ class UserTypeEnum(Enum):
     user = "user"
 
 
-@mapper_registry.mapped
-class ModelMixin(Base):
+class ModelMixin(AllFeaturesMixin):
     """
     Generic Mixin Model to provide helper functions that all Model classes need
     """

@@ -7,28 +7,36 @@ from app.api.admin.models import Admin
 admins = Admin.read_all()
 users = User.read_all()
 agents = Agent.read_all()
+def rotate_all():
+    for admin in admins:
+        try:
+            admin.password = get_password_hash("123")
+            admin.session.commit()
+        except Exception as e:
+            print(e)
+            admin.session.rollback()
 
-for admin in admins:
-    try:
-        admin.password = get_password_hash("123")
-        admin.session.commit()
-    except Exception as e:
-        print(e)
-        admin.session.rollback()
+    for user in users:
 
-for user in users:
+        try:
+            user.password = get_password_hash("123")
+            user.session.commit()
+        except Exception as e:
+            print(e)
+            user.session.rollback()
 
-    try:
+    for agent in agents:
+        try:
+            agent.password = get_password_hash("123")
+            agent.session.commit()
+        except Exception as e:
+            print(e)
+            agent.session.rollback()
+
+
+def rotate_one(email=input("enter email")):
+    if user := User.read(email=email):
         user.password = get_password_hash("123")
         user.session.commit()
-    except Exception as e:
-        print(e)
-        user.session.rollback()
-
-for agent in agents:
-    try:
-        agent.password = get_password_hash("123")
-        agent.session.commit()
-    except Exception as e:
-        print(e)
-        agent.session.rollback()
+    else:
+        print("user not found")

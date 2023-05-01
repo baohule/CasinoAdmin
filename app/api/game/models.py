@@ -8,7 +8,7 @@ from sqlalchemy import (
     DateTime,
     Integer,
     String,
-    JSON, ForeignKey, Boolean,
+    JSON, ForeignKey, Boolean, Float,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
@@ -178,11 +178,22 @@ class GameList(ModelMixin):
         """
         return cls.where(**kwargs).first()
 
-class FishGame(ModelMixin):
-    __tablename__ = "FishGame"
-    id = Column(Integer, primary_key=True, unique=True, index=True)
-    fishId = Column(Integer, nullable=False)
-    fishType = Column(Integer, nullable=False)
-    fishPath = Column(String(255), nullable=False)
-    fishCount = Column(Integer, nullable=False)
-    fishLineup = Column(Integer, nullable=False)
+
+class Fish(ModelMixin):
+    __tablename__ = 'fish'
+
+    id = Column(Integer, primary_key=True)
+    fishType = Column(Float)
+    coin = Column(Float)
+    outPro = Column(Float)
+    prop = Column(Float)
+    propId = Column(Float)
+    propCount = Column(Float)
+    propValue = Column(Float)  # Only for certain fish types
+
+    @classmethod
+    def seed_fish_config(cls, fish_config):
+        for config in fish_config:
+            fish = cls(**config)
+            cls.session.add(fish)
+        cls.session.commit()

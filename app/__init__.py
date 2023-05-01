@@ -68,8 +68,7 @@ app.add_middleware(
     engine_args={"pool_size": 100000, "max_overflow": 10000},
 )
 logger.debug("Middleware registered")
-with db():
-    ModelMixin.set_session(db.session)
+
 logger.debug("Database connection established")
 # celery = Celery("tasks", broker=Config.broker_url, backend=Config.redis_host)
 # celery.conf.update({"accept_content": ["text/plain", "json"]})
