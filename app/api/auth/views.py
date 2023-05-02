@@ -243,6 +243,7 @@ async def start_otp_login(context: OTPLoginStart):
         message=otp_debug,
         phone_number=context.phone_number,
     )
+    logger.info(response.message)
     return OTPLoginStartResponse(success=True, response=response)
 
 
