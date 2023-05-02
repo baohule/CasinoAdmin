@@ -98,6 +98,7 @@ class AgentUserCreate(CamelModel):
 
     email: EmailStr
     password: str
+    username: str
     quota: Optional[int]
 
 
