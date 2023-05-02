@@ -248,7 +248,6 @@ class WithdrawalContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
-    email: Optional[str] = Field(default=None, description="optional")
     status: Optional[Status] = Field(default=None, description="optional")
 
 
