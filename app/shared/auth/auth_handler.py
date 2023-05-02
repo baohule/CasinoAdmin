@@ -91,7 +91,7 @@ def decode_jwt(token: str, admin=False, agent=False) -> UserClaim:
                 logger.info(f"trying secret {secret}")
                 return jwt.decode(token, secret, algorithms=[JWT_ALGORITHM])
 
-    logger.info(f"decoded jwt with token {token}")
+    # logger.info(f"decoded jwt with token {token}")
 
     if claim := _get_user_type():
         logger.info(f"decoded {token} with claim {claim}")
