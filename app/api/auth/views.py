@@ -30,6 +30,7 @@ from app.shared.twilio.templates.sms_templates import OTPStartMessage
 
 logger = logging.getLogger("auth")
 logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
 
 router = APIRouter(
     prefix="/api/auth",
