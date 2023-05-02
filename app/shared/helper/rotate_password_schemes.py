@@ -1,8 +1,13 @@
+from app.endpoints.urls import APIPrefix
 from app.shared.auth.password_handler import get_password_hash, verify_password
 from app.api.user.models import User
 from app.api.agent.models import Agent
 from app.api.admin.models import Admin
-
+for route in APIPrefix.include:
+    try:
+        exec(f"from app.api.{route}.models import ModelMixin as Base")
+    except ImportError as e:
+        pass
 
 admins = Admin.read_all()
 users = User.read_all()
