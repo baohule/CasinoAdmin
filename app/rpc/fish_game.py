@@ -7,6 +7,7 @@
 # let fishOutListConfig = require("./../config/fishOutListConfig");
 #
 # let redis_send_and_listen = require("./../../../util/redis_send_and_listen");
+import itertools
 import random
 import time
 from typing import List, Optional, Dict, Any
@@ -560,17 +561,16 @@ FishGame object and run the game.
                 self.pro_count[i].append([0] * 9999)
                 self.hit_times[i].append(0)
                 point = 0
-                for k in range(self.pro_max_count):
+                for _ in range(self.pro_max_count):
                     point += np.random.randint(low=0, high=pro[i])
                     self.pro_count[i][j][point] = 1
                     point += 1
 
-                for z in range(10):
-                    for k in range(5000):
-                        temp = self.pro_count[i][j][k]
-                        idx = np.random.randint(low=0, high=self.pro_max)
-                        self.pro_count[i][j][k] = self.pro_count[i][j][idx]
-                        self.pro_count[i][j][idx] = temp
+                for _, k in itertools.product(range(10), range(5000)):
+                    temp = self.pro_count[i][j][k]
+                    idx = np.random.randint(low=0, high=self.pro_max)
+                    self.pro_count[i][j][k] = self.pro_count[i][j][idx]
+                    self.pro_count[i][j][idx] = temp
 
         for i in range(len(self.prop_fish_hit_count)):
             self.reset_prop(i)
