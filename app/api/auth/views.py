@@ -277,7 +277,7 @@ async def verify_otp_login(context: OTPLoginVerify):
                 UserClaim(
                     id=user.id,
                     email=user.email,
-                    phoneNumber=user.phone,
+                    phoneNumber=user.phoneNumber,
                     username=user.username
                 )
             )

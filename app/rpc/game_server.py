@@ -1,0 +1,798 @@
+from app.shared.auth.password_handler import get_password_hash, verify_password
+import logging
+from datetime import datetime, timedelta
+from socket import socket
+
+from fastapi import FastAPI
+from fastapi_socketio import SocketManager
+from pydantic import BaseModel
+import json
+
+signCode = "slel3@lsl334xx,deka"
+import bcrypt
+
+app = FastAPI()
+mgr = SocketManager(app, cors_allowed_origins='*')
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+
+from typing import Optional, List
+from pydantic import BaseModel, validator, root_validator
+
+import logging
+from datetime import datetime
+from typing import Dict
+
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
+from fastapi_socketio import SocketManager
+from pydantic import BaseModel, Field, validator
+from redis import Redis
+from socketio import AsyncNamespace
+
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger('GameInfo')
+
+app = FastAPI()
+mgr = SocketManager(app, cors_allowed_origins='*')
+redis_client = Redis()
+
+class User(BaseModel):
+    id: str
+    email: str = Field(...)
+    username: str = Field(...)
+    balance_val: float = Field(...)
+    password: str = Field(...)
+    phone: str = Field(...)
+    head_image: str = Field(...)
+    active: bool = Field(...)
+
+class Game(BaseModel):
+    user_list: Dict[str, User] = {}
+    online_player_count: int = 0
+    win_total: float = 0
+    maintain: bool = False
+    game_rank: dict = {}
+    send_card_list: dict = {}
+    score_change_log_list: list = []
+    diamond_change_log_list: list = []
+    send_api_list: list = []
+    line_out_list: dict = {}
+    landload_race_is_start: bool = False
+    landload_race_dict: dict = {}
+    landload_race_sort: dict = {}
+    check_no: dict = {}
+
+class GameResultInfor(BaseModel):
+    user_id: str = Field(...)
+    total_win: float = Field(...)
+    total_bet_count: int = Field(...)
+    total_bet: float = Field(...)
+    del_game_id: bool = Field(...)
+    result_code: int = Field(...)
+    ip: str = Field(...)
+    game_id: str = Field(...)
+
+    @validator('ip')
+    def validate_ip(cls, v):
+        # Perform validation logic here
+        return v
+
+async def get_redis_client():
+    yield redis_client
+
+async def get_game() -> Game:
+    return Game()
+
+async def get_user(user_id: str, redis_client: Redis = Depends(get_redis_client)) -> User:
+    user_data = redis_client.get(f'user:{user_id}')
+    if not user_data:
+        raise HTTPException(status_code=404, detail=f'User with id {user_id} not found')
+    user_dict = user_data.decode('utf-8')
+    return User.parse_raw(user_dict)
+
+
+def get_notification():
+    pass
+
+
+@mgr.namespace('/')
+class GameNamespace(AsyncNamespace):
+    game: Game = await get_game()
+
+    async def on_connect(self, sid: str, environ: dict):
+        log.info(f'Client {sid} connected')
+        await self.emit('connect', {'sid': sid})
+
+    async def on_disconnect(self, sid: str):
+        log.info(f'Client {sid} disconnected')
+
+    async def on_login(self, data: dict, sid: str):
+        try:
+            user = await get_user(data['user_id'])
+            self.game.user_list[user.id] = user
+            self.game.online_player_count += 1
+            await self.emit('login_result', {'result_id': 1, 'msg': 'Login succeeded!', 'obj': user_info})
+            await self.emit('server_list_result', {'game_info': self.server_info.get_server_all()})
+            notifications = await get_notification()
+            if notifications and len(notifications):
+                news_datas = []
+                for data in reversed(notifications):
+                    send_data = {
+                        "status": True,
+                        "txt": data['username'] + " just won " + str(data['win_score']) + " with a bet " + str(data['bet_score']) + " gold"
+                    }
+                    news_datas.append(send_data)
+                await self.emit('notice_msg', news_datas)
+        except HTTPException as e:
+            await self.emit('login_result', {'result_id': 0, 'msg': 'Login failed!'})
+            log.error(f'Client {sid} login failed: {e}')
+
+
+class UserData(BaseModel):
+    id: Optional[int]
+    email: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
+    balance: Optional[List[dict]]
+    head_image: Optional[str]
+
+    @root_validator(pre=True)
+    def convert_id(cls, values):
+        if values.get('id') is not None:
+            values['id'] = int(values['id'])
+        return values
+
+    @validator('balance', pre=True)
+    def convert_balance(cls, value):
+        return value or []
+
+class GameRank(BaseModel):
+    server_id: int
+    rank: List[dict]
+
+class CoinRank(BaseModel):
+    user_id: str
+    score: int
+    diamond: int = 0
+    gift_ticket: int = 0
+    nickname: Optional[str]
+    head_image: Optional[str]
+
+class UpdateNickNameInfo(BaseModel):
+    new_nick_name: str
+
+class UpdateHeadUrlInfo(BaseModel):
+    url: str
+
+class UpdatePasswordInfo(BaseModel):
+    old_password: str
+    password: str
+
+class Game:
+    def __init__(self):
+        self.game_rank = {}
+
+    def update_nick_name(self, socket_id: str, info: UpdateNickNameInfo, ip: str):
+        user_data = Redis.get_user_data_by_socket_id(socket_id)
+        if user_data is None or user_data.id is None:
+            return
+
+        user_result = Redis.get_user_by_name(info.new_nick_name)
+        if user_result is not None:
+            mgr.emit('updateNickNameResult', {'Result': 4, 'msg': 'Exists Same Name!'})
+            return
+
+        before_value = user_data.username
+        user_data.username = info.new_nick_name
+        new_user_data = UserData(**user_data.dict())
+        if not info.new_nick_name:
+            mgr.emit('updateNickNameResult', {'Result': 2, 'msg': '昵称不能为空'})
+            return
+
+        new_user_data.update_user_data()
+        if new_user_data.id:
+            mgr.emit('updateNickNameResult', {'Result': 0, 'msg': '修改成功'})
+        else:
+            mgr.emit('updateNickNameResult', {'Result': 3, 'msg': '修改失败'})
+
+        new_user_data.insert_action_history(
+            2,
+            {
+                'token': user_data.password,
+                'beforeUsername': str(before_value),
+                'newUsername': str(info.new_nick_name),
+                'balance': user_data.balance_val
+            },
+            ip,
+            user_data.id
+        )
+
+    def update_head_url(self, socket_id: str, info: UpdateHeadUrlInfo, ip: str):
+        user_data = Redis.get_user_data_by_socket_id(socket_id)
+        if user_data is None or user_data.id is None:
+            logger.error(f'user not found on socket {socket_id} ')
+            mgr.emit('updateHeadUrlResult', {'Result': 1, 'msg': 'user not found on socket'})
+            return
+
+        before_value = user_data.head_image
+        user_data.head_image = Info.url
+        new_user_data = UserData(**user_data.dict())
+        if not info.url:
+            mgr.emit('updateHeadUrlResult', {'Result': 2, 'msg': '头像不能为空'})
+            return
+
+        new_user_data.update_user_data()
+        if new_user_data.id:
+            new_user = User(id=new_user_data.id, data=new_user_data, socket_id=_socket.id)
+            if Info.url == "":
+                mgr.emit("updateHeadUrlResult", {"Result": 2, "msg": "头像不能为空"})
+            else:
+                new_user.update_user_data()
+                if new_user.last_error:
+                    mgr.emit("updateHeadUrlResult", {"Result": 3, "msg": "修改失败"})
+                else:
+                    mgr.emit("updateHeadUrlResult", {"Result": 0, "msg": "修改成功", "url": _info.url})
+                new_user.insert_action_history(
+                    3,
+                    {
+                        "token": new_user_data.password,
+                        "beforeImage": before_value,
+                        "newImage": Info.url,
+                        "balance": new_user_data.balance,
+                    },
+                    ip,
+                    new_user_data.id,
+                )
+        else:
+            logger.info(f"用户不在线，无法操作, id: {new_user_data.id}")
+            mgr.emit("updateHeadUrlResult", {"Result": 1, "msg": "ID不存在"})
+
+
+class GameServerInfo(BaseModel):
+    signCode: str
+    serverName: str
+    serverId: int
+
+
+class OTPInfo(BaseModel):
+    phoneNo: str
+
+
+class gameInfo(BaseModel):
+    maintain: bool = False
+
+    def isMaintain(self):
+        return gameInfo.maintain
+
+    def setMaintain(self, maintain):
+        gameInfo.maintain = maintain
+
+
+class ServerInfo(BaseModel):
+    socket = {}
+
+    def setSocket(self, serverId, sid):
+        ServerInfo.socket[serverId] = sid
+
+    def getSocket(self, serverId):
+        return ServerInfo.socket[serverId]
+
+
+class RegisterSMSRequest(BaseModel):
+    accountname: str
+    phone: str
+
+
+class logger_nRequest(BaseModel):
+    userName: str
+    password: str
+
+
+class smsConfig(BaseModel):
+    url: str
+    username: str
+    password: str
+    senderid: str
+    message: str
+    type: str
+    dlr: str
+    destination: str
+
+
+class UserInfo(BaseModel):
+    userName: str
+    password: str
+    phone: str
+    email: str
+    otp: str
+
+
+class Info(BaseModel):
+    userName: str
+    password: str
+    phone: str
+    email: str
+    otp: str
+    url: str
+
+
+class OTPAttempts:
+    _phone = None
+    attempts = 0
+    last_attempt = datetime.now()
+
+    def __init__(self, *args, **kwargs):
+        self.attempts = self.attempts
+        self.last_attempt = self.last_attempt
+        super(OTPAttempts, self).__init__(*args, **kwargs)
+
+    def __new__(cls, *args, **kwargs):
+        if not OTPAttempts._phone:
+            OTPAttempts._phone = super(OTPAttempts, cls).__new__(cls, *args, **kwargs)
+        return OTPAttempts._phone
+
+
+@mgr.on('connect')
+async def on_connect(sid, environ):
+    logger.info(f"Connected with => {sid}")
+    await mgr.emit('connected', 'Connected to server', sid=sid)
+
+
+@mgr.on('GameServerConnect')
+def on_game_server_connect(info: GameServerInfo, sid):
+    logger.info(f"{info.serverName} | Server connected successfully!")
+    logger.info(f"Game ID: {info.serverId}")
+    mgr.emit('GameServerConnectResult', {'resultCode': 1}, sid=sid)
+
+
+def sendOTP(phone):
+    pass
+
+
+@mgr.on('getOTP')
+async def on_get_otp(info: OTPInfo, sid):
+    if not info.phoneNo:
+        message = "Cannot leave any blank input field"
+        await mgr.emit('getOTP', {"message": message, "info": info.json()}, sid=sid)
+        return
+
+    otp_logins = OTPAttempts(phone=info.phoneNo)
+
+    if (datetime.now() - otp_logins.last_attempt).seconds < 60:
+        message = "Please wait for the 60 seconds cooldown!"
+        await mgr.emit('getOTP', {"message": message, "info": info.json()}, sid=sid)
+        return
+
+    if otp_logins.attempts >= 3 or (otp_logins.last_attempt + timedelta(hours=1) < datetime.now()):
+        message = "You have reached the maximum number of attempts, please try again later!"
+        await mgr.emit('getOTP', {"message": message, "info": info.json()}, sid=sid)
+        return
+
+    sendOTPResponse = await sendOTP(info.phoneNo)
+    otp_logins.attempts += 1
+    otp_logins.last_attempt = datetime.now()
+    logger.info(sendOTPResponse)
+
+    if sendOTPResponse.get('resultid') == 1:
+        message = "OTP sent successfully!"
+    else:
+        message = "Error sending OTP!"
+    await mgr.emit('getOTP', {"message": message, "info": info.json()}, sid=sid)
+    return sendOTPResponse
+
+
+def verifySMS(phone, otp):
+    pass
+
+
+
+
+@mgr.on('verifySMS')
+async def on_verify_sms(info_string: str, sid):
+    info = Info(**json.loads(info_string))
+    logger.info("verifySMS")
+    logger.info(info_string)
+    try:
+
+        valid = bool(info.phone) and info.otp
+        if not valid:
+            logger.info(f"Cannot leave any blank input field {json.dumps(info)}")
+            return
+    except Exception as e:
+        logger.warn("logger.njson")
+    if not info:
+        logger.info(f"verifyinfo {info}")
+        return
+    try:
+        response = await verifySMS(phone=info.phone, otp=info.otp)
+        logger.info(response)
+        await mgr.emit('verifySMSResult', {'verified': response.get('verified'), 'msg': response.get('msg'), 'response': response.get('response')}, sid=sid)
+    except Exception as e:
+        logger.exception('Error verifying SMS')
+
+
+class UserInfor(BaseModel):
+    phone: str
+    otp: str
+
+
+@mgr.on('login')
+async def login(info_string):
+    logger.info('login')
+    logger.info(info_string)
+
+    info = json.loads(info_string)
+    if not info.get('phoneNo') or not info.get('otp'):
+        logger.info(f'Cannot leave any blank input field {json.dumps(info)}')
+        return
+
+    verified, msg, response = await verify_sms(info)
+
+    if not verified:
+        mgr.emit('loginResult', msg)
+        return
+
+    user_info = UserInfor(phone=info.phone)
+    user_data = User.getUserByPhone(user_info.phone)
+
+    if not user_data:
+        create_new_user(info)
+    else:
+        update_existing_user(info, user_data)
+
+
+def verify_sms(info):
+    logger.info("verifySMS")
+    logger.info(info)
+    try:
+        phone = info.phone
+        otp = info.otp
+        if not phone or not otp:
+            logger.info(f"Cannot leave any blank input field {json.dumps(info)}")
+            return False, {'resultid': 0, 'msg': 'Cannot leave any blank input field'}, None
+
+        response = await verifySMS(phone=phoneNo, otp=otp)
+        logger.info(response)
+        return response.get('verified'), {'verified': response.get('verified'), 'msg': response.get('msg'), 'response': response.get('response')}, response
+
+    except Exception as e:
+        logger.exception('Error verifying SMS')
+        return False, {'resultid': 0, 'msg': 'Something went wrong. Please try again later.'}, None
+
+
+async def get_user_info():
+    try:
+        user_info = await get_user_info()
+        if not (user_info and user_info.userName and user_info.headImage):
+            raise ValueError('Invalid user information')
+    except Exception as e:
+        pass
+        # handle exception
+
+
+def create_new_user(user_info):
+    user_data = await User.getUserByName(user_info.userName)
+    if not user_data:
+        logger.info(f"User already exists {user_info.userName}")
+        mgr.emit('loginResult', 'User already exists')
+        return
+
+    new_user = await User.create(
+        username=user_info.userName,
+        email=user_info.userName,
+        phoneNo=user_info.phoneNo,
+        headImage=user_info.headImage.toString(),
+        active=True
+    )
+    new_user.balanceVal = new_user.balance
+    new_user.balanceId = new_user.balance.id
+    new_user.freeCount = 0
+    new_user.gameid = ""
+    new_user.gamesocketid = ""
+    result = await gameInfo.addUser(new_user)
+    if result == 1:
+        gameInfo.SuccessLoginSocket(new_user)
+        new_user.signInServer('none', gameInfo.getIpAddress(mgr.handle_request.request.remote_addr))
+
+
+def update_existing_user(sid, info, user_data, io):
+    if not user_data.active:
+        result = {'resultid': -1, 'msg': 'This account is disabled!'}
+        mgr.emit('logger.nResult', result)
+
+    new_user = User(user_data.id)
+    logger.info('This account is being logged in in another game')
+    # gameInfo.updateUserInfor(user_data, sid, (result) => {
+    if result := User.update():
+        gameInfo.SuccessLoginSocket(user_data, sid, io)
+    else:
+        mgr.emit('loginResult', {'resultid': 2, 'msg': 'Something error in server!'})
+    # new_user.signInServer('user.sign', gameInfo.getIpAddress(request.remote_addr))
+    mgr.emit('logout', {'resultid': 0, 'mgs': 'Your account has just been signed In. If this is not you, please contact the management team.'})
+    mgr.emit('logoutUser', {'userId': user_data.id, 'socketid': user_data.gamesocketid})
+
+    # emit('logger.nResult', {'resultid': 2, 'msg': 'Something error in server!'})
+
+
+@mgr.on('registerSMS')
+def register_sms(req: RegisterSMSRequest):
+    pwd = get_password_hash(req.password)
+
+    user_info = {
+        'accountname': req.accountname,
+        'pwd': pwd,
+        'nickname': req.accountname,
+        'goldnum': 0,
+        'p': smsConfig.password,
+        'phoneNo': req.phone
+    }
+
+    result = dao.CreateUser(user_info)
+    if result:
+        logger.info(f'Create User Success: accountname: {user_info["accountname"]}, goldnum: {user_info["goldnum"]}')
+        send_str = '{"status":0,"msg":"","data":{"accountname":" ' + user_info["accountname"] + ', "gold": ' + str(user_info["goldnum"]) + '}}'
+    else:
+        send_str = '{"status":1,"msg":"Create User Fail!"}'
+    logger.info(send_str)
+
+
+@mgr.on('login')
+def loginRequest(user: logger_nRequest, lastUserData=None):
+    """
+
+    :param user:
+    :return:
+    """
+    logger.info('user69=>')
+    logger.info(user)
+    if not user.userName or not user.password or user.userName is None or user.password is None:
+        logger.info(f'user {user}')
+        return
+    try:
+        user_data = User.getUserByName(user.userName)
+        if not user_data or not user_data.active:
+            mgr.emit('logger.nResult', {'resultid': -1, 'msg': 'Account or password error,logger.n fail!'})
+            return
+        user_pwd = user_data.pwd
+        content = user.password
+        verified_pw = verify_password(content, user_pwd)
+
+        if not verified_pw:
+            mgr.emit('loginResult', {'resultid': -1, 'msg': 'Account or password error,logger.n fail!'})
+            logger.info("password error, loging fail!")
+            return
+        new_user = User(user_data.id)
+
+
+        #gameInfo.IsPlayerOnline(user_data.id, (socketid, lastUserData) = > {
+            # user_data.freeCount = lastUserData.freeCount if lastUserData else 0
+        user_data.gameid = lastUserData.gameid if lastUserData else ""
+        user_data.gamesocketid = lastUserData.gamesocketid if lastUserData else ""
+        # if socketid:
+            # logger.er.info('This account is being logger.ed in another game')
+        gameInfo.updateUserInfor(user_data, sid, (result) = > {
+        if result:
+            gameInfo.successlogger.nSocket(user_data, sid, io)
+        else:
+            mgr.emit('logger.nResult', {'resultid': 2, 'msg': 'Something error in server!'})
+        new_user.signInServer('user.sign', gameInfo.getIpAddress(request.remote_addr))
+        io.to(socketid).mgr.emit('logger.ut', {'resultid': 0, 'mgs': 'Your account has just been signed In. If this is not you, please contact the management team.'})
+        Gmgr.mgr.emit('logoutUser', {'userId': user_data.id, 'socketid': user_data.gamesocketid})
+        }, False)
+        else:
+        gameInfo.addUser(user_data, sid, (result) = > {
+        if result == 1:
+            gameInfo.successlogger.nSocket(user_data, sid, io)
+        new_user.signInServer('user.sign', gameInfo.getIpAddress(request.remote_addr))
+        })
+        })
+        else:
+        mgr.emit('logger.nResult', {'resultid': 2, 'msg': 'Something error in server!'})
+        new_user.signInServer('user.sign', gameInfo.getIpAddress(request.remote_addr))
+    except Exception as e:
+        logger.error(f"logger.n error: {e}")
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    password: str
+    active: bool
+    balance: list = []
+
+    def signInServer(self, sign, ipAddress):
+        pass  # implementation omitted
+
+    @classmethod
+    def getUserByPhone(cls, phone):
+        pass
+
+
+class logger_nUser(BaseModel):
+    userName: str
+    password: str
+    sign: str
+    captcha: str
+
+
+@mgr.on('logger_nUser')
+async def logger_nUser(user: logger_nUser):
+    logger.N_ERROR_MSG = 'Account or password error,logger.n fail!'
+    if not all((user.userName, user.password)):
+        return
+
+    userData = User.signin({'username': user.userName})
+    if not userData:
+        result = {'resultid': 0, 'msg': logger.N_ERROR_MSG}
+        mgr.emit('logger.nResult', result)
+        logger.er.info("account not found")
+        return
+
+    match = await bcrypt.hash(user.password, 12)
+    if match != userData.password:
+        result = {'resultid': 0, 'msg': logger.N_ERROR_MSG}
+        mgr.emit('logger.nResult', result)
+        logger.er.info("account bad password")
+        return
+
+    newUser = User(**userData.dict())
+
+    if not newUser.active:
+        result = {'resultid': -1, 'msg': 'This account is disabled!'}
+        mgr.emit('logger.nResult', result)
+        logger.er.info("This account is disabled!")
+        return
+
+    if len(newUser.balance) == 1:
+        newUser.balanceVal = newUser.balance[0].balance
+        newUser.balanceId = newUser.balance[0].id
+
+        gameInfo.IsPlayerOnline(
+            newUser.id,
+            lambda socketid, lastUserData: handlelogger.nSocket(
+                newUser, socket, io, socketid, lastUserData, user.sign, gameInfo.getIpAddress(mgr.handshake.address)
+            )
+        )
+    else:
+        result = {'resultid': 0, 'msg': logger.N_ERROR_MSG}
+        mgr.emit('logger.nResult', result)
+        logger.er.info("account bad password")
+
+
+def handlelogger(newUser, socket, io, socketid, lastUserData, sign, ipAddress):
+    userData = newUser.dict()
+
+    userData['freeCount'] = lastUserData.get('freeCount', 0)
+    userData['gameid'] = lastUserData.get('gameid', '')
+    userData['gamesocketid'] = lastUserData.get('gamesocketid', '')
+
+    if socketid:
+        logger.er.info("account is online, kickout old socket!")
+        gameInfo.updateUserInfor(
+            newUser, socket
+        )
+        mgr.emit("logger.nResult", {'resultid': 2, 'msg': 'Something error in server!'}),
+        newUser.signInServer(sign, ipAddress)
+
+    else:
+        gameInfo.updateUserInfor(newUser, socket, lambda result: successlogger.nSocket(newUser, socket, io) if result else (
+            mgr.emit("logger.nResult", {'resultid': 2, 'msg': 'Something error in server!'}),
+            newUser.signInServer(sign, ipAddress)
+        ))
+
+
+# logger.n Game
+@mgr.on('logger.nGame')
+def handle_logger(data):
+    server_sign = data.get('serverSign')
+    user_id = data.get('userid')
+    sign = data.get('sign')
+    server_id = data.get('serverId')
+    game_id = data.get('gameId')
+    ip = data.get('ip') or request.remote_addr
+
+    if server_sign != server_sign:
+        return
+
+    encoin = ServerInfo.getServerEnterCoinByProt(server_id)
+
+
+def handle_logger(userInfo, game_id, ip):
+    if not userInfo or not userInfo.get('id') or not userInfo.get('balanceVal'):
+        newUser = User(user_id, {}, mgr.id, game_id)
+
+        result_code = '0'
+        result_msg = userInfo.get('msg', '')
+    else:
+        result_obj = {
+            'account': userInfo.get('email'),
+            'id': userInfo.get('id'),
+            'nickname': userInfo.get('username'),
+            'score': userInfo.get('balanceVal')
+        }
+
+        newUser = User(userInfo.get('id'), {}, mgr.id, game_id)
+        newUser.logger.nGame(1, sign, ip)
+
+        result_code = '1'
+        result_msg = 'logger.n lineserver succeed!'
+
+    result = {'resultid': result_code, 'msg': result_msg, 'Obj': result_obj}
+    mgr.emit('logger.nGameResult', result)
+
+
+# logger.ut User
+@mgr.on('logger.ut')
+def handle_logger.
+
+
+    ut(data):
+gameInfo.logger.utUser(data, gameInfo.getIpAddress(request.remote_addr))
+
+
+# Disconnect
+@mgr.on('disconnect')
+def handle_disconnect():
+    if not mgr.userId:
+        return
+
+    if mgr.serverGameid:
+        logger.er.info(f'游戏服务器 -{ServerInfo.getServerNameById(mgr.serverGameid)}- 已经断开连接')
+
+    logger.er.info(f'disconnect: {mgr.userId}')
+
+
+# Get Online Player List
+@mgr.on('getOnlinePlayerList')
+def handle_get_online_player_list():
+    players_list = {}
+    online_players = gameInfo.getOnlinePlayer()
+
+    for player in online_players or []:
+        players_list[player._account] = {
+            'account': player._account,
+            'gameId': player.GameId,
+            'isRobot': player._Robot,
+            'userId': player._userId,
+        }
+
+    mgr.emit('getOnlinePlayerResult', players_list)
+
+
+# User Disconnect
+@mgr.on('userDisconnect')
+def handle_user_disconnect(data):
+    logger.er.info('userDisconnect:')
+    logger.er.info(data)
+    gameInfo.logger.utGame(data, gameInfo.getIpAddress(request.remote_addr), io)
+
+
+# Get Coin Rank
+@mgr.on('getCoinRank')
+def handle_get_coin_rank():
+    gameInfo.getCoinRank(socket)
+
+
+# Check Nick Name
+@mgr.on('checkNickName')
+def handle_check_nick_name(str_info):
+    try:
+        info = json.loads(str_info)
+    except Exception as e:
+        logger.warn('checkNickName-json')
+        return
+
+    if gameInfo.IsPlayerOnline(mgr.userId):
+        gameInfo.checkNickName(socket, info)
+
+
+# Update Nick Name
+@mgr.on('updateNickName')
+def handle_update_nick_name(str_info):
+    try:
+        info = json.loads(str_info)
+    except Exception as e:
+        logger.warn('updateNickName-json')
+        return
