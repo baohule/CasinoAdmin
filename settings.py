@@ -50,3 +50,4 @@ class Config:
     )
     jira_key = os.getenv("JIRA_KEY", "ty66G3lFl6VmnPQh")
     otp_base = os.getenv("OTP_BASE", "LOG6DLW7LGOGTDLT4A7W4G4K5UFX37IN")
+    otp_reset_time = os.getenv("OTP_RESET_TIME", 'minutes=3')

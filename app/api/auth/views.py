@@ -224,7 +224,7 @@ async def start_otp_login(context: OTPLoginStart):
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     if (
             otp_logins.send_attempts >= 3
-            and otp_logins.last_attempt + timedelta(hours=1) < datetime.now()
+            and otp_logins.last_attempt + timedelta(settings.Config.otp_reset_time) < datetime.now()
     ):
         otp_logins.send_attempts = 0
 
