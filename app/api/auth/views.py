@@ -237,9 +237,10 @@ async def start_otp_login(context: OTPLoginStart):
     otp_logins.last_attempt = datetime.now()
     if not sms_sent:
         return BaseResponse(success=False, error=OTPError.NotSent)
-
+    otp_non_debug = 'OTP sent to your phone number'
+    otp_debug = f"DEBUG: OTP Code: {otp}"
     response = LoginStartResponse(
-        message="OTP sent to your phone number",
+        message=otp_debug,
         phone_number=context.phone_number,
     )
     return OTPLoginStartResponse(success=True, response=response)
@@ -276,10 +277,10 @@ async def verify_otp_login(context: OTPLoginVerify):
                     username=user.username
                 )
             )
-            User.update(
+            User.update(dict(
                 id=user.id,
                 accessToken=response.response.access_token
-            )
+            ))
             return response
         return BaseResponse(success=False, error=OTPError.UserNotFound)
 
