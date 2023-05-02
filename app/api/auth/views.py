@@ -269,7 +269,7 @@ async def verify_otp_login(context: OTPLoginVerify):
     if totp.verify(context.code):
         otp_logins.verify_attempts = 0
         logger.info("OTP verified, looking up user")
-        if user := User.read(phone=context.phone_number):
+        if user := User.read(phoneNumber=context.phone_number):
             logger.info(f"User {user.id} found, generating JWT")
             response: TokenResponse = sign_jwt(
                 UserClaim(
