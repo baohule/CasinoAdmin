@@ -290,7 +290,7 @@ async def verify_otp_login(context: OTPLoginVerify):
 
     otp_logins.verify_attempts += 1
     if otp_logins.verify_attempts == 3:
-        if user := User.read(phone=context.phone_number):
+        if user := User.read(phoneNumber=context.phone_number):
             error = OTPError(phone_number=context.phone_number)
             logger.info(error.DeactivatingUser)
             user.active = False

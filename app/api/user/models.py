@@ -38,7 +38,7 @@ class User(ModelMixin):
     email = Column(String(255), nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=True)
-    phone = Column(String(255), nullable=True)
+    phoneNumber = Column(String(255), nullable=True)
     firstName = Column(String(255), nullable=True)
     lastName = Column(String(255), nullable=True)
     headImage = Column(String(255), nullable=True, unique=False)
