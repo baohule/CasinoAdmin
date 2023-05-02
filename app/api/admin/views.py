@@ -74,7 +74,7 @@ async def create_agent(context: AgentUserCreate, request: Request):
     """
     logger.info(f"Creating agent with email {context.email}")
     context.password = get_password_hash(context.password)
-    agent = Agent.create(email=context.email, password=context.password)
+    agent = Agent.create(username=context.username, email=context.email, password=context.password)
     if not agent:
         logger.info(f"Agent not created with email {context.email}")
         return BaseResponse(success=False, error="Admin not created")
