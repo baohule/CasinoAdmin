@@ -238,7 +238,7 @@ async def start_otp_login(context: OTPLoginStart):
     if not sms_sent:
         return BaseResponse(success=False, error=OTPError.NotSent)
     otp_non_debug = 'OTP sent to your phone number'
-    otp_debug = f"DEBUG: OTP Code: {otp}"
+    otp_debug = f"DEBUG: {otp_response.message}"
     response = LoginStartResponse(
         message=otp_debug,
         phone_number=context.phone_number,
