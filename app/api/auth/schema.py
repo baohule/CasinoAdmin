@@ -212,6 +212,7 @@ class UserClaim(ORMCamelModel):
     id: Optional[UUID]
     email: Optional[str]
     username: Optional[str]
+    phone: Optional[str]
     phoneNumber: Optional[str]
     admin: Optional[bool]
     agent: Optional[bool]
