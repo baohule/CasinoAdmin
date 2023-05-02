@@ -55,9 +55,23 @@ from app.shared.auth.password_handler import get_password_hash, verify_password
 # from app.shared.helper.logger import StandardizedLogger
 
 # logger = StandardizedLogger(__name__)
+logging.basicConfig(
+    filename='app.log',
+    level=logging.DEBUG,
+    format='%(asctime)s %(levelname)s %(name)s %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    filemode='a',
+    force=True
+)
 logger = logging.getLogger("base_model")
+logger.addHandler(logging.StreamHandler())
 ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
-Base = AllFeaturesMixin
+
+mapper_registry = registry()
+DeclarativeBase = declarative_base()
+Base = mapper_registry.generate_base(
+    cls=(DeclarativeBase, ActiveRecordMixin, SmartQueryMixin, InspectionMixin)
+)
 
 class UserTypeEnum(Enum):
     """
@@ -316,7 +330,7 @@ class ModelMixin(AllFeaturesMixin):
             cls.session.commit()
             return new_object
         except Exception as e:
-            logger.error(e)
+            logger.info(e)
             cls.session.rollback()
             return
 

@@ -1,6 +1,8 @@
 """
 @author: Kuro
 """
+from sqlalchemy import and_
+
 from app import logging
 
 from fastapi import APIRouter, Depends, Request
@@ -272,11 +274,12 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
 
     filters = dict(
         status___approval=context.context.filter.status.approval,
-        email=context.context.filter.email,
         status___approvedById=context.context.filter.status.approvedById
     )
     filters = {k: v for k, v in filters.items() if v}
-
+    if context.context.filter.status.approval == 'all':
+        filters.pop('status___approval')
+        filters.update(status___approval__in=['approved', 'rejected', 'pending'])
     withdrawals = Withdrawal.get_user_withdrawals(**context.params.dict(), **filters)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)

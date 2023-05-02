@@ -74,6 +74,7 @@ async def create_user(context: AgentCreateUser, request: Request):
 
         _user = User.create(**user_data)
         if not _user:
+            logging.info("User not created")
             return
         logger.info(f"User created with id {_user.id}")
         balance = Balance.create(

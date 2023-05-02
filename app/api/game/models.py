@@ -20,6 +20,41 @@ from app.shared.bases.base_model import ModelMixin, paginate, ModelType
 from app.shared.schemas.page_schema import PagedResponse
 
 
+class GameList(ModelMixin):
+    """
+    GameList is a table that stores the game list.
+    """
+
+    __tablename__ = "GameList"
+
+    id = Column(Integer, primary_key=True, unique=True, index=True)
+    eGameName = Column(String(255), nullable=False)
+    cGameName = Column(String(255), nullable=False)
+    type = Column(Integer)
+    json = Column(JSON)
+    createdAt = Column(DateTime)
+
+    @classmethod
+    def add_game(cls, *_, **kwargs) -> ModelType:
+        """
+        It creates a new game in the database.
+
+        :param cls: The class that the method is being called on
+        :return: CreateGameResponse
+        """
+        try:
+            game_data = cls.rebuild(kwargs)
+            if cls.where(id=game_data["id"]).first():
+                return CreateGameResponse(error="Game not Found")
+            game = cls(**game_data)
+            cls.session.add(game)
+            cls.session.commit()
+            return game
+        except Exception as e:
+            cls.session.rollback()
+            print(e)
+            return
+
 class GameSession(ModelMixin):
     """
     GameSession is a table that stores the game session.
@@ -79,40 +114,6 @@ class PlayerSession(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
 
 
-class GameList(ModelMixin):
-    """
-    GameList is a table that stores the game list.
-    """
-
-    __tablename__ = "GameList"
-
-    id = Column(Integer, primary_key=True, unique=True, index=True)
-    eGameName = Column(String(255), nullable=False)
-    cGameName = Column(String(255), nullable=False)
-    type = Column(Integer)
-    json = Column(JSON)
-    createdAt = Column(DateTime)
-
-    @classmethod
-    def add_game(cls, *_, **kwargs) -> ModelType:
-        """
-        It creates a new game in the database.
-
-        :param cls: The class that the method is being called on
-        :return: CreateGameResponse
-        """
-        try:
-            game_data = cls.rebuild(kwargs)
-            if cls.where(id=game_data["id"]).first():
-                return CreateGameResponse(error="Game not Found")
-            game = cls(**game_data)
-            cls.session.add(game)
-            cls.session.commit()
-            return game
-        except Exception as e:
-            cls.session.rollback()
-            print(e)
-            return
 
     @classmethod
     def update_game(cls, *_, **kwargs) -> ModelType:
