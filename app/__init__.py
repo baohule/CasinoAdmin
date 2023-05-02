@@ -70,6 +70,8 @@ app.add_middleware(
 logger.debug("Middleware registered")
 
 logger.debug("Database connection established")
+with db():
+    ModelMixin.set_session(db.session)
 # celery = Celery("tasks", broker=Config.broker_url, backend=Config.redis_host)
 # celery.conf.update({"accept_content": ["text/plain", "json"]})
 # celery.conf.task_protocol = 1
