@@ -216,7 +216,7 @@ async def start_otp_login(context: OTPLoginStart):
     :return: The function `start_otp_login` returns a `OTPLoginStartResponse` object with a
     `success` flag set to `True` and no error message.
     """
-    phone_list = User.session.query(User.phone).filter_by(active=False).all()
+    phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
     if context.phone_number in disabled_list:
         return BaseResponse(success=False, error=OTPError.UserDisabled)
