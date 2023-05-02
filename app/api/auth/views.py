@@ -277,10 +277,10 @@ async def verify_otp_login(context: OTPLoginVerify):
                     username=user.username
                 )
             )
-            User.update(dict(
+            User.update(
                 id=user.id,
                 accessToken=response.response.access_token
-            ))
+            )
             return response
         return BaseResponse(success=False, error=OTPError.UserNotFound)
 
