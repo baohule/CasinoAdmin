@@ -37,6 +37,7 @@ router = APIRouter(
 )
 totp = pyotp.TOTP(settings.Config.otp_base, interval=60)
 
+
 @router.post("/signup", response_model=TokenResponse)
 async def create_user(context: AdminUserCreate) -> TokenResponse:
     """
@@ -57,7 +58,7 @@ async def create_user(context: AdminUserCreate) -> TokenResponse:
 
 
 def jwt_login(
-    context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
+        context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
 ) -> TokenResponse:
     """
     Takes a context object, which is either an AdminLogin, UserLogin or AgentLogin,
@@ -202,7 +203,6 @@ class OTPError:
         return cls._instance
 
 
-
 @router.post("/login/otp/start", response_model=OTPLoginStartResponse)
 async def start_otp_login(context: OTPLoginStart):
     """
@@ -221,14 +221,14 @@ async def start_otp_login(context: OTPLoginStart):
         return BaseResponse(success=False, error=OTPError.UserDisabled)
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     if (
-        otp_logins.send_attempts >= 3
-        and otp_logins.last_attempt + timedelta(hours=1) < datetime.now()
+            otp_logins.send_attempts >= 3
+            and otp_logins.last_attempt + timedelta(hours=1) < datetime.now()
     ):
         otp_logins.send_attempts = 0
 
     delta = otp_logins.last_attempt + timedelta(minutes=1)
     if delta > datetime.now() or otp_logins.send_attempts >= 3:
-        error = OTPError(time_left= delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now())
+        error = OTPError(time_left=delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now())
         return BaseResponse(success=False, error=error.TooManyRequests)
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
@@ -246,7 +246,6 @@ async def start_otp_login(context: OTPLoginStart):
     return OTPLoginStartResponse(success=True, response=response)
 
 
-
 @router.post("/login/otp/verify", response_model=TokenResponse)
 async def verify_otp_login(context: OTPLoginVerify):
     """
@@ -260,6 +259,7 @@ async def verify_otp_login(context: OTPLoginVerify):
     `TokenResponse` object with a JWT token, and no error message, or a `BaseResponse`
     object with a `success` flag set to `False` and an error message.
     """
+    logger.info(f"Verifying OTP for {context.phone_number} with code {context.code}")
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
     phone_list = User.session.query(User.phone).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
@@ -267,8 +267,10 @@ async def verify_otp_login(context: OTPLoginVerify):
     if context.phone_number in disabled_list:
         return BaseResponse(success=False, error=OTPError.UserDisabled)
     if totp.verify(context.code):
-
+        otp_logins.verify_attempts = 0
+        logger.info("OTP verified, looking up user")
         if user := User.read(phone=context.phone_number):
+            logger.info(f"User {user.id} found, generating JWT")
             response: TokenResponse = sign_jwt(
                 UserClaim(
                     id=user.id,
