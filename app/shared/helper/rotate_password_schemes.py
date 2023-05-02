@@ -34,9 +34,11 @@ def rotate_all():
             agent.session.rollback()
 
 
-def rotate_one(email=input("enter email")):
+def rotate_one(email=input("enter email"), password=input("enter password")):
     if user := User.read(email=email):
-        user.password = get_password_hash("123")
+        user.password = get_password_hash(password)
         user.session.commit()
     else:
         print("user not found")
+
+rotate_one()
