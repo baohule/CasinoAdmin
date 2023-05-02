@@ -263,7 +263,7 @@ async def verify_otp_login(context: OTPLoginVerify):
     """
     logger.info(f"Verifying OTP for {context.phone_number} with code {context.code}")
     otp_logins = AttemptedLogin(phone_number=context.phone_number)
-    phone_list = User.session.query(User.phone).filter_by(active=False).all()
+    phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
 
     if context.phone_number in disabled_list:
