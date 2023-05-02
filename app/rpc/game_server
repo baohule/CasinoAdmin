@@ -132,7 +132,7 @@ class GameNamespace(AsyncNamespace):
 
 class UserData(BaseModel):
     id: Optional[int]
-    phone: Optional[str]
+    email: Optional[str]
     username: Optional[str]
     password: Optional[str]
     balance: Optional[List[dict]]
