@@ -163,6 +163,7 @@ class AttemptedLogin:
     follows singleton pattern
     """
     _instance = None
+    phone_number = None
     verify_attempts = 0
     send_attempts = 0
     last_attempt = datetime.now() - timedelta(minutes=1)
@@ -174,7 +175,7 @@ class AttemptedLogin:
         self.last_attempt = self.last_attempt
 
     def __new__(cls, *args, **kwargs):
-        if not cls._instance:
+        if cls.phone_number != kwargs.get("phone_number"):
             cls._instance = super().__new__(cls)
         return cls._instance
 
