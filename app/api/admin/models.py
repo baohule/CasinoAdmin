@@ -1,7 +1,7 @@
 """
 @author: Kuro
 """
-from app import logging
+import logging
 import uuid
 from datetime import datetime
 

@@ -23,7 +23,7 @@ from sqlalchemy.orm import relationship, backref
 from app.api.user.models import User
 from app.shared.bases.base_model import ModelMixin, Page
 from app.shared.bases.base_model import paginate
-from app import logging
+import logging
 logger = logging.getLogger("credit_models")
 logger.addHandler(logging.StreamHandler())
 

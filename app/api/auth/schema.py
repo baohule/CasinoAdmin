@@ -238,10 +238,10 @@ class TokenResponse(BaseResponse):
 
 
 class OTPLoginStart(CamelModel):
-    phone_number: str = Field(example="+14801234567 - note the +1")
+    phoneNumber: str = Field(example="+14801234567 - note the +1")
 
 class OTPLoginVerify(CamelModel):
-    phone_number: str
+    phoneNumber: str
     code: str = Field(example="123456")
 
 class LoginStartResponse(ORMCamelModel):

@@ -1,9 +1,9 @@
 """
 @author: Kuro
 """
-from fastapi.routing import APIRoute
 
-from app import app
+import contextlib
+from fastapi.routing import APIRoute
 from app.endpoints.urls import APIPrefix
 
 
@@ -20,14 +20,17 @@ def use_route_names_as_operation_ids(app):
             route.operation_id = f"{route.tags[0]}_{route.name}_{method}"
 
 
-def add_routes():
+def add_routes(app):
     """
     It imports all the routers from the routes.include list
     and includes them in the app
     :return: The app object is being returned.
     """
     for route in APIPrefix.include:
-        exec(f"from app.api.{route}.views import router as {route}")
-        exec(f"app.include_router({route})")
+        with contextlib.suppress(ImportError, ModuleNotFoundError):
+            exec(f"from app.api.{route}.views import router as {route}")
+            exec(f"app.include_router({route})")
+            exec(f'from app.rpc.{route}.views import router as rpc_{route}')
+            exec(f"app.include_router(rpc_{route})")
     use_route_names_as_operation_ids(app)
     return app
