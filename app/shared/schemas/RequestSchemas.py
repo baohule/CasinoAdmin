@@ -5,6 +5,7 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi_camelcase import CamelModel
+from pydantic import BaseModel, validator
 
 
 class BaseRequest(CamelModel):
@@ -43,3 +44,17 @@ class CloseObject(BaseRequest):
     """
 
     pass
+
+
+class GetAwaitable(BaseModel):
+    """
+    GetAwaitable exists as an abstract input schema to mark
+    and object as active in the database.
+    """
+    @validator('HTTP_AUTHORIZATION')
+    def validate_token(cls, v):
+        if not v or 'Bearer' not in v:
+            raise ValueError('Token is required to use the format: Bearer <token>')
+        return v
+
+    HTTP_AUTHORIZATION: Optional[str]
