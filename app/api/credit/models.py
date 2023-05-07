@@ -39,7 +39,7 @@ class Balance(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
     ownerId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         unique=True,
@@ -134,7 +134,7 @@ class Withdrawal(ModelMixin):
         backref=backref("withdrawalStatus", single_parent=True, uselist=False),
     )
     ownerId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
@@ -175,7 +175,7 @@ class Deposit(ModelMixin):
         backref=backref("depositStatus", single_parent=True, uselist=False),
     )
     ownerId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )

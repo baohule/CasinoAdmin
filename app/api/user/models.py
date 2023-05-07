@@ -12,7 +12,7 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey, Text, )
+    ForeignKey, Text, Integer, )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer, joinedload, load_only
 
@@ -34,7 +34,7 @@ class User(ModelMixin):
 
     __tablename__ = "User"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, unique=True, index=True)
     email = Column(String(255), nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=True)

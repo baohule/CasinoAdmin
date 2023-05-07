@@ -209,7 +209,7 @@ class ModelMixin(AllFeaturesMixin):
         :param context:BaseModel: Used to Get the fields of the model that are not none or empty strings.
         :return: The ownerId of the user making the request, and a dictionary containing.
         """
-        ownerId: UUID = request.user.id
+        ownerId: int = request.user.id
         context_dict = context.dict(exclude_unset=True)
         context_dict["ownerId"] = ownerId
         return ownerId, context_dict

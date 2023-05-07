@@ -96,7 +96,7 @@ class PlayerSession(ModelMixin):
         backref=backref("gameSession", single_parent=True),
     )
     userId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         nullable=False,

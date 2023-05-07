@@ -35,7 +35,7 @@ def update_user(user_id: str, **kwargs):
 
 
 @safe
-def remove_user(user_id: UUID):
+def remove_user(user_id: int):
     """
     The remove_user function removes a user from the database.
 
