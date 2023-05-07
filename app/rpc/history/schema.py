@@ -9,16 +9,11 @@ import pytz
 from pydantic import BaseModel, Field
 
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMSchema
-from app.shared.schemas.page_schema import (
-    GetOptionalContextPages,
-    PagedResponse,
-    Filter,
-    GetPages,
-)
+from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Filter, GetPages
 
 
-class Game(ORMSchema):
+class Game(ORMCamelModel):
     """
     `Game` is a class that is used to represent a game
     """
@@ -26,7 +21,7 @@ class Game(ORMSchema):
     id: Optional[int]
 
 
-class User(ORMSchema):
+class User(ORMCamelModel):
     """
     `User` is a class that is used
     to represent a user
@@ -34,10 +29,10 @@ class User(ORMSchema):
 
     id: Optional[int]
     username: Optional[str]
-    phone: Optional[str]
+    email: Optional[str]
 
 
-class BetHistory(ORMSchema):
+class BetHistory(ORMCamelModel):
     """
     `BetHistory` is a class that is
     used to represent a bet history
@@ -54,7 +49,7 @@ class BetHistory(ORMSchema):
     owner: User
 
 
-class ActionHistory(ORMSchema):
+class ActionHistory(ORMCamelModel):
     """
     `ActionHistory` is a class that is used
     to represent an action history
@@ -64,4 +59,5 @@ class ActionHistory(ORMSchema):
     newValueJson: Optional[str]
     ip: Optional[str]
     createdAt: Optional[datetime]
-    userActionHistory: Optional[User]
+    userActionHistory:  Optional[User]
+

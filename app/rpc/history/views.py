@@ -12,9 +12,9 @@ logger = logging.getLogger("history")
 logger.addHandler(logging.StreamHandler())
 
 
-def insert_bet_history(content: BetHistory):
-    """ """
-
-
-def insert_action_history(content: ActionHistory):
-    """ """
+def insert_bet_history(content:BetHistory):
+    """
+    """
+def insert_action_history(content:ActionHistory):
+    """
+    """

@@ -4,7 +4,7 @@
 import json
 from typing import Optional, Dict, List
 
-from app.shared.schemas.orm_schema import Schema
+from fastapi_camelcase import CamelModel
 from pydantic import Field, EmailStr, BaseModel, validator
 from uuid import UUID
 
@@ -13,12 +13,13 @@ from app.shared.helper.session_state import SocketSession
 
 
 class OTPInput(BaseModel):
-    phone_number: str = Field(example="19299338861")
-    code: Optional[int]
+        phone_number: str = Field(example="19299338861")
+        code: Optional[int]
 
 
 class AccesToken(BaseModel):
     access_token: str
+
 
 
 class RedisUser(BaseModel):
@@ -26,6 +27,7 @@ class RedisUser(BaseModel):
 
 
 class RedisUsers(BaseModel):
+
     @validator("users")
     def validate_message(cls, v):
         for item in v:

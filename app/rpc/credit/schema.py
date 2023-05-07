@@ -7,10 +7,10 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.shared.schemas.orm_schema import ORMSchema
+from app.shared.schemas.orm_schema import ORMCamelModel
 
 
-class Balance(ORMSchema):
+class Balance(ORMCamelModel):
     id: UUID
     balance: int
     createdAt: Optional[datetime]
