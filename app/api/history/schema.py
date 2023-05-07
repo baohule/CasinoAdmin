@@ -29,7 +29,7 @@ class User(ORMCamelModel):
     to represent a user
     """
 
-    id: Optional[UUID]
+    id: Optional[int]
     username: Optional[str]
     email: Optional[str]
 
@@ -86,7 +86,7 @@ class GetBetHistory(BaseModel):
     is used to represent a request
     """
 
-    ownerId: UUID
+    ownerId: int
 
 
 class GetActionHistory(BaseModel):
@@ -97,14 +97,14 @@ class GetActionHistory(BaseModel):
 
     agentId: Optional[UUID]
     adminId: Optional[UUID]
-    userId: Optional[UUID]
+    userId: Optional[int]
 
     class Config:
         arbitrary_types_allowed = True
 
 
 class GetCreditHistory(BaseModel):
-    ownerId: UUID
+    ownerId: int
     status: Optional[str] = Field(default='all')
 
 
@@ -143,7 +143,7 @@ class StatsPageFilter(BaseModel):
     start_date: Optional[datetime]
     end_date: Optional[datetime]
     game_id: Optional[UUID]
-    user_id: Optional[UUID]
+    user_id: Optional[int]
 
 
 class GetPlayerStatsContext(Filter):

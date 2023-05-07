@@ -16,7 +16,7 @@ from app.shared.schemas.page_schema import GetOptionalContextPages, Filter, Page
 
 
 class User(ORMCamelModel):
-    id: Optional[UUID]
+    id: Optional[int]
     email: Optional[str]
     username: Optional[str]
 
@@ -87,7 +87,7 @@ class CreateUserCredit(CamelModel):
     """
 
     balance: float
-    ownerId: UUID
+    ownerId: int
 
 
 class CreateUserCreditResponse(BaseResponse):
@@ -150,7 +150,7 @@ class BalanceDeposit(CamelModel):
     `BalanceDeposit` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID]
+    ownerId: Optional[int]
     amount: Optional[int]
 
 
@@ -159,7 +159,7 @@ class BalanceWithdrawal(CamelModel):
     `BalanceWithdrawal` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID]
+    ownerId: Optional[int]
     amount: Optional[int]
 
 
@@ -187,7 +187,7 @@ class GetWithdrawal(CamelModel):
     `GetWithdrawal` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID] = Field(default=None, description="optional")
+    ownerId: Optional[int] = Field(default=None, description="optional")
     id: Optional[UUID] = Field(default=None, description="optional")
     approvedById: Optional[UUID] = Field(default=None, description="optional")
 
@@ -197,7 +197,7 @@ class GetDeposit(CamelModel):
     `GetDeposit` is a class that is used to represent a request
     """
 
-    ownerId: Optional[UUID] = Field(default=None, description="optional")
+    ownerId: Optional[int] = Field(default=None, description="optional")
     id: Optional[UUID] = Field(default=None, description="optional")
     approvedById: Optional[UUID] = Field(default=None, description="optional")
 

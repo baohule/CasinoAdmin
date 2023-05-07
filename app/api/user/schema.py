@@ -28,7 +28,7 @@ class UserCredit(ORMCamelModel):
 
 
 class User(ORMCamelModel):
-    id: Optional[UUID]
+    id: Optional[int]
     email: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
@@ -43,7 +43,7 @@ class BaseUser(ORMCamelModel):
     `User` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    id: Optional[UUID]
+    id: Optional[int]
     email: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
@@ -155,7 +155,7 @@ class GetUser(CamelModel):
     `GetUser` is a class that is used to validate the data that is being passed to the `/user/{userId}` route.
     """
 
-    id: UUID
+    id: int
 
 
 class AdminBaseResponse(ORMCamelModel):
@@ -197,7 +197,7 @@ class CLaimAuthPayload(ORMCamelModel):
     This class is used to claim a user's account
     """
 
-    id: UUID
+    id: int
     email: str
 
 
@@ -218,7 +218,7 @@ class GetUserListResponse(PagedBaseResponse):
 
 
 class GeneratePassword(BaseModel):
-    id: UUID = Field(..., alias='userId')
+    id: int = Field(..., alias='userId')
 
 
 class NewPassword(CamelModel):

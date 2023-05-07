@@ -20,7 +20,7 @@ class UpdateUser(CamelModel):
     It's a model that represents a user that is being updated.
     """
 
-    id: UUID
+    id: int
     password: Optional[str]
     username: Optional[str]
 
@@ -30,7 +30,7 @@ class RemoveUser(CamelModel):
     It's a model that is used to remove a user from the database.
     """
 
-    id: UUID
+    id: int
 
 
 class GetAgent(CamelModel):
@@ -46,7 +46,7 @@ class BaseUser(ORMCamelModel):
     that needs to be written in the `User` class.
     """
 
-    id: UUID
+    id: int
     email: Optional[str]
     password: Optional[str]
     creditAccount: Optional[UserCredit]
@@ -63,7 +63,7 @@ class BaseUserResponse(ORMCamelModel):
     It's a model that is used to return a list of users.
     """
 
-    id: UUID
+    id: int
     email: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
@@ -158,7 +158,7 @@ class AdminSetRole(BaseModel):
     """
 
     role_id: UUID
-    ownerId: UUID
+    ownerId: int
     parameters: Optional[Dict]
 
 

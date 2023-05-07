@@ -27,7 +27,7 @@ class PaymentHistory(ModelMixin):
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     approvalAt = Column(DateTime)
     ownerId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey(
             "User.id",
             ondelete="CASCADE",
@@ -67,7 +67,7 @@ class BetDetailHistory(ModelMixin):
         backref=backref("game", single_parent=True, uselist=False),
     )
     ownerId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
     )
@@ -92,7 +92,7 @@ class ActionHistory(ModelMixin):
     ip = Column(String(255), nullable=True)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     userId = Column(
-        UUID(as_uuid=True),
+        Integer,
         ForeignKey("User.id", ondelete="CASCADE", link_to_name=True),
         index=True,
         nullable=True,

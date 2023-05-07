@@ -209,7 +209,7 @@ class UserClaim(ORMCamelModel):
     The UserClaim class is a model that represents a user's claim
     """
 
-    id: Optional[UUID]
+    id: Optional[int]
     email: Optional[str]
     username: Optional[str]
     phone: Optional[str]
