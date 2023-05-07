@@ -338,8 +338,7 @@ class FishNamespace:
         self.fish_list: Dict[str, Dict[int, Fish]] = {}
 
     def delete_fish(self, table_obj: Dict[int, Fish], fish_id: int) -> None:
-        fish = table_obj.get(fish_id)
-        if fish:
+        if fish := table_obj.get(fish_id):
             fish.deleted = True
             self.del_fish_list.append(fish)
             del table_obj[fish_id]
@@ -399,7 +398,7 @@ FishGame object and run the game.
         self.prop = []
 
         self.fish_out_time = [0] * len(self.fish_config)
-        for i, fc in enumerate(self.fish_config):
+        for fc in self.fish_config:
             if fc.coin > 0:
                 self.pro.append(fc.coin)
             else:
@@ -992,6 +991,7 @@ FishGame object and run the game.
                 self.pro_count.values[pro][betidx][idx] = temp
             self.hit_times.values[pro][betidx] = 0
 
+
         if pro <= boom_level:
             idx = self.hit_times.values[pro][betidx] // 10
             self.hit_times.values[pro][betidx] += hit_count
@@ -1017,10 +1017,14 @@ FishGame object and run the game.
         :return: The method `get_boom_by_id` returns an instance of the `Boom` class if there is a `Boom` object in the `boom_list` attribute of the class instance that has a `userId`
         attribute equal to the `user_id` argument and a `fish_id` attribute equal to the `fish_id` argument. If such a `Boom` object is found, it is
         """
-        for i, boom in enumerate(self.boom_list):
-            if boom.userId == user_id and boom.fish_id == fish_id:
-                return self.boom_list.pop(i)
-        return None
+        return next(
+            (
+                self.boom_list.pop(i)
+                for i, boom in enumerate(self.boom_list)
+                if boom.userId == user_id and boom.fish_id == fish_id
+            ),
+            None,
+        )
 
     def fishShoot(self, _pro: int, _bet: int, hitCount: int) -> None:
         """
@@ -1084,9 +1088,7 @@ FishGame object and run the game.
         :return: The function `costSkill` returns an integer value which is the cost of a skill. If the `info` parameter is `None` or the `sid` attribute of `info` is not 1 or 2, then
         the function returns 0. Otherwise, it returns the cost of the skill which is stored in the `skill_cost` list at the index `info.sid -
         """
-        if not info or info.sid not in [1, 2]:
-            return 0
-        return self.skill_cost[info.sid - 1]
+        return self.skill_cost[info.sid - 1] if info and info.sid in [1, 2] else 0
 
 
 async def redisMessageReceived(self, message: str) -> None:

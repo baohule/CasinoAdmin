@@ -4,11 +4,11 @@
 from typing import Optional
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import Schema
+from fastapi_camelcase import CamelModel
 from pydantic import BaseModel, validator
 
 
-class BaseRequest(Schema):
+class BaseRequest(CamelModel):
     """
     Request factory for our abstract input class
     """
@@ -51,11 +51,10 @@ class GetAwaitable(BaseModel):
     GetAwaitable exists as an abstract input schema to mark
     and object as active in the database.
     """
-
-    @validator("HTTP_AUTHORIZATION")
+    @validator('HTTP_AUTHORIZATION')
     def validate_token(cls, v):
-        if not v or "Bearer" not in v:
-            raise ValueError("Token is required to use the format: Bearer <token>")
+        if not v or 'Bearer' not in v:
+            raise ValueError('Token is required to use the format: Bearer <token>')
         return v
 
     HTTP_AUTHORIZATION: Optional[str]
