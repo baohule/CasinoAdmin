@@ -47,6 +47,7 @@ class User(ModelMixin):
     updatedAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     token = Column(String(255), nullable=True)
     accessToken = Column(Text, nullable=True)
+    online = Column(Boolean, default=False)
     agentId = Column(
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),

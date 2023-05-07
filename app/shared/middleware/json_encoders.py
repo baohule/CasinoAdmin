@@ -41,12 +41,14 @@ class ModelEncoder(json.JSONEncoder):
             return str(obj)
         if isinstance(obj, (datetime.datetime, datetime.date)):
             return str(obj)
-        if isinstance(
-            obj,
-            (object),
-        ):
-            return None
-        return json.JSONEncoder.default(self, obj)
+        return (
+            None
+            if isinstance(
+                obj,
+                (object),
+            )
+            else json.JSONEncoder.default(self, obj)
+        )
 
 
 class _JSONEncoder(json.JSONEncoder):
