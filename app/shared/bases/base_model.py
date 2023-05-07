@@ -56,7 +56,7 @@ from app.shared.auth.password_handler import get_password_hash, verify_password
 
 # logger = StandardizedLogger(__name__)
 logging.basicConfig(
-    filename='app.log',
+    filename='../../app.log',
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(name)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
@@ -72,6 +72,7 @@ DeclarativeBase = declarative_base()
 Base = mapper_registry.generate_base(
     cls=(DeclarativeBase, ActiveRecordMixin, SmartQueryMixin, InspectionMixin)
 )
+
 
 class UserTypeEnum(Enum):
     """

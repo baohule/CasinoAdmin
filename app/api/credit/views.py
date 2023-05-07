@@ -1,8 +1,6 @@
 """
 @author: Kuro
 """
-from sqlalchemy import and_
-
 from app import logging
 
 from fastapi import APIRouter, Depends, Request
@@ -19,10 +17,9 @@ from app.api.credit.schema import (
     GetUserCreditResponse,
     UpdateUserCreditResponse,
     UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeDeposit, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal,
-    AgentQuta,
+    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal
 )
-from app.shared.bases.base_model import Page, paginate
+from app.shared.bases.base_model import paginate
 from app.shared.bases.base_response import AgentQuotaExceeded, AuthenticationScopeMismatch, NoUserBalanceObject, QuotaNotUpdated
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse

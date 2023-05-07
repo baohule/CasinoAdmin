@@ -3,7 +3,7 @@
 """
 from enum import Enum
 
-from app import logging
+import logging
 from datetime import datetime, timedelta
 
 import pyotp
@@ -219,9 +219,9 @@ async def start_otp_login(context: OTPLoginStart):
     """
     phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
-    if context.phone_number in disabled_list:
+    if context.phoneNumber in disabled_list:
         return BaseResponse(success=False, error=OTPError.UserDisabled)
-    otp_logins = AttemptedLogin(phone_number=context.phone_number)
+    otp_logins = AttemptedLogin(phone_number=context.phoneNumber)
     if (
             otp_logins.send_attempts >= 3
             and otp_logins.last_attempt + timedelta(settings.Config.otp_reset_time) < datetime.now()
@@ -234,7 +234,7 @@ async def start_otp_login(context: OTPLoginStart):
         return BaseResponse(success=False, error=error.TooManyRequests)
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
-    sms_sent = send_sms(context.phone_number, otp_response.message)
+    sms_sent = send_sms(context.phoneNumber, otp_response.message)
     otp_logins.send_attempts += 1
     otp_logins.last_attempt = datetime.now()
     if not sms_sent:
@@ -243,7 +243,7 @@ async def start_otp_login(context: OTPLoginStart):
     otp_debug = f"DEBUG: {otp_response.message}"
     response = LoginStartResponse(
         message=otp_debug,
-        phone_number=context.phone_number,
+        phone_number=context.phoneNumber,
     )
     logger.info(response.message)
     return OTPLoginStartResponse(success=True, response=response)
@@ -263,16 +263,16 @@ async def verify_otp_login(context: OTPLoginVerify):
     object with a `success` flag set to `False` and an error message.
     """
     logger.info(f"Verifying OTP for {context.phone_number} with code {context.code}")
-    otp_logins = AttemptedLogin(phone_number=context.phone_number)
+    otp_logins = AttemptedLogin(phoneNumber=context.phone_number)
     phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
 
-    if context.phone_number in disabled_list:
+    if context.phoneNumber in disabled_list:
         return BaseResponse(success=False, error=OTPError.UserDisabled)
     if totp.verify(context.code):
         otp_logins.verify_attempts = 0
         logger.info("OTP verified, looking up user")
-        if user := User.read(phoneNumber=context.phone_number):
+        if user := User.read(phoneNumber=context.phoneNumber):
             logger.info(f"User {user.id} found, generating JWT")
             response: TokenResponse = sign_jwt(
                 UserClaim(
