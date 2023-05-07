@@ -262,8 +262,8 @@ async def verify_otp_login(context: OTPLoginVerify):
     `TokenResponse` object with a JWT token, and no error message, or a `BaseResponse`
     object with a `success` flag set to `False` and an error message.
     """
-    logger.info(f"Verifying OTP for {context.phone_number} with code {context.code}")
-    otp_logins = AttemptedLogin(phoneNumber=context.phone_number)
+    logger.info(f"Verifying OTP for {context.phoneNumber} with code {context.code}")
+    otp_logins = AttemptedLogin(phone_number=context.phoneNumber)
     phone_list = User.session.query(User.phoneNumber).filter_by(active=False).all()
     disabled_list = [phone[0] for phone in phone_list if phone[0]]
 
@@ -291,8 +291,8 @@ async def verify_otp_login(context: OTPLoginVerify):
 
     otp_logins.verify_attempts += 1
     if otp_logins.verify_attempts == 3:
-        if user := User.read(phoneNumber=context.phone_number):
-            error = OTPError(phone_number=context.phone_number)
+        if user := User.read(phoneNumber=context.phoneNumber):
+            error = OTPError(phone_number=context.phoneNumber)
             logger.info(error.DeactivatingUser)
             user.active = False
             user.session.commit()
