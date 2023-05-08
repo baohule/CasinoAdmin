@@ -2,7 +2,6 @@
 @author: Kuro
 """
 from fastapi import FastAPI
-from fastapi_socketio import SocketManager
 from fastapi_sqlalchemy import DBSessionMiddleware, db
 from starlette.middleware.authentication import AuthenticationMiddleware
 

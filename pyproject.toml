@@ -27,8 +27,6 @@ meilisearch = "^0.26.0"
 uvicorn = "^0.22.0"
 py-linq = "^1.4.0"
 psycopg2-binary = "^2.9.6"
-fastapi-socketio = "^0.0.10"
-socketio = "^0.2.1"
 schedule = "^1.2.0"
 
 [tool.poetry.dev-dependencies]
