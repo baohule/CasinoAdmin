@@ -61,7 +61,7 @@ with db():
     ModelMixin.set_session(db.session)
 
 
-main_socket = SocketManager(app)
+# main_socket = SocketManager(app)
 
 #
 # app.add_route("/socket.io/", route=main_socket._app, methods=['GET', 'POST'])
