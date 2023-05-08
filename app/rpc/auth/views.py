@@ -3,25 +3,18 @@
 """
 import json
 import logging
-from types import SimpleNamespace
-from typing import Dict, List
 
-from app.api.auth.views import start_otp_login, verify_otp_login
+from py_linq import Enumerable
 
-from app.api.auth.schema import OTPLoginStart, OTPLoginVerify, TokenResponse, OTPLoginStartResponse
-from app.api.game.models import PlayerSession
-from app.api.user.models import User
-from app.rpc.auth.schema import AccesToken, RedisUsers
-from app.rpc.user.schema import UserLogin, UserResponse, UserSession
-from app.rpc.user.schema import User as UserSchema
-from fastapi import APIRouter
-
-import uuid
 from app import main_socket
+from app.api.auth.schema import OTPLoginStart, OTPLoginVerify, TokenResponse, OTPLoginStartResponse
+from app.api.auth.views import start_otp_login, verify_otp_login
+from app.api.user.models import User
+from app.rpc.user.schema import User as UserSchema
+from app.rpc.user.schema import UserResponse
 from app.shared.helper.session_state import SocketSession, Session
 from app.shared.middleware.json_encoders import ModelEncoder
-from app.shared.redis.redis_services import RedisServices
-from py_linq import Enumerable
+from app import redis
 
 logger = logging.getLogger("auth")
 logger.addHandler(logging.StreamHandler())
@@ -32,7 +25,7 @@ default_session = {
     'state': None
 }
 
-redis = RedisServices().redis
+
 
 
 @main_socket.on('getOTP')
@@ -106,15 +99,31 @@ async def verify_SMS(socket_id, context: OTPLoginVerify) -> TokenResponse:
 
 
 async def update_online_users(user, online=True):
+    """
+    This function updates the online status of a user, retrieves a list of online users, logs the list, stores the list in Redis, and returns the list.
+
+    :param user: The "user" parameter is an instance of a user model object that represents a user in the system. It is used to update the user's online status and retrieve a list of
+    all online users
+    :param online: The "online" parameter is a boolean value that indicates whether the user is currently online or not. If it is set to True, it means the user is online, and if it is
+    set to False, it means the user is offline. The function updates the "online" attribute of the user, defaults to True (optional)
+    :return: a list of online users, which are instances of the `UserSchema` class.
+    """
     user.update(**dict(online=online))
     user.session.commit()
-    online_users = [json.dumps(UserSchema.from_orm(user.to_dict(nested=True)), cls=ModelEncoder) for user in User.read_all(online=True)]
+    online_users = [json.dumps(UserSchema.from_orm(user).dict(), cls=ModelEncoder) for user in User.read_all(online=True)]
     logger.info(f"online users: {online_users}")
     await redis.set('online_users', json.dumps(online_users, cls=ModelEncoder))
     return online_users
 
 
 def get_auth_token(socket):
+    """
+    This function retrieves the authorization token from a socket object.
+
+    :param socket: The `socket` parameter is an object representing a WebSocket connection. It is likely an instance of the `SocketIO` class from the `socketio` library in Python
+    :return: The function `get_auth_token` returns the authentication token from the `HTTP_AUTHORIZATION` header of the socket's environment. The token is extracted from the header by
+    splitting the header string at the space character and returning the second element of the resulting list.
+    """
     return Enumerable(
         socket._sio.environ.values()
     ).select(
