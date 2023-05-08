@@ -63,8 +63,8 @@ with db():
 
 main_socket = SocketManager(app)
 
-
-app.add_route("/socket.io/", route=main_socket._app, methods=['GET', 'POST'])
-app.add_websocket_route("/socket.io/", main_socket._app)
+#
+# app.add_route("/socket.io/", route=main_socket._app, methods=['GET', 'POST'])
+# app.add_websocket_route("/socket.io/", main_socket._app)
 
 redis = RedisServices().redis
