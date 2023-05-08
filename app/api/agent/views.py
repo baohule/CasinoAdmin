@@ -54,12 +54,12 @@ async def create_user(context: AgentCreateUser, request: Request):
     :type request: Request
     :return: A user object
     """
-    logger.info(f"Creating user with email {context.email}")
+    logger.info(f"Creating user with phone {context.phone}")
 
     def _make_user(_context, _password):
         if not (
                 user_data := dict(
-                    email=context.email.lower(),
+                    phone=context.phone,
                     password=get_password_hash(_password),
                     username=context.username.lower(),
                     headImage=context.headImage,

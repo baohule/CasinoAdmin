@@ -312,7 +312,7 @@ class AgentCreateUser(BaseModel):
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    email: EmailStr
+    phone: str = Field(example="19299338861")
     username: Optional[str]
     headImage: Optional[str]
     creditAccount: Optional[Balance]
