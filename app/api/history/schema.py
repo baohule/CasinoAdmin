@@ -31,7 +31,7 @@ class User(ORMCamelModel):
 
     id: Optional[int]
     username: Optional[str]
-    email: Optional[str]
+    phone: Optional[str]
 
 
 class BetHistory(ORMCamelModel):

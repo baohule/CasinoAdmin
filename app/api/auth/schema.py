@@ -16,7 +16,7 @@ class UserRecovery(CamelModel):
     The UserRecovery class is a model that contains the information about a user's password recovery
     """
 
-    email: EmailStr = Field(...)
+    phone: str
 
     class Config:
         schema_extra = {

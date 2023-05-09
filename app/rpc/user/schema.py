@@ -31,7 +31,7 @@ class UserCredit(ORMCamelModel):
 
 class User(ORMCamelModel):
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
     phoneNumber: Optional[str]
@@ -58,7 +58,7 @@ class BaseUser(ORMCamelModel):
     """
 
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     phoneNumber: Optional[str]
     firstName: Optional[str]

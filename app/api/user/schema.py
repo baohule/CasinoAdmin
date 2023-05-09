@@ -29,7 +29,7 @@ class UserCredit(ORMCamelModel):
 
 class User(ORMCamelModel):
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
     balance: Optional[UserCredit]
@@ -44,7 +44,7 @@ class BaseUser(ORMCamelModel):
     """
 
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
@@ -85,7 +85,7 @@ class AdminUserCreate(CamelModel):
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    email: EmailStr
+    phone: str
     password: str
     username: str
 
@@ -96,7 +96,7 @@ class AgentUserCreate(CamelModel):
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    email: EmailStr
+    phone: str
     password: str
     username: str
     quota: Optional[int]
@@ -108,7 +108,7 @@ class UserLogin(CamelModel):
     A class that is used to validate the data that is being passed to the `/login` route.
     """
 
-    email: EmailStr
+    phone: str
     password: str
 
 
