@@ -55,7 +55,7 @@ async def create_user(context: AdminUserCreate) -> TokenResponse:
     if not user_response:
         return TokenResponse(success=False, error="Object not created")
     Balance.create(ownerId=user_response.id, balance=0)
-    return sign_jwt(UserClaim(id=user_response.id, email=context.email))
+    return sign_jwt(UserClaim(id=user_response.id, phone=context.phone))
 
 
 def jwt_login(
@@ -277,7 +277,7 @@ async def verify_otp_login(context: OTPLoginVerify):
             response: TokenResponse = sign_jwt(
                 UserClaim(
                     id=user.id,
-                    email=user.email,
+                    phone=user.phone,
                     phoneNumber=user.phoneNumber,
                     username=user.username
                 )
