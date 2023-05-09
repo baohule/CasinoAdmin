@@ -308,10 +308,10 @@ class ModelMixin(AllFeaturesMixin):
         :return: A UserClaim object with the user's id and email.
         """
         password = kwargs.get("password")
-        user_email = kwargs.get("email")
-        user_lookup: ModelType = cls.read(email=user_email)
+        phone = kwargs.get('phone')
+        user_lookup: ModelType = cls.read(phone=phone)
         if user_lookup and verify_password(password, user_lookup.password):
-            return UserClaim(id=user_lookup.id, email=user_email, username=user_lookup.username)
+            return UserClaim(id=user_lookup.id, phone=phone, username=user_lookup.username)
 
     @classmethod
     def create(cls, *_, **kwargs) -> ModelType:
