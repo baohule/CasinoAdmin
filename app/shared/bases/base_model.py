@@ -310,7 +310,19 @@ class ModelMixin(AllFeaturesMixin):
         filters = cls.get_constraints(kwargs, ["email", "phone"])
         user_lookup: ModelType = cls.read(**filters)
         if user_lookup and verify_password(password, user_lookup.password):
-            return UserClaim(id=user_lookup.id, phone=user_lookup.phone, username=user_lookup.username)
+            keys = dict(id=user_lookup.id, username=user_lookup.username)
+            keys[
+                filters.get('email')
+                and 'email'
+                or filters.get('phone')
+                and 'phone'
+            ] = (
+                filters.get('email')
+                and user_lookup.email
+                or filters.get('phone')
+                and user_lookup.phone
+            )
+            return UserClaim()
 
     @classmethod
     def create(cls, *_, **kwargs) -> ModelType:
