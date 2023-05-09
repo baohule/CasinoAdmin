@@ -73,7 +73,7 @@ class UpdateUser(CamelModel):
     """
 
     id: int
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
