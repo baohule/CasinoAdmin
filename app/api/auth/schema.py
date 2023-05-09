@@ -210,7 +210,7 @@ class UserClaim(ORMCamelModel):
     """
 
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     phone: Optional[str]
     phoneNumber: Optional[str]
