@@ -268,9 +268,8 @@ class ModelMixin(AllFeaturesMixin):
         :type constraints: List[str]
         :return: A SimpleNamespace object with the keys and values of the kwargs dictionary.
         """
-        return SimpleNamespace(
-            **{k: v or None for k, v in kwargs.items() if k in constraints}
-        )
+        return {k: v or None for k, v in kwargs.items() if k in constraints}
+
 
     @classmethod
     def build_response(
@@ -308,10 +307,10 @@ class ModelMixin(AllFeaturesMixin):
         :return: A UserClaim object with the user's id and email.
         """
         password = kwargs.get("password")
-        phone = kwargs.get('phone')
-        user_lookup: ModelType = cls.read(phone=phone)
+        filters = cls.get_constraints(kwargs, ["email", "phone"])
+        user_lookup: ModelType = cls.read(**filters)
         if user_lookup and verify_password(password, user_lookup.password):
-            return UserClaim(id=user_lookup.id, phone=phone, username=user_lookup.username)
+            return UserClaim(id=user_lookup.id, phone=user_lookup.phone, username=user_lookup.username)
 
     @classmethod
     def create(cls, *_, **kwargs) -> ModelType:
