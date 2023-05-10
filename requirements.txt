@@ -27,7 +27,7 @@ starlette~=0.14.2
 aiofiles==0.7.0
 python-multipart==0.0.5
 watchgod==0.7
-websockets==10.0
+websockets==11.0.3
 PyYAML==6.0
 httptools==0.2.0
 faker==9.8.0

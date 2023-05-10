@@ -10,7 +10,7 @@ from py_linq import Enumerable
 from pydantic import BaseModel, Field
 from realtime import timestamp
 
-from app import main_socket
+from app.rpc import socket_app as socket
 
 from fastapi import Request
 
@@ -69,6 +69,50 @@ class RoomList(BaseModel):
     rooms: List[GameRoom]
 
 
+async def add_player_to_room(session: Session, context: PlayerBet):
+    """
+    This function is used to add a player to a game room.
+    :return:
+    """
+    game = GameList.read(id=context.game_id)
+    user = User.read(id=session.user.id)
+    active_rooms = RoomList(
+        rooms=[
+            GameRoom(**room) for room in await redis.get('rooms')
+        ]
+    )
+    if (
+            game_room := Enumerable(active_rooms.rooms)
+                    .where(
+                lambda room: room.game_id == context.game_id
+                             and len(room.players) < game.max_players
+                             and Enumerable(room.players)
+                                     .where(lambda player: player.id != user.id)
+                                     .first()
+            ).first()
+    ):
+        game_room.players.append(user)
+        updated_session = session.dict()
+        updated_session.get(user.phoneNumber).update(
+            {
+                "game": {
+                    "game_id": context.game_id,
+                    "room": game_room.json()
+                }
+            }
+        )
+        await socket.save_session(session.sid, updated_session)
+        await redis.set('rooms', active_rooms.json())
+
+        active_rooms = RoomList(
+            rooms=[
+                GameRoom(**room) for room in await redis.get('rooms')
+            ]
+        )
+
+        return active_rooms.json()
+
+
 async def get_active_rooms(session: Session, context: PlayerBet):
     """
     This function is used to create a new game room.
@@ -76,7 +120,6 @@ async def get_active_rooms(session: Session, context: PlayerBet):
     :param context:
     :return:
     """
-    game = GameList.read(id=context.game_id)
     user = User.read(id=session.user.id)
     active_rooms = RoomList(
         rooms=[
@@ -96,17 +139,12 @@ async def get_active_rooms(session: Session, context: PlayerBet):
                 )
             ]
         )
-    if (
-            game_room := Enumerable(active_rooms.rooms)
-                    .where(
-                lambda room: room.game_id == context.game_id
-                             and len(room.players) < game.max_players
-                             and Enumerable(room.players)
-                                     .where(lambda player: player.id != user.id)
-                                     .first()
-            ).first()
-    ):
-        pass
+
+        await redis.set('rooms', active_rooms.json())
+        return active_rooms.json()
+
+
+
 
 
     #     if (
@@ -128,13 +166,13 @@ async def get_active_rooms(session: Session, context: PlayerBet):
     #             }
     #         }
     #     )
-    #     await main_socket.save_session(session.sid, updated_session)
+    #     await socket.save_session(session.sid, updated_session)
     #
     # await redis.set('rooms', active_rooms.json())
     # return active_rooms
 
 
-@main_socket.on("loginRoom")
+@socket.on("loginRoom")
 async def login_room(socket_id, context: PlayerBet):
     """
     This function is used to login to a game room.
@@ -146,7 +184,7 @@ async def login_room(socket_id, context: PlayerBet):
     :return: None
     """
 
-    socket_session = main_socket.get_session(socket_id)
+    socket_session = socket.get_session(socket_id)
     if not socket_session:
         return BaseResponse(success=False, error="Session not found, log in again")
     session_data = Enumerable(socket_session.dict().values()).first()
@@ -154,12 +192,12 @@ async def login_room(socket_id, context: PlayerBet):
     active_room = get_active_rooms(session, context)
     if not active_room:
         return BaseResponse(success=False, error="No room available")
-    await main_socket.enter_room(socket_id, session.game.game_id, namespace=session.game.room.room_name)
+    await socket.enter_room(socket_id, session.game.game_id, namespace=session.game.room.room_name)
     redis.set(f"{context.game_id}-{int(time.time())}", socket_id)
-    await main_socket.emit("loginRoom", data=context.dict(), room=context.game_id)
+    await socket.emit("loginRoom", data=context.dict(), room=context.game_id)
 
 
-@main_socket.on("logoutRoom")
+@socket.on("logoutRoom")
 async def logout_room(socket_id, context: PlayerBet):
     """
     This function logs out a player from a game room and emits a "logoutRoom" event to all players in the room.
@@ -171,7 +209,7 @@ async def logout_room(socket_id, context: PlayerBet):
     """
     game = GameList.read(id=context.game_id)
 
-    socket_session = main_socket.get_session(socket_id)
+    socket_session = socket.get_session(socket_id)
     if not socket_session:
         return BaseResponse(success=False, error="Session not found, log in again")
     session_data = Enumerable(socket_session.dict().values()).first()
@@ -208,7 +246,6 @@ async def logout_room(socket_id, context: PlayerBet):
     #                         and bet.player_hand_value == context.player_hand_value
     #                         and bet.dealer_hand == context.dealer_hand
 
-
     #
-    # await main_socket.leave_room(socket_id, context.game_id, namespace=game.eGameName)
-    # await main_socket.emit("logoutRoom", data=context.dict(), room=context.game_id)
+    # await socket.leave_room(socket_id, context.game_id, namespace=game.eGameName)
+    # await socket.emit("logoutRoom", data=context.dict(), room=context.game_id)

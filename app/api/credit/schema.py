@@ -17,7 +17,7 @@ from app.shared.schemas.page_schema import GetOptionalContextPages, Filter, Page
 
 class User(ORMCamelModel):
     id: Optional[int]
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
 
 
@@ -53,7 +53,7 @@ class UpdateUserCredit(CamelModel):
     `UpdateUserCredit` is a class that is used to represent a request
     """
 
-    ownerId: UUID
+    ownerId: int
     balance: float
 
 
@@ -70,7 +70,7 @@ class DeleteUserCredit(CamelModel):
     `DeleteUserCredit` is a class that is used to represent a request
     """
 
-    id: UUID
+    id: int
 
 
 class DeleteUserCreditResponse(BaseResponse):
