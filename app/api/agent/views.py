@@ -88,7 +88,7 @@ async def create_user(context: AgentCreateUser, request: Request):
     logger.info("Generating password")
     password = generate_password()
     if user := _make_user(context, password):
-        send_password_email(user.email, User.username, password)
+        # send_password_email(user.email, User.username, password)
         logger.info("Password email sent")
         return AgentCreateUserResponse(success=True, response=user)
     return BaseResponse(success=False, error="User not created")
