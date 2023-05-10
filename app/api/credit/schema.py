@@ -37,7 +37,7 @@ class GetUserCredit(CamelModel):
     `GetUserCredit` is a class that is used to represent a request
     """
 
-    ownerId: UUID
+    ownerId: int
 
 
 class GetUserCreditResponse(BaseResponse):

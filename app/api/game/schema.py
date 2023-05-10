@@ -17,7 +17,7 @@ from app.shared.schemas.page_schema import (
 
 
 class Game(ORMCamelModel):
-    id: UUID
+    id: int
     eGameName: Optional[str]
     cGameName: Optional[str]
     type: Optional[int]
@@ -61,14 +61,14 @@ class CreateGame(BaseModel):
 
 
 class UpdateGame(BaseModel):
-    id: UUID
+    id: int
     name: str
     description: str
 
 
 class RemoveGame(BaseModel):
-    id: UUID
+    id: int
 
 
 class GetGame(BaseModel):
-    id: UUID
+    id: int

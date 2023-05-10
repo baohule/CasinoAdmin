@@ -214,7 +214,7 @@ class AgentSetRole(BaseModel):
     """
 
     role_id: UUID
-    ownerId: UUID
+    ownerId: int
     parameters: Optional[Dict]
 
 
