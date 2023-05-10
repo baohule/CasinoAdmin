@@ -118,7 +118,7 @@ class AdminLogin(CamelModel):
 
     """
 
-    email: str
+    phone: str
     password: str
 
     class Config:
@@ -131,7 +131,7 @@ class AgentLogin(CamelModel):
 
     """
 
-    email: str
+    phone: str
     password: str
 
     class Config:
@@ -198,7 +198,7 @@ class CLaimAuthPayload(ORMCamelModel):
     """
 
     id: int
-    email: str
+    phone: str
 
 
 class IGetUserList(CamelModel):

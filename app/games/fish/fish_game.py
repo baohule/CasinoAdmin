@@ -21,6 +21,9 @@ from app.rpc.fish_game import GameConfig
 
 
 class FishGame:
+    """
+    Fish game class that handles game logic and server-side validation.
+    """
     def __init__(self, session: Session):
         # Initialize game config values from database
         self.difficulty = session.query(GameConfig).first().difficulty
@@ -56,7 +59,7 @@ class FishGame:
         Checks if fish is hit (according to probability distribution)
         and updates game result accordingly.
         """
-        fish = Fish.session.query(Fish).get(fish_id)  # assuming Fish model exists and session is provided
+        fish = Fish.session.query(Fish).read(fish_id)  # assuming Fish model exists and session is provided
         if not fish:
             return None
         prob_dist = self.get_prob_distribution(fish.propValue)  # assumes get_prob_distribution is defined
@@ -92,14 +95,14 @@ class FishGame:
         bullet.save()  # assuming save method exists for Bullet model
         return {"bullet_id": bullet_id, "bet_amount": bet_amount, "owner_id": owner_id}
 
-    def fishout(self) -> List[Dict[str, int]]:
+    def fish_out(self) -> List[Dict[str, int]]:
         """
         Returns information about all the available fish in the game.
         """
         fishes = Fish.session.query(Fish).all()
         return [{"fish_id": fish.id, "fish_type": fish.fishType} for fish in fishes]
 
-    def bigfish_chance(self) -> float:
+    def big_fish_chance(self) -> float:
         """
         Returns the chance to kill a big fish based on total bet and RTP (Return to player percentage).
         """

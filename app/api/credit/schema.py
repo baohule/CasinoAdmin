@@ -295,7 +295,7 @@ class DepositContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
-    email: Optional[str]
+    phone: Optional[str]
     status: Optional[Status]
 
 

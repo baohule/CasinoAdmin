@@ -31,7 +31,7 @@ class Recovery(CamelModel):
     The Recovery class is a model that represents a recovery
     """
 
-    email: EmailStr
+    phone: EmailStr
     code: str
     password: str
 
