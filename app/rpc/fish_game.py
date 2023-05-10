@@ -707,7 +707,7 @@ FishGame object and run the game.
         self.tableList[tableidx][seatidx] = socket
         self.tableList[tableidx][self.seatMax] = 1
 
-        tablestring = "table" + str(tableidx)
+        tablestring = f"table{str(tableidx)}"
         await socket.join_room(tablestring)
 
         return LoginResponse(tableId=tableidx, seatId=seatidx)

@@ -9,7 +9,7 @@ from pydantic import BaseModel
 
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.api.credit.schema import Balance
+from app.api.credit.schema import UserCredit
 from app.shared.schemas.page_schema import (
     GetOptionalContextPages,
     PagedResponse,
@@ -25,14 +25,16 @@ class Game(ORMCamelModel):
     jsonData: Optional[Dict[str, Any]]
     createdAt: Optional[datetime]
 
+
 class PlayerBet(ORMCamelModel):
-    id:UUID
-    game_id:int
-    balance:int
-    winscore:Optional[int]
-    betscore:int
-    betline:Optional[int]
-    ip:str
+    id: Optional[int]
+    game_id: Optional[int]
+    balance: Optional[UserCredit]
+    winscore: Optional[int]
+    betscore: Optional[int]
+    betline: Optional[int]
+    ip: Optional[str]
+
 
 class PagedGameItems(PagedResponse):
     items: Optional[List[Game]]
@@ -45,4 +47,3 @@ class PagedListAllGamesResponse(PagedBaseResponse):
 
 class ListAllGames(GetOptionalContextPages):
     params: Params
-
