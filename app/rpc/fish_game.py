@@ -124,6 +124,8 @@ class FishGame:
         self.changeFishOutI = 0
         self.isSendingChange = False
         self.changeingFishScene = False
+        self.del_fish_list = None
+        self.fish_list: Dict[str, Dict[int, Fish]] = {}
 
     def init(self):
         """
@@ -168,12 +170,14 @@ class FishGame:
                     fish_infos.append(fish_info1)
 
                 # Use the intersect method from py_linq to get the common unique fish_ids from all fish_infos
-                fish_ids = Enumerable(fish_infos[0].fish_id).intersect(*[Enumerable(info.fish_id) for info in fish_infos[1:]])
+                fish_ids = Enumerable(fish_infos[0].fish_id).intersect(
+                    *[Enumerable(info.fish_id) for info in fish_infos[1:]])
 
                 # Update the fishList with the common unique fish_ids
                 for index, fish_id in enumerate(fish_ids):
                     self.fishList[index].update({
-                        fish_id: self.pop_or_create_fish(fish_id, fish_info.fish_type, fish_info.fish_path, fish_info.coin)
+                        fish_id: self.pop_or_create_fish(fish_id, fish_info.fish_type, fish_info.fish_path,
+                                                         fish_info.coin)
                     })
                     await sio.emit('FishOut', info.dict(), room=table_string)
 
@@ -302,7 +306,7 @@ class GameInfo(BaseModel):
     gametype: int
 
 
-class FishNamespace(AsyncNamespace):
+class FishNameSpace(AsyncNamespace):
     pool: float = 0
     betCount: List[int] = [1, 5, 10, 20, 30, 50, 100]
     fishList: dict = {}
@@ -332,11 +336,7 @@ bet_count = [1, 2, 3]
 pro = [0.2, 0.3, 0.4]
 
 
-class FishNamespace:
-    def __init__(self):
-        self.del_fish_list = None
-        self.fish_list: Dict[str, Dict[int, Fish]] = {}
-
+class FishNamespace(FishGame):
     def delete_fish(self, table_obj: Dict[int, Fish], fish_id: int) -> None:
         fish = table_obj.get(fish_id)
         if fish:
@@ -378,14 +378,15 @@ class Boom:
     pass
 
 
-class FishServer:
+class FishServer(FishGame):
     """
 The FishServer class is a class that represents a
 server for the FishGame class. It is used to create a
 FishGame object and run the game.
     """
-
     def __init__(self, fish_config: List[FishConfig], game_config: GameConfig, socket_str: str):
+        super().__init__()
+        self.fishOut = None
         self.max_pool = None
         self.betCount = None
         self.tableList = None
@@ -452,6 +453,8 @@ FishGame object and run the game.
         self.pool: int = 0
         self.virtualPool: int = 0
         self.skill_cost: list[int] = [10, 20]
+        self.reward_pool: int = 0
+        self.bullet_pool = []
 
         self.init_fish_out_pro()
 
@@ -524,7 +527,8 @@ FishGame object and run the game.
         """
         fish_config_data = [[1], [2], [3], [4], [5], [6], [7], [8], [9], [10], [11], [12], [13]]
         self.fish_config = pd.DataFrame(fish_config_data, columns=["outPro"], index=range(1, 14))
-        self.fishOut = FishOut(fishOutList=self.generate_fish_out_list(), fishOutProMax=self.fish_config["outPro"].cumsum().max())
+        self.fishOut = FishOut(fishOutList=self.generate_fish_out_list(),
+                               fishOutProMax=self.fish_config["outPro"].cumsum().max())
 
     def generate_fish_out_list(self) -> List[int]:
         """
@@ -756,19 +760,6 @@ FishGame object and run the game.
         room_str = f"table{table_id}"
         sio.leave_room(socketio_sid, room_str)
 
-    def find_bullet_bet(bet: int, bet_count: List[int]) -> bool:
-        """
-        The function checks if a given bet is present in a list of bet counts and returns a boolean value.
-
-        :param bet: an integer representing the bet amount that we want to check if it exists in the list of bet counts
-        :type bet: int
-        :param bet_count: The parameter `bet_count` is a list of integers that represents the number of times each bet has been placed. Each element in the list corresponds to a
-        specific bet, where the index of the element represents the bet number. For example, `bet_count[0]` represents the number of times
-        :type bet_count: List[int]
-        :return: a boolean value indicating whether the given bet is present in the list of bet counts.
-        """
-        return bet in bet_count
-
     def send_pool(pool: Pool) -> None:
         """
         The function sends a pool object to a specific room using Socket.IO.
@@ -795,6 +786,10 @@ FishGame object and run the game.
         """
         await sio.emit('init', {'pool': self.pool})
 
+    async def shooting(self, data: dict):
+        user = User(**data['user'])
+
+
     async def on_fish_hit(self, sid: str, data: dict):
         """
         This is a function that handles the logic for when a fish is hit in a game, calculating the score and updating various game and user information.
@@ -806,102 +801,30 @@ FishGame object and run the game.
         :type data: dict
         :return: A dictionary with keys 'score', 'propId', and 'propCount' and their respective values.
         """
-        _User = User(**data['user'])
-        _bet = int(data['bet'])
-        hitCount = int(data['hitCount'])
-
+        user = User(**data['user'])
+        bet = int(data['bet'])
         fish_data = FishInfo(**data['fish'])
         fish_id = fish_data.fish_id
-        hitInfo = fish_data.hitInfo
 
-        gameinfor = GameInfo(**data['gameinfo'])
-
-        userid = _User.id
-
-        if _bet not in self.betCount:
-            logger.info(f"{_bet} not in betCount")
+        target_fish = self.fishList[user.table_id][fish_id].getfish_type()
+        is_kill = self.compute_probability(fish_data.fish_type)
+        if target_fish < 0 or target_fish >= len(fishConfig) \
+                or bet not in self.betCount \
+                or not self.fishList[user.table_id].get(fish_id) \
+                or self.fishList[user.table_id][fish_id].getfish_id() != fish_id \
+                or self.fishList[user.table_id][fish_id].isDel()\
+                or not is_kill:
             return {'score': 0, 'propId': 0, 'propCount': 0}
+        return {'userId': user.id, 'score': fish_data.coin, 'fish_id': fish_id, 'propId': 0, 'propCount': 0}
 
-        if self.fishList[_User.tableId].get(fish_id) is None:
-            if not _User._Robot:
-                self.pool += self.betCount[self.betCount.index(_bet)]
-            return {'socre': 0, 'propId': 0, 'propCount': 0}
+    def compute_probability(self, fish_type: int):
+        seed: float = random.random()
+        difficulty_level: int = self.fishConfig[fish_type].difficulty
+        prob_range: list = [(difficulty_level - 1) * 0.05, difficulty_level * 0.05]
+        if prob_range[0] <= seed < prob_range[1]:
+            return True
+        return False
 
-        if self.fishList[_User.tableId][fish_id].getfish_id() != fish_id:
-            return {'score': 0, 'propId': 0, 'propCount': 0}
-
-        if self.fishList[_User.tableId][fish_id].isDel():
-            return {'score': 0, 'propId': 0, 'propCount': 0}
-
-        _pro = self.fishList[_User.tableId][fish_id].getfish_type()
-
-        if _pro < 0 or _pro >= len(fishConfig):
-            return {'score': 0, 'propId': 0, 'propCount': 0}
-
-        tablestring = f"table{_User.tableId}"
-
-        score = _bet * fishConfig[_pro].coin
-        pool = (gameinfor.totalwin + score * gameinfor.gametype) / gameinfor.totalbet
-
-        poollimit = GameConfig.clickodd[0].maxpool
-
-    async def calculate_poollimit(self, currentuser: CurrentUser):
-        """
-        This function calculates the pool limit based on the current user's click count and game configuration.
-
-        :param currentuser: The current user object that contains information about the user, such as their player click count
-        :type currentuser: CurrentUser
-        :return: A dictionary containing the calculated pool limit value with the key 'poollimit'.
-        """
-        for i, click_odd in enumerate(game_config.clickodd):
-            if i == 5:
-                poollimit = click_odd.maxpool if currentuser.playerclick % click_odd.percent <= click_odd.cycle else click_odd.minpool
-            elif currentuser.playerclick < click_odd.click:
-                if currentuser.playerclick % click_odd.percent > click_odd.cycle:
-                    poollimit = click_odd.minpool
-                else:
-                    poollimit = click_odd.maxpool
-            else:
-                continue
-        return {'poollimit': poollimit}
-
-    async def kill_fish(self, userid: str, score: float, fish_id: str, tableobj: str, pool: float, game_config: GameConfig):
-        """
-        This function determines whether a fish should be killed based on various conditions and returns information about the kill or a score of 0.
-
-        :param userid: A string representing the user ID of the player who is killing the fish
-        :type userid: str
-        :param score: The score obtained by the player for killing the fish
-        :type score: float
-        :param fish_id: The ID of the fish that the player is trying to kill
-        :type fish_id: str
-        :param tableobj: The `tableobj` parameter is a string that represents the name or identifier of the table or game object where the fish killing action is taking place
-        :type tableobj: str
-        :param pool: The amount of virtual currency that the player has accumulated in the game
-        :type pool: float
-        :param game_config: GameConfig is an object that contains various configurations for the game, such as the maximum pool size, the poollimit calculation formula, and other game
-        settings. It is used in the function to calculate the poollimit and determine whether a fish should be killed based on the player's pool size and
-        :type game_config: GameConfig
-        :return: If certain conditions are met, a dictionary containing information about the killed fish (userId, score, fish_id, propId, propCount) is returned. Otherwise, a
-        dictionary with score, propId, and propCount set to 0 is returned.
-        """
-        is_kill = False
-        randomkill = random.randint(0, 9)
-
-        poollimit_result = await self.calculate_poollimit(CurrentUser(playerclick=pool, level=5), game_config)
-
-        if pool < poollimit_result['poollimit']:
-            if randomkill > 7:
-                is_kill = True
-        elif randomkill > 7:
-            randomkill = random.randint(0, 9)
-            if randomkill < 5:
-                is_kill = True
-
-        if pool < self.max_pool and (((poollimit_result['poollimit'] < 16 and is_kill) or is_kill) or (poollimit_result['poollimit'] > 15)):
-            return {'userId': userid, 'score': score, 'fish_id': fish_id, 'propId': 0, 'propCount': 0}
-        else:
-            return {'score': 0, 'propId': 0, 'propCount': 0}
 
     async def boom_fish_hit(self, user: User, bet: float, hit_count: int, fish_id: int, boom_level: int):
         """
@@ -943,7 +866,6 @@ FishGame object and run the game.
             logger.info("")
 
             self.pro_max = pro_max
-            self.betCount = self.betCount
             self.pro = pro
             n_pro = len(pro_max)
             n_bet = len(self.betCount)
@@ -1022,7 +944,7 @@ FishGame object and run the game.
                 return self.boom_list.pop(i)
         return None
 
-    def fishShoot(self, _pro: int, _bet: int, hitCount: int) -> None:
+    def fishShoot(self, _pro: int, _bet: int, hit_count: int) -> None:
         """
         The function "fishShoot" takes in three parameters and does not have any implementation yet.
 
