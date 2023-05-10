@@ -142,7 +142,7 @@ class GetPlayerStatsData(ORMCamelModel):
 class StatsPageFilter(BaseModel):
     start_date: Optional[datetime]
     end_date: Optional[datetime]
-    game_id: Optional[UUID]
+    game_id: Optional[int]
     user_id: Optional[int]
 
 

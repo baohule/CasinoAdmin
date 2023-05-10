@@ -175,9 +175,6 @@ class ModelMixin(AllFeaturesMixin):
         timestamp = datetime.now(pytz.utc)
         new_kwargs = dict(kwargs)
         new_kwargs["createdAt"] = timestamp
-        if not new_kwargs.get("id"):
-            item_id = uuid.uuid4()
-            new_kwargs["id"] = item_id
         return new_kwargs
 
     @classmethod
