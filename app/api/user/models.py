@@ -35,7 +35,7 @@ class User(ModelMixin):
     __tablename__ = "User"
 
     id = Column(Integer, primary_key=True, autoincrement=True, unique=True, index=True)
-    email = Column(String(255), nullable=False, unique=True)
+    phone = Column(String(255), nullable=False, unique=True)
     username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=True)
     phoneNumber = Column(String(255), nullable=True)

@@ -64,7 +64,7 @@ class BaseUserResponse(ORMCamelModel):
     """
 
     id: int
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
@@ -188,7 +188,7 @@ class SearchUser(CamelModel):
     It is used in the `/search` endpoint.
     """
 
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     firstName: Optional[str]
     type: str

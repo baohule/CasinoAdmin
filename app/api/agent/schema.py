@@ -114,7 +114,7 @@ class BaseUser(CamelModel):
     """
 
     id: int
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     password: Optional[str]
     username: Optional[str]
@@ -139,7 +139,7 @@ class BaseUserResponse(ORMCamelModel):
     """
 
     id: int
-    email: Optional[str]
+    phone: Optional[str]
     username: Optional[str]
     active: Optional[bool]
     creditAccount: Optional[UserCredit]
@@ -302,7 +302,7 @@ class CreateUser(BaseModel):
     `CreateUser` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    email: EmailStr
+    phone: str
     password: str
     username: str
 
