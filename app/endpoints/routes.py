@@ -4,7 +4,7 @@
 
 import contextlib
 from fastapi.routing import APIRoute
-from app.endpoints.urls import APIPrefix
+from app.endpoints.urls import APIPrefix, SocketPrefix
 
 
 def use_route_names_as_operation_ids(app):
@@ -30,7 +30,12 @@ def add_routes(app):
         with contextlib.suppress(ImportError, ModuleNotFoundError):
             exec(f"from app.api.{route}.views import router as {route}")
             exec(f"app.include_router({route})")
-            exec(f'from app.rpc.{route}.views import router as rpc_{route}')
-            exec(f"app.include_router(rpc_{route})")
     use_route_names_as_operation_ids(app)
     return app
+
+
+def add_socket_routes(socket):
+
+    for route in SocketPrefix.include:
+        exec(f'from app.rpc.{route}.views import socket')
+        return socket

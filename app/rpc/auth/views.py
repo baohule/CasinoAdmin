@@ -15,7 +15,7 @@ from app.rpc.user.schema import UserResponse
 from app.shared.helper.session_state import SocketSession, Session
 from app.shared.middleware.json_encoders import ModelEncoder
 from app import redis
-from app.rpc import app
+from app.rpc import socket
 
 logger = logging.getLogger("auth")
 logger.addHandler(logging.StreamHandler())
@@ -27,10 +27,10 @@ default_session = {
 }
 
 
-@app.sio.on('getOTP')
+@socket.on('getOTP')
 async def get_OTP(socket_id, context: OTPLoginStart) -> OTPLoginStartResponse:
     """
-    This function gets an OTP for login and emits it through a app.sio.
+    This function gets an OTP for login and emits it through a socket.
 
     :param socket_id:
     :param context: The parameter `context` is of type `OTPLoginStart`, which
@@ -42,7 +42,7 @@ async def get_OTP(socket_id, context: OTPLoginStart) -> OTPLoginStartResponse:
     `OTPLoginStartResponse`.
     """
     context = OTPLoginStart(**context)
-    socket_session = await app.sio.get_session(socket_id)
+    socket_session = await socket.get_session(socket_id)
     if not socket_session:
         socket_session = SocketSession.construct(**{context.phoneNumber: default_session})
         logger.info(f'session: {socket_session}')
@@ -53,16 +53,16 @@ async def get_OTP(socket_id, context: OTPLoginStart) -> OTPLoginStartResponse:
         session.sid = socket_id
         session.state = 'sms_wait'
         socket_session = socket_session.update_session(session)
-        await app.sio.save_session(socket_id, socket_session.dict())
-        await app.sio.emit("getOTP", data=response.dict())
+        await socket.save_session(socket_id, socket_session.dict())
+        await socket.emit("getOTP", data=response.dict())
     return OTPLoginStartResponse(success=False, error="SMS already sent")
 
 
-@app.sio.on('verifySMS')
+@socket.on('verifySMS')
 async def verify_SMS(socket_id, context: OTPLoginVerify) -> TokenResponse:
     """
     The function verifies a user's login using a one-time password
-    and emits the result through a app.sio.
+    and emits the result through a socket.
 
     :param socket_id:
     :param context: The parameter "context" is of type OTPLoginVerify,
@@ -73,7 +73,7 @@ async def verify_SMS(socket_id, context: OTPLoginVerify) -> TokenResponse:
     :return: a variable named "result" which is of type TokenResponse.
     """
     context = OTPLoginVerify(**context)
-    socket_session = SocketSession.construct(**await app.sio.get_session(socket_id))
+    socket_session = SocketSession.construct(**await socket.get_session(socket_id))
     session = Session(**socket_session.dict().get(context.phoneNumber))
     result = TokenResponse(success=False, error="SMS not sent")
     logger.info(f'session: {session}')
@@ -91,9 +91,9 @@ async def verify_SMS(socket_id, context: OTPLoginVerify) -> TokenResponse:
             session.state = 'login_failure'
 
         socket_session = socket_session.update_session(session)
-        await app.sio.save_session(socket_id, socket_session.dict())
+        await socket.save_session(socket_id, socket_session.dict())
 
-    await app.sio.emit('loginResult', result.dict())
+    await socket.emit('loginResult', result.dict())
     return TokenResponse(success=False, error="SMS not sent")
 
 
@@ -130,7 +130,7 @@ def get_auth_token(socket):
     ).first().split(' ')[1]
 
 
-@app.sio.on('login')
+@socket.on('login')
 async def log_in(socket_id, _context) -> UserResponse:
     """
     The function logs in a user by checking their access token
@@ -143,9 +143,9 @@ async def log_in(socket_id, _context) -> UserResponse:
     :return: a `BaseResponse` object.
     """
     logger.info('login')
-    app.sio.emit('loginResult', 'login')
-    token = get_auth_token(app.sio)
-    socket_session = SocketSession.construct(**await app.sio.get_session(socket_id))
+    socket.emit('loginResult', 'login')
+    token = get_auth_token(socket)
+    socket_session = SocketSession.construct(**await socket.get_session(socket_id))
     user = None
     if token:
         user = User.read(accessToken=token)
@@ -158,20 +158,20 @@ async def log_in(socket_id, _context) -> UserResponse:
             break
 
     if user:
-        socket_session = SocketSession.construct(app.sio.session(socket_id))
+        socket_session = SocketSession.construct(socket.session(socket_id))
         response = UserResponse(success=True, response=user)
         session = Session(sid=socket_id, user=user, state='login_success')
         socket_session = socket_session.dict()
         socket_session[user.phoneNumber] = session.json()
         logger.info(socket_session)
         await update_online_users(user)
-        await app.sio.save_session(socket_id, socket_session)
-        await app.sio.emit('loginResult', response.json())
+        await socket.save_session(socket_id, socket_session)
+        await socket.emit('loginResult', response.json())
 
         return response
 
 
-@app.sio.on('logout')
+@socket.on('logout')
 async def log_out(socket_id):
     """
     The function logs out a user by setting their access token to None.
@@ -190,5 +190,5 @@ async def log_out(socket_id):
     await update_online_users(user, online=False)
     user.accessToken = None
     user.save()
-    await app.sio.emit('logoutResult', user.id)
+    await socket.emit('logoutResult', user.id)
     return

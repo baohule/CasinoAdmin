@@ -2,6 +2,7 @@
 @author: Kuro
 """
 from fastapi import FastAPI
+# from fastapi_socketio import SocketManager
 from fastapi_sqlalchemy import DBSessionMiddleware, db
 from starlette.middleware.authentication import AuthenticationMiddleware
 
@@ -13,7 +14,6 @@ from settings import Config
 from app.shared.middleware.auth import JWTBearer
 import logging
 from app.shared.redis.redis_services import RedisServices
-
 from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
@@ -64,7 +64,6 @@ with db():
 
 #
 
-# app.add_route("/socket.io/", route=socket._app, methods=['GET', 'POST'])
-# app.add_websocket_route("/socket.io/", socket._app)
+
 
 redis = RedisServices().redis
