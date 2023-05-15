@@ -1,6 +1,7 @@
 """
 @author: Kuro
 """
+
 import datetime
 import pytz
 from sqlalchemy import (
@@ -54,6 +55,7 @@ class GameList(ModelMixin):
             cls.session.rollback()
             print(e)
             return
+
 
 class GameSession(ModelMixin):
     """
@@ -111,8 +113,6 @@ class PlayerSession(ModelMixin):
     betResult = Column(Integer, nullable=False)
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
 
-
-
     @classmethod
     def update_game(cls, *_, **kwargs) -> ModelType:
         """
@@ -132,7 +132,6 @@ class PlayerSession(ModelMixin):
             print(e)
             return
 
-
     @classmethod
     def remove_game(cls, *_, **kwargs) -> ModelType:
         """
@@ -148,7 +147,6 @@ class PlayerSession(ModelMixin):
             cls.session.rollback()
             print(e)
             return
-
 
     @classmethod
     def list_all_games(cls, page, num_items) -> PagedResponse:
@@ -198,3 +196,13 @@ class Fish(ModelMixin):
             fish = cls(**config)
             cls.session.add(fish)
         cls.session.commit()
+
+
+class Paths(ModelMixin):
+    __tablename__ = 'paths'
+
+    id = Column(Integer, primary_key=True)
+    duration = Column(DateTime)
+    starting = Column(Float)
+    middle = Column(Float)
+    destination = Column(Float)
