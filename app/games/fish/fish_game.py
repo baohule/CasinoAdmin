@@ -48,6 +48,9 @@ class FishGame:
             return {"success": False}
         if bullet_id := Bullet.read(id=bullet_id):
             return {"success": False}
+        user.balace -= bet_amount
+        user.save()
+        self.append_bullet_list(bullet_id, bet_amount, owner_id)
         return {"success": True}
 
     def fish_hit(self, bullet_id: int, owner_id: int, fish_id: int) -> Optional[Dict[str, bool]]:
@@ -55,19 +58,17 @@ class FishGame:
         Checks if fish is hit (according to probability distribution)
         and updates game result accordingly.
         """
+        bullet = Bullet.read(id=bullet_id)
         for fish in self.fish_pool:
-            if fish["fish_id"] == fish_id:
-                hit = self.get_prob_distribution(fish.difficulty)  # assumes difficulty is defined
-                if hit:
+            if fish["fish_id"] == fish_id and bullet:
+                kill = self.get_prob_distribution(fish.difficulty)  # assumes difficulty is defined
+                if kill:
                     reward = fish.coin  # use coin field as reward amount
                     game_result = GameResult(user_id=owner_id, bullet_id=bullet_id, fish_id=fish_id, win=reward)
-                    # Deduct winning from total bet (reward pool already increased in serverside_fish_hit)
-                    self.total_bet -= reward
                     game_result.save()  # assuming save method exists for GameResult model
                     return {"success": True}
-                else:
-                    return {"success": False}
-            return None
+                return {"success": False}
+            return {"success": False}
 
     def append_bullet_list(self, bullet_id: int, bet_amount: int, owner_id: int) -> Dict[str, int]:
         """
@@ -75,7 +76,6 @@ class FishGame:
         """
         bullet = Bullet(id=bullet_id, bet=bet_amount, user_id=owner_id)
         bullet.save()  # assuming save method exists for Bullet model
-        return {"bullet_id": bullet_id, "bet_amount": bet_amount, "owner_id": owner_id}
 
     def kill_big_fish(self) -> bool:
         """
