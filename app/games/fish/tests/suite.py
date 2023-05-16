@@ -54,7 +54,7 @@ class TestFishGame:
             owner_id = 1
             bet_amount = 100
             user = User.where(id=owner_id).first()
-            user.creditAccount.balance = 200
+            user.balance.amount = 200
             user.save()
             bullet = Bullet(id=bullet_id, bet=bet_amount,owner_id)
             bullet.save()
@@ -75,7 +75,7 @@ class TestFishGame:
             fish_id = 1
             bet_amount = 100
             user = User.where(id=owner_id).first()
-            user.creditAccount.balance = 200
+            user.balance.amount = 200
             user.save()
             bullet = Bullet(id=bullet_id, bet=bet_amount, user_id=owner_id)
             bullet.save()
@@ -112,7 +112,7 @@ class TestFishGame:
             owner_id = 1
             bet_amount = 100
             user = User.where(id=owner_id).first()
-            user.creditAccount.balance = 50
+            user.balance.amount = 50
             user.save()
 
             # Act
@@ -130,7 +130,7 @@ class TestFishGame:
             owner_id = 1
             bet_amount = 100
             user = User.where(id=owner_id).first()
-            user.creditAccount.balance = 200
+            user.balance.amount = 200
             user.save()
             bullet = Bullet(id=bullet_id, bet=bet_amount, user_id=owner_id)
             bullet.save()
@@ -151,7 +151,7 @@ class TestFishGame:
             fish_id = 1
             bet_amount = 100
             user = User.where(id=owner_id).first()
-            user.creditAccount.balance = 200
+            user.balance.amount = 200
             user.save()
             bullet = Bullet(id=bullet_id, bet=bet_amount, user_id=owner_id)
             bullet.save()

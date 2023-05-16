@@ -16,7 +16,7 @@ def datetime_parser(json_dict):
     :param json_dict: Used to Pass the json_dict to be parsed.
     :return: A dictionary with the datetime objects.
     """
-    for (key, value) in json_dict.items():
+    for key, value in json_dict.items():
         try:
             json_dict[key] = dateutil.parser.parse(value)
         except (ValueError, AttributeError):

@@ -16,11 +16,30 @@ from app.api.credit.schema import (
     GetUserCredit,
     GetUserCreditResponse,
     UpdateUserCreditResponse,
-    UpdateUserCredit, UpdateAgentQuotaResponse, UpdateAgentQuota, GetUserWithdrawals, GetUserWithdrawalsResponse, GetUserDepositsResponse, GetUserDeposits, DepositResponse,
-    WithdrawalResponse, GetWithdrawal, GetDeposit, ChangeDepositStatusResponse, ChangeWithdrawalStatusResponse, MakeWithdrawal, BalanceDeposit, BalanceWithdrawal
+    UpdateUserCredit,
+    UpdateAgentQuotaResponse,
+    UpdateAgentQuota,
+    GetUserWithdrawals,
+    GetUserWithdrawalsResponse,
+    GetUserDepositsResponse,
+    GetUserDeposits,
+    DepositResponse,
+    WithdrawalResponse,
+    GetWithdrawal,
+    GetDeposit,
+    ChangeDepositStatusResponse,
+    ChangeWithdrawalStatusResponse,
+    MakeWithdrawal,
+    BalanceDeposit,
+    BalanceWithdrawal,
 )
 from app.shared.bases.base_model import paginate
-from app.shared.bases.base_response import AgentQuotaExceeded, AuthenticationScopeMismatch, NoUserBalanceObject, QuotaNotUpdated
+from app.shared.bases.base_response import (
+    AgentQuotaExceeded,
+    AuthenticationScopeMismatch,
+    NoUserBalanceObject,
+    QuotaNotUpdated,
+)
 from app.shared.middleware.auth import JWTBearer
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
@@ -86,7 +105,6 @@ async def update_credit(context: UpdateUserCredit, request: Request):
         return NoUserBalanceObject(success=False)
 
     if agent := Agent.read(id=request.user.id):
-
         if not agent or admin:
             return AuthenticationScopeMismatch(success=False)
 
@@ -94,16 +112,11 @@ async def update_credit(context: UpdateUserCredit, request: Request):
             return AgentQuotaExceeded(success=False)
 
         _agent_updated = Agent.update(
-            id=agent.id,
-            quota=agent.quota.balance - context.balance
+            id=agent.id, quota=agent.quota.balance - context.balance
         )
 
     _updated = Balance.update(**context.dict())
     return UpdateUserCreditResponse(success=True, response=_updated)
-
-
-
-
 
 
 @router.post("/manage/update_agent_quota", response_model=UpdateAgentQuotaResponse)
@@ -116,8 +129,7 @@ async def update_agent_quota(context: UpdateAgentQuota, request: Request):
     """
     _updated = Quota.update(agentId=context.agentId, balance=context.quota.balance)
     return (
-        UpdateAgentQuotaResponse(
-            success=True, response=_updated)
+        UpdateAgentQuotaResponse(success=True, response=_updated)
         if _updated
         else QuotaNotUpdated(success=False)
     )
@@ -132,16 +144,18 @@ async def deposit(context: BalanceDeposit, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Deposit.where(ownerId=context.ownerId)
-                    .join(Status, isouter=True)
-                    .filter(Status.approval == "pending")
-                    .first()
+        _ := Deposit.where(ownerId=context.ownerId)
+        .join(Status, isouter=True)
+        .filter(Status.approval == "pending")
+        .first()
     ):
         return BaseResponse(success=False, error="User has pending deposit")
     _status = Status.create(approval="pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
-    _deposit = Deposit.create(statusId=_status.id, ownerId=context.ownerId, amount=int(context.amount))
+    _deposit = Deposit.create(
+        statusId=_status.id, ownerId=context.ownerId, amount=int(context.amount)
+    )
     return UpdateUserCreditResponse(success=True, response=_deposit)
 
 
@@ -157,14 +171,13 @@ async def approve_deposit(context: GetDeposit, request: Request):
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
-        id=_deposit.status.id,
-        status="approved",
-        approvedBy=request.user.id
+        id=_deposit.status.id, status="approved", approvedBy=request.user.id
     )
     if not _Status:
         return BaseResponse(success=False, error="Could not approve deposit")
     _updated = Balance.update(
-        ownerId=_deposit.ownerId, balance=_deposit.balance + _deposit.owner.balance.balance
+        ownerId=_deposit.ownerId,
+        balance=_deposit.balance + _deposit.owner.balance.balance,
     )
     return ChangeDepositStatusResponse(success=True, response=_updated)
 
@@ -181,9 +194,7 @@ async def reject_deposit(context: GetDeposit, request: Request):
     if not _deposit:
         return BaseResponse(success=False, error="Deposit not found")
     _Status = Status.update(
-        id=_deposit.status.id,
-        status="rejected",
-        approvedBy=request.user.id
+        id=_deposit.status.id, status="rejected", approvedBy=request.user.id
     )
     return (
         ChangeDepositStatusResponse(success=True, response=_deposit)
@@ -201,16 +212,18 @@ async def withdraw(context: BalanceWithdrawal, request: Request):
     :return: UpdateUserCreditResponse
     """
     if (
-            _ := Withdrawal.where(ownerId=context.ownerId)
-                    .join(Status, isouter=True)
-                    .filter(Status.approval == "pending")
-                    .first()
+        _ := Withdrawal.where(ownerId=context.ownerId)
+        .join(Status, isouter=True)
+        .filter(Status.approval == "pending")
+        .first()
     ):
         return BaseResponse(success=False, error="User has pending withdrawal")
     _status = Status.create(approval="pending")
     if not _status:
         return BaseResponse(success=False, error="Could not create withdrawal request")
-    _withdraw = Withdrawal.create(statusId=_status.id, ownerId=context.ownerId, amount=context.amount)
+    _withdraw = Withdrawal.create(
+        statusId=_status.id, ownerId=context.ownerId, amount=context.amount
+    )
     return WithdrawalResponse(success=True, response=_withdraw)
 
 
@@ -228,16 +241,16 @@ async def approve_withdraw(context: GetWithdrawal, request: Request):
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _status = Status.update(
-        id=_withdraw.status.id,
-        approval="approved",
-        approvedById=approval
+        id=_withdraw.status.id, approval="approved", approvedById=approval
     )
     if not _status:
         return BaseResponse(success=False, error="Could not approve withdrawal")
     _updated_balance = Balance.update(
         ownerId=context.ownerId, balance=Balance.balance - _withdraw.amount
     )
-    response = MakeWithdrawal(**dict(withdrawal=_withdraw, status=_status, balance=_updated_balance))
+    response = MakeWithdrawal(
+        **dict(withdrawal=_withdraw, status=_status, balance=_updated_balance)
+    )
     return ChangeWithdrawalStatusResponse(success=True, response=response)
 
 
@@ -249,9 +262,7 @@ async def reject_withdraw(context: GetWithdrawal, request: Request):
     if not _withdraw:
         return BaseResponse(success=False, error="Withdrawal not found")
     _Status = Status.update(
-        id=_withdraw.status.id,
-        approval="rejected",
-        approvedById=approved_id
+        id=_withdraw.status.id, approval="rejected", approvedById=approved_id
     )
     return (
         ChangeWithdrawalStatusResponse(success=True, response=_withdraw)
@@ -271,12 +282,12 @@ async def get_user_withdrawals(context: GetUserWithdrawals, request: Request):
 
     filters = dict(
         status___approval=context.context.filter.status.approval,
-        status___approvedById=context.context.filter.status.approvedById
+        status___approvedById=context.context.filter.status.approvedById,
     )
     filters = {k: v for k, v in filters.items() if v}
-    if context.context.filter.status.approval == 'all':
-        filters.pop('status___approval')
-        filters.update(status___approval__in=['approved', 'rejected', 'pending'])
+    if context.context.filter.status.approval == "all":
+        filters.pop("status___approval")
+        filters.update(status___approval__in=["approved", "rejected", "pending"])
     withdrawals = Withdrawal.get_user_withdrawals(**context.params.dict(), **filters)
     return (
         GetUserWithdrawalsResponse(success=True, response=withdrawals)
@@ -296,11 +307,13 @@ async def get_user_deposits(context: GetUserDeposits, request: Request):
     filters = dict(
         status___approval=context.context.filter.status.approval,
         email=context.context.filter.email,
-        approvedById=context.context.filter.status.approvedById
+        approvedById=context.context.filter.status.approvedById,
     )
     filters = {k: v for k, v in filters.items() if v}
 
-    deposits = paginate(Deposit.where(**filters), context.params.page, context.params.size)
+    deposits = paginate(
+        Deposit.where(**filters), context.params.page, context.params.size
+    )
     return (
         GetUserDepositsResponse(success=True, response=deposits)
         if deposits

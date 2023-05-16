@@ -12,7 +12,10 @@ from app.api.admin.schema import (
     GetUserList,
     GetAgent,
     RemoveUser,
-    AgentCreateResponse, SearchResults, SearchUser, AdminPagedResponse,
+    AgentCreateResponse,
+    SearchResults,
+    SearchUser,
+    AdminPagedResponse,
 )
 from app.api.agent.models import Agent
 from app.api.credit.models import Quota
@@ -20,7 +23,11 @@ from app.api.user.models import User
 from app.shared.auth.password_handler import get_password_hash
 from app.shared.bases.base_model import Page
 from app.shared.middleware.auth import JWTBearer
-from app.api.user.schema import AdminUserCreate, AdminUserCreateResponse, AgentUserCreate
+from app.api.user.schema import (
+    AdminUserCreate,
+    AdminUserCreateResponse,
+    AgentUserCreate,
+)
 from app.api.admin.models import Admin
 from fastapi.exceptions import HTTPException
 
@@ -74,7 +81,9 @@ async def create_agent(context: AgentUserCreate, request: Request):
     """
     logger.info(f"Creating agent with email {context.email}")
     context.password = get_password_hash(context.password)
-    agent = Agent.create(username=context.username, email=context.email, password=context.password)
+    agent = Agent.create(
+        username=context.username, email=context.email, password=context.password
+    )
     if not agent:
         logger.info(f"Agent not created with email {context.email}")
         return BaseResponse(success=False, error="Admin not created")
@@ -98,10 +107,7 @@ async def update_agent(context: AgentUpdate, request: Request):
     :return: AgentUpdateResponse
     """
     logger.info(f"Updating agent with id {context.agentId}")
-    agent = Agent.update_agent(
-        id=context.agentId,
-        active=context.active
-    )
+    agent = Agent.update_agent(id=context.agentId, active=context.active)
     if context.quota:
         Quota.update(agentId=context.agentId, balance=context.quota)
     if not agent:
@@ -139,14 +145,16 @@ async def list_agents(context: GetUserList, request: Request):
     :type request: Request
     :return: ListAdminUserResponse
     """
-    logger.info(f"Listing agents with page {context.params.page} and size {context.params.size}")
+    logger.info(
+        f"Listing agents with page {context.params.page} and size {context.params.size}"
+    )
     agent_pages = Agent.list_all_agents(
-        context.params.page,
-        context.params.size,
-        active=context.context.filter.active
+        context.params.page, context.params.size, active=context.context.filter.active
     )
     logger.info(f"{len(agent_pages.items)} agents found")
-    return ListAdminUserResponse(success=True, response=AdminPagedResponse(**agent_pages.as_dict()))
+    return ListAdminUserResponse(
+        success=True, response=AdminPagedResponse(**agent_pages.as_dict())
+    )
 
 
 @router.post("/get_agent", response_model=BaseResponse)
@@ -186,14 +194,13 @@ async def search_users(context: SearchUser, request: Request):
     """
     logger.info(f"Searching for {context.type}s")
     model = User
-    if context.type == 'agent':
+    if context.type == "agent":
         model = Agent
-    if context.type == 'admin':
+    if context.type == "admin":
         model = Admin
-    if context.type == 'user':
+    if context.type == "user":
         model = User
     logger.info(f"{model} selected for search")
     result = model.search(**context.dict(exclude_none=True)) or []
     logger.info(f"{len(result)} {context.type}s found")
     return SearchResults(success=True, response=result)
-

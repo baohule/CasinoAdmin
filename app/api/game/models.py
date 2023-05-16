@@ -11,7 +11,10 @@ from sqlalchemy import (
     DateTime,
     Integer,
     String,
-    JSON, ForeignKey, Boolean, Float,
+    JSON,
+    ForeignKey,
+    Boolean,
+    Float,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
@@ -63,6 +66,7 @@ class GameSession(ModelMixin):
     """
     GameSession is a table that stores the game session.
     """
+
     __tablename__ = "GameSession"
 
     id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
@@ -75,7 +79,7 @@ class GameSession(ModelMixin):
     game = relationship(
         "GameList",
         foreign_keys="GameSession.gameId",
-        backref=backref("gameSession", single_parent=True, uselist=False)
+        backref=backref("gameSession", single_parent=True, uselist=False),
     )
 
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
@@ -85,9 +89,16 @@ class PlayerSession(ModelMixin):
     """
     PlayerSession is a table that stores the player session.
     """
+
     __tablename__ = "PlayerSession"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True, default=uuid.uuid4())
+    id = Column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        unique=True,
+        index=True,
+        default=uuid.uuid4(),
+    )
     gameSessionId = Column(
         UUID(as_uuid=True),
         ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
@@ -181,7 +192,7 @@ class PlayerSession(ModelMixin):
 
 
 class Fish(ModelMixin):
-    __tablename__ = 'fish'
+    __tablename__ = "fish"
 
     id = Column(Integer, primary_key=True)
     fishType = Column(Float)
@@ -201,7 +212,7 @@ class Fish(ModelMixin):
 
 
 class Paths(ModelMixin):
-    __tablename__ = 'paths'
+    __tablename__ = "paths"
 
     id = Column(Integer, primary_key=True)
     duration = Column(DateTime)

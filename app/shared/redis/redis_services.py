@@ -35,6 +35,7 @@ class SocketSession(BaseModel):
     """
     The NestedSession class is used to represent a nested JSON object that is stored in Redis.
     """
+
     session_id: str
     session: Session
 
@@ -43,6 +44,7 @@ class Online(BaseModel):
     """
     The Online class is used to represent a list of users that are currently online.
     """
+
     users: List[UserSchema] = []
 
 
@@ -50,6 +52,7 @@ class Socket(BaseModel):
     """
     The Sessions class is used to represent a list of sessions that are currently active.
     """
+
     sessions: Optional[List[SocketSession]] = []
 
 
@@ -58,7 +61,7 @@ class Sockets(BaseModel):
     __self: __root__
 
 
-T = TypeVar('T', bound=BaseModel)
+T = TypeVar("T", bound=BaseModel)
 
 
 class RedisMixin(BaseModel, Enumerable):
@@ -99,63 +102,59 @@ class RedisMixin(BaseModel, Enumerable):
         :return: The `init_redis` function is returning an instance of an `aioredis.Redis` object, which is created using the `aioredis.create_redis` method. This object represents a
         connection to a Redis server, which can be used to execute Redis commands and interact with the Redis data store.
         """
-        cls.redis = Redis(await aioredis.create_redis_pool(address=Config.redis_host, db=0))
+        cls.redis = Redis(
+            await aioredis.create_redis_pool(address=Config.redis_host, db=0)
+        )
         return cls.redis
-
 
     @classmethod
     async def read(cls, *args, **kwargs) -> Optional[T]:
         """
-    The read function is used to read a single object from the database.
-    It takes in any number of keyword arguments, and returns an instance of the
-    class that called it if there is a match.
-    If no match exists, None will be returned instead.
+        The read function is used to read a single object from the database.
+        It takes in any number of keyword arguments, and returns an instance of the
+        class that called it if there is a match.
+        If no match exists, None will be returned instead.
 
-    Args:
-        cls: Create a new instance of the class that called read
-        *args: Accept any number of arguments
-        **kwargs: Pass keyword arguments to the function
+        Args:
+            cls: Create a new instance of the class that called read
+            *args: Accept any number of arguments
+            **kwargs: Pass keyword arguments to the function
 
-    Returns:
-        The first object that matches the kwargs
-"""
+        Returns:
+            The first object that matches the kwargs"""
         redis_data = json.loads(await cls.redis.get(cls.__name__.lower()))
         print(redis_data)
         if not redis_data:
             return
         return (
-            Enumerable(
-                redis_data
-        ).where(
-            # Filter the list of objects to only include objects that have a key from kwargs
-            lambda _object: any(
-                _object.get(key) == value for key, value in kwargs.items()
+            Enumerable(redis_data)
+            .where(
+                # Filter the list of objects to only include objects that have a key from kwargs
+                lambda _object: any(
+                    _object.get(key) == value for key, value in kwargs.items()
+                )
             )
-        )
-                .first(lambda _object: _object and cls(**_object))
+            .first(lambda _object: _object and cls(**_object))
         )
 
     @classmethod
     async def read_all(cls, **kwargs):
         """
-    The read_all function takes in a class and any number of keyword arguments.
-    It then returns a list of objects that have the same key-value pairs as the kwargs passed in.
+        The read_all function takes in a class and any number of keyword arguments.
+        It then returns a list of objects that have the same key-value pairs as the kwargs passed in.
 
-    Args:
-        cls: Reference the class that is calling this function
-        **kwargs: Pass in a dictionary of arguments
+        Args:
+            cls: Reference the class that is calling this function
+            **kwargs: Pass in a dictionary of arguments
 
-    Returns:
-        A list of objects that match the kwargs passed to it
+        Returns:
+            A list of objects that match the kwargs passed to it
 
-    """
+        """
         instance = cls()
         return (
-            Enumerable(
-                await instance.redis.get(
-                    cls.__name__.lower()
-                )
-            ).where(
+            Enumerable(await instance.redis.get(cls.__name__.lower()))
+            .where(
                 # Filter the list of objects to only include objects that have a key from kwargs
                 lambda _object: any(
                     _object.get(key) == value for key, value in kwargs.items()
@@ -168,59 +167,62 @@ class RedisMixin(BaseModel, Enumerable):
     @classmethod
     def filter_kwargs(cls, kwargs: dict, additional_filters: list = None):
         """
-    The filter_kwargs function is used to remove any identity targets from the kwargs.
-    This means that we would return only items that do not have id or _id in the kwargs,
-    additionally we want to remove any items that have a value of None. This function is
-    used by both create and update methods.
+        The filter_kwargs function is used to remove any identity targets from the kwargs.
+        This means that we would return only items that do not have id or _id in the kwargs,
+        additionally we want to remove any items that have a value of None. This function is
+        used by both create and update methods.
 
-    Args:
-        cls: Pass in the class that is being used to instantiate an object
-        kwargs: Pass keyword arguments to a function
+        Args:
+            cls: Pass in the class that is being used to instantiate an object
+            kwargs: Pass keyword arguments to a function
 
-    Returns:
-        A dictionary of key/value pairs that are not none
+        Returns:
+            A dictionary of key/value pairs that are not none
 
 
-    """
+        """
         return {
-            key: value for key, value in kwargs.items()
-            if key and value
-               and key in ["id", "_id", "Id"] or additional_filters and key in additional_filters
+            key: value
+            for key, value in kwargs.items()
+            if key
+            and value
+            and key in ["id", "_id", "Id"]
+            or additional_filters
+            and key in additional_filters
         }
 
     @classmethod
     async def update(cls, **kwargs):
         """
-    The update function takes in a dictionary of key-value pairs and updates the
-        object with those values. The function first filters out any keys that are not
-        part of the class's schema, then it checks to see if an object exists with
-        those filtered key-value pairs. If one does exist, it creates a new dictionary
-        from that existing object and merges in the original kwargs passed into update().
+        The update function takes in a dictionary of key-value pairs and updates the
+            object with those values. The function first filters out any keys that are not
+            part of the class's schema, then it checks to see if an object exists with
+            those filtered key-value pairs. If one does exist, it creates a new dictionary
+            from that existing object and merges in the original kwargs passed into update().
 
-    Args:
-        cls: Pass the class object to the function
-        **kwargs: Pass a variable number of keyword arguments to the function
+        Args:
+            cls: Pass the class object to the function
+            **kwargs: Pass a variable number of keyword arguments to the function
 
-    Returns:
-        A class instance
-    """
+        Returns:
+            A class instance
+        """
         instance = cls._instance
         target = cls.filter_kwargs(kwargs)
         if _object := await cls.read(**target):
             new_object = _object.dict()
             new_object.update(kwargs)
-            await instance.redis.set(
-                cls.__name__.lower(),
-                new_object
-            )
+            await instance.redis.set(cls.__name__.lower(), new_object)
             return cls(**new_object)
 
-    #@classmethod
+    # @classmethod
     async def create(self, context: str = None, **kwargs):
         target = self.filter_kwargs(kwargs, additional_filters=["phone"])
         key = self.__class__.__name__.lower()
         redis = await self.init_redis()
-        object_json = self.dict(exclude={'redis'}, exclude_none=True, exclude_unset=True)
+        object_json = self.dict(
+            exclude={"redis"}, exclude_none=True, exclude_unset=True
+        )
         redis_data = await redis.get(key)
 
         async def _insert_key(node, data: dict = None):
@@ -276,10 +278,6 @@ class RedisMixin(BaseModel, Enumerable):
         
         
         """
-
-
-
-
 
         if redis_data:
             master_object = Enumerable(json.loads(redis_data))

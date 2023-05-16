@@ -2,6 +2,7 @@
 @author: Kuro
 """
 from fastapi import FastAPI
+
 # from fastapi_socketio import SocketManager
 from fastapi_sqlalchemy import DBSessionMiddleware, db
 from starlette.middleware.authentication import AuthenticationMiddleware
@@ -16,12 +17,12 @@ import logging
 from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
-    filename='app.log',
+    filename="app.log",
     level=logging.DEBUG,
-    format='%(asctime)s %(levelname)s %(name)s %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    filemode='a',
-    force=True
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    filemode="a",
+    force=True,
 )
 # logger.setLevel(logging.DEBUG)
 
@@ -40,7 +41,7 @@ origins = [
 ]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,7 +63,6 @@ with db():
 # socket = SocketManager(app)
 
 #
-
 
 
 # redis = RedisServices().redis

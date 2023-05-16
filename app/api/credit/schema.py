@@ -12,7 +12,11 @@ from pydantic import Field
 from app.api.agent.schema import AgentQuota
 from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, Filter, PagedResponse
+from app.shared.schemas.page_schema import (
+    GetOptionalContextPages,
+    Filter,
+    PagedResponse,
+)
 
 
 class User(ORMCamelModel):
@@ -102,6 +106,7 @@ class AgentQuta(ORMCamelModel):
     """
     `AgentQuta` is a class that is used to represent a user credit
     """
+
     id: Optional[UUID]
     createdAt: Optional[datetime]
     updatedAt: Optional[datetime]
@@ -202,11 +207,11 @@ class GetDeposit(CamelModel):
     approvedById: Optional[UUID] = Field(default=None, description="optional")
 
 
-
 class ApproveDeposit(CamelModel):
     """
     `ApproveDeposit` is a class that is used to represent a request
     """
+
     id: Optional[UUID]
     approvedById: Optional[UUID]
 
@@ -248,6 +253,7 @@ class WithdrawalContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
+
     status: Optional[Status] = Field(default=None, description="optional")
 
 
@@ -295,6 +301,7 @@ class DepositContext(CamelModel):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
+
     phone: Optional[str]
     status: Optional[Status]
 

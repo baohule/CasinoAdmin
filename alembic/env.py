@@ -20,7 +20,7 @@ for route in APIPrefix.include:
         exec(f"from app.api.{route}.models import ModelMixin as Base")
     except ImportError as e:
         logger.error(f"Route {route} has no tables defined")
-games = ['fish']
+games = ["fish"]
 for route in games:
     try:
         exec(f"from app.games.{route}.models import ModelMixin as Base")

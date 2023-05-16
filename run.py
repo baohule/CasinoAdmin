@@ -12,18 +12,19 @@ from uvicorn import Server, Config
 import logging
 
 logging.basicConfig(
-        filename=f"{os.getcwd()}/logs/runtime.log",
-        filemode='a',
-        level=logging.DEBUG,
-        format="%(asctime)s %(levelname)s %(name)s %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        force=True,
-    )
+    filename=f"{os.getcwd()}/logs/runtime.log",
+    filemode="a",
+    level=logging.DEBUG,
+    format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+    force=True,
+)
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
 app = add_routes(app)
+
 
 class SocketServer(Server):
     async def run(self, sockets=None):
@@ -32,38 +33,37 @@ class SocketServer(Server):
 
 
 async def run():
-    app_configs = [{
-        "WebAPI": Config(
-            "app:app",
-            host=config.fastapi_host,
-            port=config.fastapi_port,
-            # ssl_keyfile="certs/local.key",
-            # ssl_certfile="certs/local.pem",
-            workers=config.workers,
-        )
-    },       {
-        "SocketIO": Config(
-            "app.rpc:app",
-            host=config.fastapi_host,
-            port=config.fastapi_port + 1,
-        )
-    }]
-
-
-
+    app_configs = [
+        {
+            "WebAPI": Config(
+                "app:app",
+                host=config.fastapi_host,
+                port=config.fastapi_port,
+                # ssl_keyfile="certs/local.key",
+                # ssl_certfile="certs/local.pem",
+                workers=config.workers,
+            )
+        },
+        {
+            "SocketIO": Config(
+                "app.rpc:app",
+                host=config.fastapi_host,
+                port=config.fastapi_port + 1,
+            )
+        },
+    ]
 
     apps = [
-        SocketServer(
-            config=Enumerable(_config.values()).first()
-        ).run() for _config in app_configs
+        SocketServer(config=Enumerable(_config.values()).first()).run()
+        for _config in app_configs
     ]
 
     return await asyncio.gather(*apps)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
-
 
 
 if __name__ == "__main__":
@@ -75,4 +75,3 @@ if __name__ == "__main__":
         # ssl_certfile="certs/local.pem",
         workers=config.workers,
     )
-

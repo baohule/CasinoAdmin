@@ -12,6 +12,7 @@ class RedisCache:
     It contains functions that are used to check if a key exists in the cache,
     put a key-value pair in the cache,
     """
+
     def __init__(self):
         self.cache = caches.get("CACHE_KEY")
 

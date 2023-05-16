@@ -48,4 +48,3 @@ def generate_password(length: int = 6) -> str:
     :return: a randomly generated string of numbers with a default length of 6.
     """
     return "".join(secrets.choice(string.digits) for _ in range(length))
-

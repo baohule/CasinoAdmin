@@ -9,6 +9,7 @@ import pytz
 from pydantic import BaseModel, Field
 
 from app.api.user.schema import User
+from app.games.fish.schema import Paths
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 from app.api.credit.schema import UserCredit
@@ -50,6 +51,7 @@ class PagedListAllGamesResponse(PagedBaseResponse):
 class ListAllGames(GetOptionalContextPages):
     params: Params
 
+
 class GameRoom(BaseModel):
     """
     This class is used to represent a game room.
@@ -69,11 +71,10 @@ class RoomList(BaseModel):
     rooms: List[GameRoom]
 
 
-
-
 class Game(BaseModel):
     game_id: Optional[int] = Field(default=None)
     room: Optional[GameRoom] = Field(default=None)
+    paths: Optional[Paths] = Field(default=None)
 
 
 class Session(BaseModel):
@@ -84,13 +85,15 @@ class Session(BaseModel):
 
 
 class PhoneNumber(BaseModel):
-    __self__: Dict[str, Session] = Field(default={'': {}})
+    __self__: Dict[str, Session] = Field(default={"": {}})
 
 
 class SocketSession(BaseModel):
     __self__: Optional[PhoneNumber] = Field(default=None)
 
-    def update_session(self: "SocketSession", updated_session: Session) -> "SocketSession":
+    def update_session(
+        self: "SocketSession", updated_session: Session
+    ) -> "SocketSession":
         for session in self:
             session[1].update(updated_session.dict())
         return self

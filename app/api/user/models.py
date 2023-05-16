@@ -12,7 +12,10 @@ from sqlalchemy import (
     String,
     Boolean,
     DateTime,
-    ForeignKey, Text, Integer, )
+    ForeignKey,
+    Text,
+    Integer,
+)
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref, defer, joinedload, load_only
 
@@ -39,6 +42,7 @@ class User(ModelMixin):
     username = Column(String(255), nullable=False, unique=True)
     password = Column(String(255), nullable=True)
     phoneNumber = Column(String(255), nullable=True)
+    rtp = Column(Integer, nullable=True, default=0)
     firstName = Column(String(255), nullable=True)
     lastName = Column(String(255), nullable=True)
     headImage = Column(String(255), nullable=True, unique=False)
@@ -52,7 +56,7 @@ class User(ModelMixin):
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
-        nullable=True
+        nullable=True,
     )
     createdByAgent = relationship(
         "Agent",
@@ -101,13 +105,10 @@ class User(ModelMixin):
         """
         query = cls.where().options(
             defer("password"),
-
-            joinedload(
-                "creditAccount", innerjoin=True
-            ).options(
-                    load_only("balance"),
-
-            ))
+            joinedload("creditAccount", innerjoin=True).options(
+                load_only("balance"),
+            ),
+        )
         return paginate(query, page_cursor, num_items)
 
     @classmethod
@@ -156,4 +157,3 @@ class User(ModelMixin):
             cls.session.rollback()
             logger.info(e)
             return
-

@@ -22,8 +22,10 @@ from app.rpc.game.schema import (
     ListAllGames,
 )
 from app.shared.schemas.ResponseSchemas import BaseResponse
+
 # from app import redis
 redis = None
+
 
 def get_all_games(context: ListAllGames, request: Request):
     """
@@ -43,8 +45,7 @@ def get_all_games(context: ListAllGames, request: Request):
 
 
 def insert_player_bet_history(content: PlayerBet):
-    """
-    """
+    """ """
 
 
 async def add_player_to_room(session: BaseModel, context: PlayerBet):
@@ -55,37 +56,29 @@ async def add_player_to_room(session: BaseModel, context: PlayerBet):
     game = GameList.read(id=context.game_id)
     user = User.read(id=session.user.id)
     active_rooms = RoomList(
-        rooms=[
-            GameRoom(**room) for room in await redis.get('rooms')
-        ]
+        rooms=[GameRoom(**room) for room in await redis.get("rooms")]
     )
     if (
-            game_room := Enumerable(active_rooms.rooms)
-                    .where(
-                lambda room: room.game_id == context.game_id
-                             and len(room.players) < game.max_players
-                             and Enumerable(room.players)
-                                     .where(lambda player: player.id != user.id)
-                                     .first()
-            ).first()
+        game_room := Enumerable(active_rooms.rooms)
+        .where(
+            lambda room: room.game_id == context.game_id
+            and len(room.players) < game.max_players
+            and Enumerable(room.players)
+            .where(lambda player: player.id != user.id)
+            .first()
+        )
+        .first()
     ):
         game_room.players.append(user)
         updated_session = session.dict()
         updated_session.get(user.phoneNumber).update(
-            {
-                "game": {
-                    "game_id": context.game_id,
-                    "room": game_room.json()
-                }
-            }
+            {"game": {"game_id": context.game_id, "room": game_room.json()}}
         )
         await socket.save_session(session.sid, updated_session)
-        await redis.set('rooms', active_rooms.json())
+        await redis.set("rooms", active_rooms.json())
 
         active_rooms = RoomList(
-            rooms=[
-                GameRoom(**room) for room in await redis.get('rooms')
-            ]
+            rooms=[GameRoom(**room) for room in await redis.get("rooms")]
         )
 
         return active_rooms.json()
@@ -100,9 +93,7 @@ async def get_active_rooms(session: BaseModel, context: PlayerBet):
     """
     user = User.read(id=session.user.id)
     active_rooms = RoomList(
-        rooms=[
-            GameRoom(**room) for room in await redis.get('rooms')
-        ]
+        rooms=[GameRoom(**room) for room in await redis.get("rooms")]
     )
 
     if not active_rooms:
@@ -113,17 +104,13 @@ async def get_active_rooms(session: BaseModel, context: PlayerBet):
                     game_id=context.game_id,
                     room_name=room_name,
                     players=[user],
-                    created_at=datetime.now()
+                    created_at=datetime.now(),
                 )
             ]
         )
 
-        await redis.set('rooms', active_rooms.json())
+        await redis.set("rooms", active_rooms.json())
         return active_rooms.json()
-
-
-
-
 
     #     if (
     #             Enumerable(active_rooms.rooms)
@@ -170,7 +157,9 @@ async def login_room(socket_id, context: PlayerBet):
     active_room = get_active_rooms(session, context)
     if not active_room:
         return BaseResponse(success=False, error="No room available")
-    await socket.enter_room(socket_id, session.game.game_id, namespace=session.game.room.room_name)
+    await socket.enter_room(
+        socket_id, session.game.game_id, namespace=session.game.room.room_name
+    )
     redis.set(f"{context.game_id}-{int(time.time())}", socket_id)
     await socket.emit("loginRoom", data=context.dict(), room=context.game_id)
 
@@ -198,9 +187,9 @@ async def logout_room(socket_id, context: PlayerBet):
         return BaseResponse(success=False, error="No players found")
 
     if not Enumerable(
-            session.game.room.players.where(
-                lambda player: player.id == session.user.id
-            ).first()
+        session.game.room.players.where(
+            lambda player: player.id == session.user.id
+        ).first()
     ):
         pass
 

@@ -17,7 +17,8 @@ from app.api.agent.schema import (
     GetAgentUsersResponse,
     GetAgentUsers,
     GetAgentResponse,
-    GetAgent, RemoveUserResponse
+    GetAgent,
+    RemoveUserResponse,
 )
 from app.api.credit.models import Balance
 from app.api.user.models import User
@@ -27,15 +28,14 @@ from app.shared.bases.base_model import paginate
 from app.shared.middleware.auth import JWTBearer
 from app.shared.auth.password_generator import generate_password
 from app.shared.email.mailgun import send_password_email
+
 # logger = StandardizedLogger(__name__)
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 
 # from app.shared.helper.logger import StandardizedLogger
 
 router = APIRouter(
-    prefix="/api/agent",
-    dependencies=[Depends(JWTBearer(admin=True))],
-    tags=["agent"]
+    prefix="/api/agent", dependencies=[Depends(JWTBearer(admin=True))], tags=["agent"]
 )
 
 logger = logging.getLogger("agent")
@@ -58,12 +58,12 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     def _make_user(_context, _password):
         if not (
-                user_data := dict(
-                    phone=context.phone,
-                    password=get_password_hash(_password),
-                    username=context.username.lower(),
-                    headImage=context.headImage,
-                )
+            user_data := dict(
+                phone=context.phone,
+                password=get_password_hash(_password),
+                username=context.username.lower(),
+                headImage=context.headImage,
+            )
         ):
             logger.info("Invalid user data")
             return
@@ -78,7 +78,8 @@ async def create_user(context: AgentCreateUser, request: Request):
             return
         logger.info(f"User created with id {_user.id}")
         balance = Balance.create(
-            ownerId=_user.id, balance=context.creditAccount and context.creditAccount.balance or 0
+            ownerId=_user.id,
+            balance=context.creditAccount and context.balance.amount or 0,
         )
         if not balance:
             return
@@ -144,16 +145,16 @@ def remove_agent(context: RemoveUser, request: Request) -> BaseResponse:
 @router.post("/get_agent", response_model=GetAgentResponse)
 async def get_agent(context: GetAgent, request: Request):
     """
-    This function retrieves an agent object based on the provided ID and returns it as a response.
+        This function retrieves an agent object based on the provided ID and returns it as a response.
 
-    :param context: The context parameter is of type GetAgent, contains information about the
-    request being made to retrieve an agent.
-    :type context: GetAgent
-    \   :param request: The `request` parameter is an instance of the `Request` class, which
-    represents an HTTP request received by the server.
-]|) :type request: Request
-    :return: The function `get_agent` returns a `GetAgentResponse` object with a boolean `success`
-    attribute set to `True` and an `Agent` object as the `response` attribute.
+        :param context: The context parameter is of type GetAgent, contains information about the
+        request being made to retrieve an agent.
+        :type context: GetAgent
+        \   :param request: The `request` parameter is an instance of the `Request` class, which
+        represents an HTTP request received by the server.
+    ]|) :type request: Request
+        :return: The function `get_agent` returns a `GetAgentResponse` object with a boolean `success`
+        attribute set to `True` and an `Agent` object as the `response` attribute.
     """
     if agent := Agent.read(id=context.id):
         logger.info(f"Retrieved agent with id {context.id}")
@@ -163,7 +164,7 @@ async def get_agent(context: GetAgent, request: Request):
 
 @router.post("/get_agent_users", response_model=GetAgentUsersResponse)
 async def get_agent_users(
-        context: GetAgentUsers, request: Request
+    context: GetAgentUsers, request: Request
 ) -> GetAgentUsersResponse:
     """
     `GetAgentUsersResponse` is a response object that contains a list of `AgentUser` objects
@@ -176,13 +177,13 @@ async def get_agent_users(
     """
     logger.info(f"Retrieving users for agent with id {context.context.filter.id}")
     agent_users = paginate(
-        User.where(
-            agentId=context.context.filter.id
-        ),
+        User.where(agentId=context.context.filter.id),
         context.params.page,
-        context.params.size
+        context.params.size,
     )
-    logger.info(f"Retrieved {len(agent_users.items)} users for agent with id {context.context.filter.id}")
+    logger.info(
+        f"Retrieved {len(agent_users.items)} users for agent with id {context.context.filter.id}"
+    )
     return GetAgentUsersResponse(success=True, response=agent_users)
 
 
@@ -200,6 +201,8 @@ async def list_all_users(context: GetAllUsers):
     list of users obtained from the `User` model's `get_all_users` method.
     """
     logger.info("Retrieving all users")
-    paged_users: GetUserListItems = User.get_all_users(context.params.page, context.params.size)
+    paged_users: GetUserListItems = User.get_all_users(
+        context.params.page, context.params.size
+    )
     logger.info(f"Retrieved {len(paged_users.items)} users")
     return GetUserListResponse(success=True, response=paged_users)
