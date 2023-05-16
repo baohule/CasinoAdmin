@@ -18,7 +18,14 @@ from app.api.history.schema import (
     GetActionHistory,
     GetActionHistoryResponse,
     GetCreditHistory,
-    GetCreditHistoryResponse, GetWinLoss, TotalWinLossResponse, TotalWinLoss, GetPlayerStatsResponse, StatsData, GetPlayerStatsPage, GetPlayerStatsPages,
+    GetCreditHistoryResponse,
+    GetWinLoss,
+    TotalWinLossResponse,
+    TotalWinLoss,
+    GetPlayerStatsResponse,
+    StatsData,
+    GetPlayerStatsPage,
+    GetPlayerStatsPages,
     CreditHistory,
 )
 from app.api.user.models import User
@@ -65,7 +72,9 @@ async def get_action_history_(context: GetActionHistory, request: Request):
     :type request: Request
     :return: GetActionHistoryResponse
     """
-    history = ActionHistory.read_all(**context.dict(exclude_unset=True, exclude_none=True))
+    history = ActionHistory.read_all(
+        **context.dict(exclude_unset=True, exclude_none=True)
+    )
     return (
         GetActionHistoryResponse(success=True, response=history)
         if history
@@ -93,23 +102,17 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
         """
         return (
             item.status.approval == context.status
-            if context.status != 'all'
+            if context.status != "all"
             else item.status.approval != context.status
         )
 
     user = User.where(id=context.ownerId).first()
-    withdrawals = Enumerable(
-        user.userWithdrawals
-    )
-    deposits = Enumerable(
-        user.userDeposits
-    )
-    transactions = deposits.concat(
-        withdrawals
-    ).order_by(
-        lambda x: x.createdAt
-    ).take_while(
-        lambda x: _get_status(x)
+    withdrawals = Enumerable(user.userWithdrawals)
+    deposits = Enumerable(user.userDeposits)
+    transactions = (
+        deposits.concat(withdrawals)
+        .order_by(lambda x: x.createdAt)
+        .take_while(lambda x: _get_status(x))
     )
 
     def _generate_response() -> Iterator[CreditHistory]:
@@ -117,9 +120,9 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
         > This function generates the response for the credit history
         :return: Iterator[CreditHistory]
         """
-        initial_credit = user.creditAccount.balance
+        initial_credit = user.balance.amount
         for item in transactions:
-            record_type = 'deposit' if isinstance(item, Deposit) else 'withdrawal'
+            record_type = "deposit" if isinstance(item, Deposit) else "withdrawal"
             initial_credit += item.amount if isinstance(item, Deposit) else -item.amount
 
             yield CreditHistory(
@@ -130,7 +133,7 @@ async def get_credit_history(context: GetCreditHistory, request: Request):
                     createdAt=item.createdAt,
                     recordType=record_type,
                     status=item.status.approval,
-                    owner=user
+                    owner=user,
                 )
             )
 
@@ -151,30 +154,38 @@ async def get_bet_stats(context: GetWinLoss, request: Request):
     :return: TotalWinLossResponse
     """
     try:
-        if total := PlayerSession.session.query(
-                select([
-                    func.sum(PlayerSession.betResult).label("wins"),
-                    func.count(PlayerSession.betResult).label("win_count")
-                ]).filter(
-                    *PlayerSession.filter_expr(
-                        betResult__lt=0
-                    )).subquery(),
-                select([
-                    func.sum(PlayerSession.betResult).label("losses"),
-                    func.count(PlayerSession.betResult).label("loss_count")
-                ]).filter(
-                    *PlayerSession.filter_expr(
-                        betResult__gt=0
-                    )).subquery()
-        ).filter(
-            *PlayerSession.filter_expr(
-                createdAt__ge=context.start_date,
-                createdAt__le=context.end_date,
+        if (
+            total := PlayerSession.session.query(
+                select(
+                    [
+                        func.sum(PlayerSession.betResult).label("wins"),
+                        func.count(PlayerSession.betResult).label("win_count"),
+                    ]
+                )
+                .filter(*PlayerSession.filter_expr(betResult__lt=0))
+                .subquery(),
+                select(
+                    [
+                        func.sum(PlayerSession.betResult).label("losses"),
+                        func.count(PlayerSession.betResult).label("loss_count"),
+                    ]
+                )
+                .filter(*PlayerSession.filter_expr(betResult__gt=0))
+                .subquery(),
             )
-        ).first():
+            .filter(
+                *PlayerSession.filter_expr(
+                    createdAt__ge=context.start_date,
+                    createdAt__le=context.end_date,
+                )
+            )
+            .first()
+        ):
             logging.debug(total)
             total_count = total.loss_count + total.win_count
-            response = TotalWinLoss(totalLoss=total.losses, totalWins=total.wins, count=total_count)
+            response = TotalWinLoss(
+                totalLoss=total.losses, totalWins=total.wins, count=total_count
+            )
             return TotalWinLossResponse(success=True, response=response)
         return TotalWinLossResponse(success=False, error="No history found")
     except Exception as e:
@@ -193,26 +204,26 @@ async def get_game_players(context: GetPlayerStatsPage, request: Request):
     :return: TotalWinLossResponse
     """
     try:
-        if total := PlayerSession.session.query(
+        if (
+            total := PlayerSession.session.query(
                 PlayerSession.gameSessionId.label("game_session_id"),
                 func.count(PlayerSession.id).label("players"),
                 func.sum(PlayerSession.betResult).label("winnings"),
-        ).group_by(
-            PlayerSession.gameSessionId
-        ).filter(
-            *PlayerSession.filter_expr(
-                createdAt__ge=context.context.filter.start_date,
-                createdAt__le=context.context.filter.end_date,
-                gameSessionId=PlayerSession.gameSessionId
+            )
+            .group_by(PlayerSession.gameSessionId)
+            .filter(
+                *PlayerSession.filter_expr(
+                    createdAt__ge=context.context.filter.start_date,
+                    createdAt__le=context.context.filter.end_date,
+                    gameSessionId=PlayerSession.gameSessionId,
+                )
             )
         ):
-            game = lambda _total: GameList.where(
-                gameSession___id=_total.game_session_id
-            ).options(
-                joinedload(
-                    "gameSession"
-                )
-            ).first()
+            game = (
+                lambda _total: GameList.where(gameSession___id=_total.game_session_id)
+                .options(joinedload("gameSession"))
+                .first()
+            )
 
             def _build_item_data(items):
                 for item in items:
@@ -230,19 +241,17 @@ async def get_game_players(context: GetPlayerStatsPage, request: Request):
                 pages.items = _build_item_data(pages.items)
 
             response = GetPlayerStatsPages(
-
                 total_winnings=sum(total.winnings for total in total),
                 total_players=sum(total.players for total in total),
-                **pages.as_dict() if isinstance(
-                    pages, Page
-                ) else dict(
+                **pages.as_dict()
+                if isinstance(pages, Page)
+                else dict(
                     items=pages if isinstance(pages, list) else pages.items,
                     page=0,
                     pages=0,
                     pageSize=len(pages),
-                    total=len(pages)
-                )
-
+                    total=len(pages),
+                ),
             )
 
             return GetPlayerStatsResponse(success=True, response=response)

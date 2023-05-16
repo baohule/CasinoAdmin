@@ -11,25 +11,25 @@ from app.rpc.user.schema import BaseUser
 from app.rpc import socket
 
 
-@socket.on('LoginGame')
+@socket.on("LoginGame")
 def log_in_game(data: Game):
     # sio.emit('LoginGameResult')
     return
 
 
-@socket.on('getCoinRank')
+@socket.on("getCoinRank")
 def get_coin_rank(data: BaseUser, context):
     # sio.emit('getCoinRankResult')
     return
 
 
-@socket.on('updateNickName')
+@socket.on("updateNickName")
 def update_nick_name(data: BaseUser):
     # sio.emit('updateNickNameResult')
     return
 
 
-@socket.on('updateHeadUrl')
+@socket.on("updateHeadUrl")
 def update_head_url(data: BaseUser):
     # sio.emit('updateHeadUrlResult')
     return

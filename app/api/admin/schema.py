@@ -12,7 +12,12 @@ from app.api.agent.schema import AgentUser, AgentQuota
 from app.api.credit.schema import UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Any, Filter
+from app.shared.schemas.page_schema import (
+    GetOptionalContextPages,
+    PagedResponse,
+    Any,
+    Filter,
+)
 
 
 class UpdateUser(CamelModel):
@@ -77,7 +82,6 @@ class BaseUserResponse(ORMCamelModel):
     createdByAgent: Optional[Admin]
 
 
-
 class AdminPagedResponse(PagedResponse):
     """
     The AdminPagedResponse class is a PagedResponse class that is
@@ -109,11 +113,8 @@ class GetUserlistQueryOptions(CamelModel):
     """
     GetUserlistQueryOptions is a model that is used to get a list of users.
     """
-    active: Optional[bool] = Field(
-        Default=True,
-        description="Filter by active status"
-    )
 
+    active: Optional[bool] = Field(Default=True, description="Filter by active status")
 
 
 class OptionalContextPagesFilter(Filter):
@@ -130,8 +131,8 @@ class GetUserList(GetOptionalContextPages):
     OptionalContextPages is a model that is used to get a list of users.
     that is used in the `/list` endpoint.
     """
-    context: Optional[OptionalContextPagesFilter]
 
+    context: Optional[OptionalContextPagesFilter]
 
 
 class BatchUsers(CamelModel):
@@ -193,13 +194,13 @@ class SearchUser(CamelModel):
     firstName: Optional[str]
     type: str
 
-
     class Config:
         schema_extra = {
             "example": {
                 "pick one: email | username | firstName": "John123@gmail.com | John123 | John",
-                "type": "agent | admin | user"
-            }}
+                "type": "agent | admin | user",
+            }
+        }
 
 
 class SearchResults(BaseResponse):
@@ -208,8 +209,8 @@ class SearchResults(BaseResponse):
     that match a search query.  It is used in the `/search` endpoint.
 
     """
-    response: Optional[List[BaseUserResponse]]
 
+    response: Optional[List[BaseUserResponse]]
 
 
 class AgentCreateResponse(BaseResponse):

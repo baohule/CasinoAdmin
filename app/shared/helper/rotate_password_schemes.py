@@ -24,7 +24,6 @@ def rotate_all():
             admin.session.rollback()
 
     for user in users:
-
         try:
             user.password = get_password_hash("123")
             user.session.commit()

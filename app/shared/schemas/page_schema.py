@@ -21,7 +21,6 @@ class Filter(CamelModel):
     filter: Optional[Dict[str, UUID]]
 
 
-
 class Post(CamelModel):
     post_id: UUID
 
@@ -29,6 +28,7 @@ class Post(CamelModel):
 class GetOptionalContextPages(CamelModel):
     context: Optional[Filter]
     params: Params
+
 
 class GetNoContextPages(CamelModel):
     params: Params

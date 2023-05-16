@@ -22,9 +22,9 @@ class BaseResponse(ORMCamelModel):
 
     def dict(self, *args, **kwargs) -> dict[str, Any]:
         """
-            Override the default dict method to exclude None values in the response
+        Override the default dict method to exclude None values in the response
         """
-        kwargs.pop('exclude_none', None)
+        kwargs.pop("exclude_none", None)
         return super().dict(*args, exclude_none=True, **kwargs)
 
 

@@ -10,7 +10,12 @@ from pydantic import BaseModel, Field
 
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Filter, GetPages
+from app.shared.schemas.page_schema import (
+    GetOptionalContextPages,
+    PagedResponse,
+    Filter,
+    GetPages,
+)
 
 
 class Game(ORMCamelModel):
@@ -59,5 +64,4 @@ class ActionHistory(ORMCamelModel):
     newValueJson: Optional[str]
     ip: Optional[str]
     createdAt: Optional[datetime]
-    userActionHistory:  Optional[User]
-
+    userActionHistory: Optional[User]

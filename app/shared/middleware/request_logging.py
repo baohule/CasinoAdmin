@@ -10,9 +10,7 @@ logger.addHandler(logging.StreamHandler())
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
-
     def __init__(self, app):
-
         super().__init__(app)
 
     async def set_body(self, request: Request):
@@ -29,14 +27,26 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             json_body = await request.json()
         except Exception:
             json_body = await request.body()
-        actions = {'create', 'update', 'delete', 'approve', 'reject', 'cancel', 'complete', 'assign', 'unassign'}
-        if any(part in actions for action in request.url.path.split('/') for part in action.split('_')):
+        actions = {
+            "create",
+            "update",
+            "delete",
+            "approve",
+            "reject",
+            "cancel",
+            "complete",
+            "assign",
+            "unassign",
+        }
+        if any(
+            part in actions
+            for action in request.url.path.split("/")
+            for part in action.split("_")
+        ):
             logger.info(f"{request.method} {request.url.path}")
             logger.info(f"payload: {json_body}")
             data = dict(
-                ip=request.client.host,
-                path=request.url.path,
-                newValueJson=json_body
+                ip=request.client.host, path=request.url.path, newValueJson=json_body
             )
 
             try:
@@ -45,9 +55,12 @@ class LoggingMiddleware(BaseHTTPMiddleware):
                 logger.info("User not found")
                 return await call_next(request)
             logger.info(f"User: {request.user.id}, AuthInfo: {request.auth.scopes}")
-            if request.user.id == '44c6b702-6ea5-4872-b140-3b5e0b22ead6' or request.user.admin:
-                data['adminId'] = request.user.id
+            if (
+                request.user.id == "44c6b702-6ea5-4872-b140-3b5e0b22ead6"
+                or request.user.admin
+            ):
+                data["adminId"] = request.user.id
             elif request.user.agent:
-                data['agentId'] = request.user.id
+                data["agentId"] = request.user.id
             ActionHistory.create(**data)
         return await call_next(request)

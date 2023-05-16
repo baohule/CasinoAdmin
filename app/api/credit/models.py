@@ -15,7 +15,8 @@ from sqlalchemy import (
     Text,
     Float,
     ForeignKey,
-    Integer, Enum,
+    Integer,
+    Enum,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
@@ -24,8 +25,10 @@ from app.api.user.models import User
 from app.shared.bases.base_model import ModelMixin, Page
 from app.shared.bases.base_model import paginate
 import logging
+
 logger = logging.getLogger("credit_models")
 logger.addHandler(logging.StreamHandler())
+
 
 class Balance(ModelMixin):
     """
@@ -35,7 +38,7 @@ class Balance(ModelMixin):
     __tablename__ = "Balance"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
-    balance = Column(Integer, default=0)
+    amount = Column(Integer, default=0)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
     ownerId = Column(
@@ -44,13 +47,11 @@ class Balance(ModelMixin):
         index=True,
         unique=True,
     )
-    creditAccount = relationship(
+    balance = relationship(
         "User",
         foreign_keys="Balance.ownerId",
-        backref=backref("creditAccount", single_parent=True, uselist=False),
+        backref=backref("balance", single_parent=True, uselist=False),
     )
-
-
 
 
 class Quota(ModelMixin):
@@ -81,6 +82,7 @@ class StatusEnum(str, Enum):
     """
     Status is a table that stores the status of a user.
     """
+
     pending = "pending"
     approved = "approved"
     rejected = "rejected"
@@ -105,7 +107,7 @@ class Status(ModelMixin):
         UUID(as_uuid=True),
         ForeignKey("Agent.id", ondelete="CASCADE", link_to_name=True),
         index=True,
-        nullable=True
+        nullable=True,
     )
     approvedBy = relationship(
         "Agent",
@@ -143,7 +145,7 @@ class Withdrawal(ModelMixin):
     owner = relationship(
         "User",
         foreign_keys="Withdrawal.ownerId",
-        backref=backref("userWithdrawals", single_parent=True)
+        backref=backref("userWithdrawals", single_parent=True),
     )
 
     @classmethod

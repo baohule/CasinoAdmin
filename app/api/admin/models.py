@@ -63,7 +63,7 @@ class Admin(ModelMixin):
             return admin
         except Exception as e:
             cls.session.rollback()
-            logger.info('Admin not created')
+            logger.info("Admin not created")
             logger.error(str(e))
             return
 

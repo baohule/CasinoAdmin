@@ -12,11 +12,25 @@ from pydantic import BaseModel
 import settings
 from app.api.admin.models import Admin
 from app.api.agent.models import Agent
-from app.api.auth.schema import UserClaim, OTPLoginStartResponse, OTPLoginStart, LoginStartResponse, OTPLoginVerify
+from app.api.auth.schema import (
+    UserClaim,
+    OTPLoginStartResponse,
+    OTPLoginStart,
+    LoginStartResponse,
+    OTPLoginVerify,
+)
 from app.api.credit.models import Balance
 from app.api.user import schema as user_schema
 from app.api.user.models import User
-from app.api.user.schema import AdminLogin, UserLogin, AgentLogin, AdminUserCreate, GeneratePassword, GeneratePasswordResponse, NewPassword
+from app.api.user.schema import (
+    AdminLogin,
+    UserLogin,
+    AgentLogin,
+    AdminUserCreate,
+    GeneratePassword,
+    GeneratePasswordResponse,
+    NewPassword,
+)
 from app.shared.auth.auth_handler import sign_jwt, TokenResponse
 from app.shared.auth.password_handler import get_password_hash
 from typing import Union
@@ -59,7 +73,7 @@ async def create_user(context: AdminUserCreate) -> TokenResponse:
 
 
 def jwt_login(
-        context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
+    context: Union[AdminLogin, UserLogin, AgentLogin], admin=False, agent=False
 ) -> TokenResponse:
     """
     Takes a context object, which is either an AdminLogin, UserLogin or AgentLogin,
@@ -153,7 +167,9 @@ async def generate_random_password(context: GeneratePassword):
     hash_password = get_password_hash(new_password)
     if user := User.update_user(id=context.id, password=hash_password):
         # send_password_email(user.email, User.username, new_password)
-        return GeneratePasswordResponse(success=True, response=NewPassword(password=new_password))
+        return GeneratePasswordResponse(
+            success=True, response=NewPassword(password=new_password)
+        )
     return BaseResponse(success=False, error="Email Not Sent")
 
 
@@ -162,6 +178,7 @@ class AttemptedLogin:
     This class is used to keep track of the number of times a user has attempted to log in
     follows singleton pattern
     """
+
     _instance = None
     phone_number = None
     verify_attempts = 0
@@ -196,8 +213,12 @@ class OTPError:
 
     def __init__(self, time_left: timedelta = None, phone_number: str = None):
         self.time_left = time_left
-        self.TooManyRequests = f"Too many requests please try again in {time_left} seconds"
-        self.DeactivatingUser = f"Deactivating user {phone_number} for too many failed attempts"
+        self.TooManyRequests = (
+            f"Too many requests please try again in {time_left} seconds"
+        )
+        self.DeactivatingUser = (
+            f"Deactivating user {phone_number} for too many failed attempts"
+        )
 
     def __new__(cls, *args, **kwargs):
         if not cls._instance:
@@ -223,14 +244,19 @@ async def start_otp_login(context: OTPLoginStart):
         return BaseResponse(success=False, error=OTPError.UserDisabled)
     otp_logins = AttemptedLogin(phone_number=context.phoneNumber)
     if (
-            otp_logins.send_attempts >= 3
-            and otp_logins.last_attempt + timedelta(settings.Config.otp_reset_time) < datetime.now()
+        otp_logins.send_attempts >= 3
+        and otp_logins.last_attempt + timedelta(settings.Config.otp_reset_time)
+        < datetime.now()
     ):
         otp_logins.send_attempts = 0
 
     delta = otp_logins.last_attempt + timedelta(minutes=1)
     if delta > datetime.now() or otp_logins.send_attempts >= 3:
-        error = OTPError(time_left=delta - datetime.now() if otp_logins.send_attempts < 3 else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now())
+        error = OTPError(
+            time_left=delta - datetime.now()
+            if otp_logins.send_attempts < 3
+            else (otp_logins.last_attempt + timedelta(hours=1)) - datetime.now()
+        )
         return BaseResponse(success=False, error=error.TooManyRequests)
     otp = totp.now()
     otp_response = OTPStartMessage(otp=otp)
@@ -239,7 +265,7 @@ async def start_otp_login(context: OTPLoginStart):
     otp_logins.last_attempt = datetime.now()
     if not sms_sent:
         return BaseResponse(success=False, error=OTPError.NotSent)
-    otp_non_debug = 'OTP sent to your phone number'
+    otp_non_debug = "OTP sent to your phone number"
     otp_debug = f"DEBUG: {otp_response.message}"
     response = LoginStartResponse(
         message=otp_debug,
@@ -279,13 +305,10 @@ async def verify_otp_login(context: OTPLoginVerify):
                     id=user.id,
                     phone=user.phone,
                     phoneNumber=user.phoneNumber,
-                    username=user.username
+                    username=user.username,
                 )
             )
-            User.update(
-                id=user.id,
-                accessToken=response.response.access_token
-            )
+            User.update(id=user.id, accessToken=response.response.access_token)
             return response
         return BaseResponse(success=False, error=OTPError.UserNotFound)
 

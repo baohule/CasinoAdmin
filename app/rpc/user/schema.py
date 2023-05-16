@@ -50,8 +50,6 @@ class UserResponse(BaseResponse):
     response: Optional[User]
 
 
-
-
 class BaseUser(ORMCamelModel):
     """
     `User` is a class that is used to validate the data that is being passed to the `/user` route.
@@ -95,4 +93,3 @@ class UserSession(ORMCamelModel):
     game: Optional[Game] = Field(default=None)
     room: Optional[Room] = Field(default=None)
     user: Optional[User]
-

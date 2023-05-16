@@ -23,9 +23,6 @@ class UserCredit(ORMCamelModel):
     updatedAt: Optional[datetime]
 
 
-
-
-
 class User(ORMCamelModel):
     id: Optional[int]
     phone: Optional[str]
@@ -89,7 +86,6 @@ class AdminUserCreate(CamelModel):
     username: str
 
 
-
 class AgentUserCreate(CamelModel):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
@@ -99,7 +95,6 @@ class AgentUserCreate(CamelModel):
     password: str
     username: str
     quota: Optional[int]
-
 
 
 class UserLogin(CamelModel):
@@ -135,8 +130,6 @@ class AgentLogin(CamelModel):
 
     class Config:
         schema_extra = {"example": {"email": "test@test.com", "password": "1234567"}}
-
-
 
 
 class UserResponse(BaseResponse):
@@ -217,7 +210,7 @@ class GetUserListResponse(PagedBaseResponse):
 
 
 class GeneratePassword(BaseModel):
-    id: int = Field(..., alias='userId')
+    id: int = Field(..., alias="userId")
 
 
 class NewPassword(CamelModel):
@@ -226,4 +219,3 @@ class NewPassword(CamelModel):
 
 class GeneratePasswordResponse(BaseResponse):
     response: Optional[NewPassword]
-

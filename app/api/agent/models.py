@@ -15,6 +15,7 @@ import logging
 logger = logging.getLogger("agent_models")
 logger.addHandler(logging.StreamHandler())
 
+
 class Agent(ModelMixin):
     __tablename__ = "Agent"
 
@@ -141,15 +142,12 @@ class Agent(ModelMixin):
         :param cls: Used to Refer to the class itself, rather than an instance of the class.
         :return: A dictionary of all the agent users in a class.
         """
-        users = cls.where(**kwargs).options(
-            defer("password")
-        )
+        users = cls.where(**kwargs).options(defer("password"))
 
         return paginate(users, page, num_items)
 
     @classmethod
     def get(cls, *_, **kwargs) -> ModelType:
-
         """
         returns an agent user with the given set of kwargs.
 

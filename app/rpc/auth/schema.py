@@ -13,13 +13,12 @@ from app.shared.helper.session_state import SocketSession
 
 
 class OTPInput(BaseModel):
-        phone_number: str = Field(example="19299338861")
-        code: Optional[int]
+    phone_number: str = Field(example="19299338861")
+    code: Optional[int]
 
 
 class AccesToken(BaseModel):
     access_token: str
-
 
 
 class RedisUser(BaseModel):
@@ -27,7 +26,6 @@ class RedisUser(BaseModel):
 
 
 class RedisUsers(BaseModel):
-
     @validator("users")
     def validate_message(cls, v):
         for item in v:

@@ -28,6 +28,7 @@ router = APIRouter(
 logger = logging.getLogger("game")
 logger.addHandler(logging.StreamHandler())
 
+
 @router.post("/manage/create_game", response_model=CreateGameResponse)
 async def create_game(context: CreateGame, request: Request) -> CreateGameResponse:
     """

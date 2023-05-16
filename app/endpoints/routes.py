@@ -35,7 +35,6 @@ def add_routes(app):
 
 
 def add_socket_routes(socket):
-
     for route in SocketPrefix.include:
-        exec(f'from app.rpc.{route}.views import socket')
+        exec(f"from app.rpc.{route}.views import socket")
         return socket

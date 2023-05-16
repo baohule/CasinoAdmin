@@ -12,7 +12,12 @@ from app.api.agent.schema import AgentUser
 from app.api.admin.schema import Admin
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-from app.shared.schemas.page_schema import GetOptionalContextPages, PagedResponse, Filter, GetPages
+from app.shared.schemas.page_schema import (
+    GetOptionalContextPages,
+    PagedResponse,
+    Filter,
+    GetPages,
+)
 
 
 class Game(ORMCamelModel):
@@ -56,6 +61,7 @@ class CreditHistory(ORMCamelModel):
     `PaymentHistory` is a class that is
     used to represent a payment history
     """
+
     transactionId: Optional[UUID]
     amount: Optional[int]
     availableCredit: Optional[int]
@@ -75,7 +81,7 @@ class ActionHistory(ORMCamelModel):
     newValueJson: Optional[str]
     ip: Optional[str]
     createdAt: Optional[datetime]
-    userActionHistory:  Optional[User]
+    userActionHistory: Optional[User]
     agentActionHistory: Optional[AgentUser]
     adminActionHistory: Optional[Admin]
 
@@ -105,7 +111,7 @@ class GetActionHistory(BaseModel):
 
 class GetCreditHistory(BaseModel):
     ownerId: int
-    status: Optional[str] = Field(default='all')
+    status: Optional[str] = Field(default="all")
 
 
 class TotalWinLoss(ORMCamelModel):
@@ -131,8 +137,6 @@ class StatsData(ORMCamelModel):
     winnings: Optional[int]
 
 
-
-
 class GetPlayerStatsData(ORMCamelModel):
     items: Optional[List[StatsData]]
     total_winnings: Optional[int]
@@ -150,16 +154,21 @@ class GetPlayerStatsContext(Filter):
     filter: Optional[StatsPageFilter]
     paginate: Optional[bool] = Field(default=True)
 
+
 class GetPlayerStatsPage(GetOptionalContextPages):
     context: Optional[GetPlayerStatsContext]
+
 
 class GetPlayerStatsPages(PagedResponse):
     items: Optional[List[StatsData]]
     total_winnings: Optional[int]
     total_players: Optional[int]
 
+
 class GetPlayerStatsResponse(PagedBaseResponse):
-    response: Optional[Union[Optional[GetPlayerStatsPages], Optional[GetPlayerStatsData]]]
+    response: Optional[
+        Union[Optional[GetPlayerStatsPages], Optional[GetPlayerStatsData]]
+    ]
 
 
 class GetBetHistoryResponse(BaseResponse):

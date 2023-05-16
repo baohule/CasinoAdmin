@@ -24,13 +24,19 @@ class AppRoutes:
             else:
                 return {"success": False, "error": "User not created"}
 
-        self.app.post(endpoint, tags=[tag], response_model=Union[dict, User], responses={200: {"model": dict}})
+        self.app.post(
+            endpoint,
+            tags=[tag],
+            response_model=Union[dict, User],
+            responses={200: {"model": dict}},
+        )
         return post_route
 
 
 @pytest.fixture(scope="session")
 def client():
     from main import app
+
     return TestClient(app)
 
 
@@ -43,7 +49,7 @@ def api_routes():
         username="test_user",
         email="test@example.com",
         headImage="https://example.com/avatar.png",
-        creditAccount={"balance": 100}
+        creditAccount={"balance": 100},
     )
 
     routes.add_post_route("/manage/create_user", "create user", create_user_data.dict())
@@ -52,14 +58,22 @@ def api_routes():
 
 
 def test_create_user_success(api_routes, client):
-    response = client.post("/manage/create_user", json=api_routes.add_post_route("/manage/create_user"), headers={"user_id": "1"})
+    response = client.post(
+        "/manage/create_user",
+        json=api_routes.add_post_route("/manage/create_user"),
+        headers={"user_id": "1"},
+    )
 
     assert response.status_code == 200
     assert response.json()["success"] == True
 
 
 def test_create_user_no_agent(api_routes, client):
-    response = client.post("/manage/create_user", json=api_routes.add_post_route("/manage/create_user"), headers={"user_id": str(uuid.uuid4())})
+    response = client.post(
+        "/manage/create_user",
+        json=api_routes.add_post_route("/manage/create_user"),
+        headers={"user_id": str(uuid.uuid4())},
+    )
 
     assert response.status_code == 200
     assert response.json()["success"] == False

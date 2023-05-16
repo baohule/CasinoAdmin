@@ -4,7 +4,6 @@ from starlette.routing import Mount
 from uvicorn import run
 
 
-
 import logging
 
 from app.endpoints.routes import add_socket_routes
@@ -19,20 +18,22 @@ logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
-socket = AsyncServer(async_mode='asgi')
+socket = AsyncServer(async_mode="asgi")
 app = ASGIApp(socketio_server=socket)
 socket = add_socket_routes(socket)
 
-@socket.on('connect')
+
+@socket.on("connect")
 async def connect(sid, environ):
-    print('connect ', sid)
-    await socket.emit('my_response', {'data': 'Connected', 'count': 0}, room=sid)
+    print("connect ", sid)
+    await socket.emit("my_response", {"data": "Connected", "count": 0}, room=sid)
     print("envrionment: \n", environ)
 
 
-@socket.on('disconnect')
+@socket.on("disconnect")
 async def disconnect(sid):
-    print('disconnect ', sid)
+    print("disconnect ", sid)
+
 
 #
 # app.mount('/socket.io', Mount("/", app=socket.handle_request, name="socket.io"))

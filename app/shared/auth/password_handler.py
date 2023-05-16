@@ -31,6 +31,8 @@ def get_password_hash(password: str) -> str:
     :return: A string
     """
     return pwd_context.hash(password, rounds=12)
+
+
 """
 @author: Kuro
 """

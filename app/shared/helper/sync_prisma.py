@@ -4,50 +4,60 @@ from sqlalchemy.dialects.postgresql import INTEGER, TIMESTAMP, TEXT, JSONB, UUID
 from app import ModelMixin
 from settings import Config
 
-path = 'igor/baohule/config/prisma-config/prisma/prisma/casino-prisma.prisma'
+path = "igor/baohule/config/prisma-config/prisma/prisma/casino-prisma.prisma"
 import os
-from sqlalchemy import create_engine, inspect, UniqueConstraint, ForeignKey, JSON, DATETIME, BOOLEAN, String, VARCHAR
+from sqlalchemy import (
+    create_engine,
+    inspect,
+    UniqueConstraint,
+    ForeignKey,
+    JSON,
+    DATETIME,
+    BOOLEAN,
+    String,
+    VARCHAR,
+)
 
 # Define a mapping of SQLAlchemy types to Prisma types
 type_mapping = {
     # SQLAlchemy types
-    'Integer': 'Int',
-    'BigInteger': 'BigInt',
-    'SmallInteger': 'Int',
-    'Float': 'Float',
-    'Numeric': 'Decimal',
-    'Boolean': 'Boolean',
-    'Date': 'DateTime',
-    'Time': 'DateTime',
-    'DateTime': 'DateTime',
-    'Interval': 'Int',
-    'String': 'String',
-    'Text': 'String',
-    'Unicode': 'String',
-    'UnicodeText': 'String',
-    'JSON': 'Json',
-    'ARRAY': 'Json',  # Map PostgreSQL ARRAY to Json in Prisma
-    'UUID': 'String',  # Map UUID to String in Prisma
-
+    "Integer": "Int",
+    "BigInteger": "BigInt",
+    "SmallInteger": "Int",
+    "Float": "Float",
+    "Numeric": "Decimal",
+    "Boolean": "Boolean",
+    "Date": "DateTime",
+    "Time": "DateTime",
+    "DateTime": "DateTime",
+    "Interval": "Int",
+    "String": "String",
+    "Text": "String",
+    "Unicode": "String",
+    "UnicodeText": "String",
+    "JSON": "Json",
+    "ARRAY": "Json",  # Map PostgreSQL ARRAY to Json in Prisma
+    "UUID": "String",  # Map UUID to String in Prisma
     # PostgreSQL specific types
-    'BIT': 'String',
-    'VARBIT': 'String',
-    'BYTEA': 'Bytes',
-    'CIDR': 'String',
-    'INET': 'String',
-    'MACADDR': 'String',
-    'JSONB': 'Json',
-    'TSVECTOR': 'String',
-    'TSQUERY': 'String',
-    'INT4RANGE': 'String',
-    'INT8RANGE': 'String',
-    'NUMRANGE': 'String',
-    'TSRANGE': 'String',
-    'TSTZRANGE': 'String',
+    "BIT": "String",
+    "VARBIT": "String",
+    "BYTEA": "Bytes",
+    "CIDR": "String",
+    "INET": "String",
+    "MACADDR": "String",
+    "JSONB": "Json",
+    "TSVECTOR": "String",
+    "TSQUERY": "String",
+    "INT4RANGE": "String",
+    "INT8RANGE": "String",
+    "NUMRANGE": "String",
+    "TSRANGE": "String",
+    "TSTZRANGE": "String",
 }
 from sqlalchemy import inspect
 from sqlalchemy.orm import RelationshipProperty
 from typing import Any, Dict, List
+
 
 def prisma_generator(model: Any) -> str:
     if metadata := model.metadata:
@@ -62,25 +72,25 @@ def prisma_generator(model: Any) -> str:
 
                 # UUID (primary key)
                 if isinstance(column_type, UUID) and column.primary_key:
-                    prisma += f"    {column_name} String @id @default(uuid()) @db.Uuid\n"
+                    prisma += (
+                        f"    {column_name} String @id @default(uuid()) @db.Uuid\n"
+                    )
 
                 elif isinstance(column_type, UUID):
                     prisma += f"    {column_name} String @default(uuid()) @db.Uuid"
                     prisma += "\n"
 
                 elif isinstance(column_type, (String, VARCHAR)):
-
                     prisma += (
                         f"    {column_name} String?"
                         if column.nullable
                         else f"    {column_name} String"
                     )
                     if column.unique:
-                        prisma += f" @unique(map: \"{table.name}_{column_name}\")"
+                        prisma += f' @unique(map: "{table.name}_{column_name}")'
                     prisma += f" @db.VarChar({column.type.length})\n"
 
                 elif isinstance(column_type, INTEGER):
-
                     prisma += (
                         f"    {column_name} Int?"
                         if column.nullable
@@ -104,7 +114,6 @@ def prisma_generator(model: Any) -> str:
                     prisma += "\n"
 
                 elif isinstance(column_type, JSON):
-
                     prisma += (
                         f"    {column_name} Json?"
                         if column.nullable
@@ -128,7 +137,9 @@ def prisma_generator(model: Any) -> str:
                 if isinstance(constraint, UniqueConstraint):
                     columns = constraint.columns
                     if len(columns) > 1:
-                        columns = "{" + ", ".join([str(col.name) for col in columns]) + "}"
+                        columns = (
+                            "{" + ", ".join([str(col.name) for col in columns]) + "}"
+                        )
                     else:
                         columns = str(columns[0].name)
                     prisma += f"    @@unique([{columns}])\n"
@@ -145,11 +156,12 @@ def prisma_generator(model: Any) -> str:
 
     return prisma
 
+
 def is_valid_type(sqlalchemy_type):
     """
     Check if a given SQLAlchemy type can be mapped to a valid Prisma type.
     """
-    valid_types = ['String', 'Int', 'Float', 'Boolean', 'DateTime', 'Json']
+    valid_types = ["String", "Int", "Float", "Boolean", "DateTime", "Json"]
     return sqlalchemy_type.__class__.__name__ in valid_types
 
 
@@ -157,7 +169,7 @@ if __name__ == "__main__":
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    engine = create_engine(f'postgresql+psycopg2://{Config.postgres_connection}')
+    engine = create_engine(f"postgresql+psycopg2://{Config.postgres_connection}")
     Session = sessionmaker(bind=engine)
     session = Session()
 
@@ -167,5 +179,5 @@ if __name__ == "__main__":
     prisma_output = prisma.join(prisma_generator(ModelMixin))
 
     # with open(path, 'w') as f:
-        #f.write(prisma)
+    # f.write(prisma)
     print(prisma_output)

@@ -18,9 +18,7 @@ from fastapi.exceptions import HTTPException
 from app.shared.schemas.page_schema import PagedResponse
 
 router = APIRouter(
-    prefix="/api/user",
-    dependencies=[Depends(JWTBearer())],
-    tags=["user"]
+    prefix="/api/user", dependencies=[Depends(JWTBearer())], tags=["user"]
 )
 
 logger = logging.getLogger("user")

@@ -43,7 +43,7 @@ def send_password_email(email: str, name: str, password: str):
             "from": " Baohule<roreply@baohule.com>",
             "to": [{email}, ""],
             "subject": "New Password",
-            "html": get_template(name, password)
+            "html": get_template(name, password),
         },
     )
     if response.status_code == 200:

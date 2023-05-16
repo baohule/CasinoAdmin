@@ -1,6 +1,7 @@
 import sys
 
 from app.shared.bases.base_model import DataSeeder
+
 args = sys.argv or 1000
 DataSeeder(
     number_of_records=int(args[1]),
@@ -11,6 +12,5 @@ DataSeeder(
         # "game_list",
         # "balance",
         # "admin",
-
     ],
 ).generate()

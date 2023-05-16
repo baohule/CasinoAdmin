@@ -16,7 +16,8 @@ from app.shared.schemas.page_schema import (
     PagedResponse,
     Any,
     GetPages,
-    Filter, GetNoContextPages,
+    Filter,
+    GetNoContextPages,
 )
 
 
@@ -24,6 +25,7 @@ class AgentQuota(ORMCamelModel):
     """
     `AgentQuota` is a class that is used to represent an agent's quota.
     """
+
     balance: Optional[int]
 
 
@@ -47,6 +49,7 @@ class RemoveUser(CamelModel):
     """
     It's a model that is used to remove a user from the database.
     """
+
     id: int
     email: Optional[str]
 
