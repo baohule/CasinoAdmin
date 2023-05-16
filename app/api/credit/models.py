@@ -51,6 +51,8 @@ class Balance(ModelMixin):
     )
 
 
+
+
 class Quota(ModelMixin):
     """
     Quota is a table that stores the quota of a user.

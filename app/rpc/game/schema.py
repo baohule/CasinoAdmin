@@ -5,8 +5,10 @@ from datetime import datetime
 from typing import List, Optional, Any, Dict
 from uuid import UUID
 
-from pydantic import BaseModel
+import pytz
+from pydantic import BaseModel, Field
 
+from app.api.user.schema import User
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
 from app.api.credit.schema import UserCredit
@@ -47,3 +49,48 @@ class PagedListAllGamesResponse(PagedBaseResponse):
 
 class ListAllGames(GetOptionalContextPages):
     params: Params
+
+class GameRoom(BaseModel):
+    """
+    This class is used to represent a game room.
+    """
+
+    game_id: Optional[int]
+    room_name: Optional[str]
+    players: Optional[List[User]]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
+
+
+class RoomList(BaseModel):
+    """
+    This class is used to represent a list of game rooms.
+    """
+
+    rooms: List[GameRoom]
+
+
+
+
+class Game(BaseModel):
+    game_id: Optional[int] = Field(default=None)
+    room: Optional[GameRoom] = Field(default=None)
+
+
+class Session(BaseModel):
+    sid: Optional[str] = Field(default=None)
+    state: Optional[str] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+    game: Optional[Game] = Field(default=None)
+
+
+class PhoneNumber(BaseModel):
+    __self__: Dict[str, Session] = Field(default={'': {}})
+
+
+class SocketSession(BaseModel):
+    __self__: Optional[PhoneNumber] = Field(default=None)
+
+    def update_session(self: "SocketSession", updated_session: Session) -> "SocketSession":
+        for session in self:
+            session[1].update(updated_session.dict())
+        return self

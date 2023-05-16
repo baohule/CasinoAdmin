@@ -13,7 +13,6 @@ from settings import Config
 
 from app.shared.middleware.auth import JWTBearer
 import logging
-from app.shared.redis.redis_services import RedisServices
 from fastapi.middleware.cors import CORSMiddleware
 
 logging.basicConfig(
@@ -66,4 +65,4 @@ with db():
 
 
 
-redis = RedisServices().redis
+# redis = RedisServices().redis

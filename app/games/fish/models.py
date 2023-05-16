@@ -2,35 +2,52 @@
 @author: Kuro
 @github: slapglif
 """
+from datetime import datetime
 
-
-
-from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relationship
+import pytz
+from sqlalchemy import Column, Integer, ForeignKey, DateTime
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.expression import null
 from app.shared.bases.base_model import ModelMixin
 
 class GameResult(ModelMixin):
-    __tablename__ = "game_results"
+    __tablename__ = "GameResult"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    bullet_id = Column(Integer, ForeignKey("bullets.id"))
-    fish_id = Column(Integer, ForeignKey("fish.id"))
+    player_session_id = Column(
+        UUID(as_uuid=True),
+        ForeignKey("PlayerSession.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=True,
+    )
+    player_session = relationship(
+        "PlayerSession",
+        foreign_keys="GameResult.player_session_id",
+        backref=backref("game_result", single_parent=True),
+    )
+    bullet_id = Column(
+        Integer,
+        ForeignKey("Bullet.id", ondelete="CASCADE", link_to_name=True),
+        index=True,
+        nullable=True,
+    )
+    # bullet_id = Column(Integer, ForeignKey("Bullet.id"))
+    # fish_id = Column(Integer, ForeignKey("Fish.id"))
     win = Column(Integer)
-
-    user = relationship("User", back_populates="game_results")
-    bullet = relationship("Bullet", back_populates="game_results")
-    fish = relationship("Fish", back_populates="game_results")
-
+    #
+    # bullet = relationship("Bullet", back_populates="GameResult")
+    # fish = relationship("Fish", back_populates="GameResult")
+    #
 
 
 class Bullet(ModelMixin):
-    __tablename__ = "bullets"
+    __tablename__ = "Bullet"
 
     id = Column(Integer, primary_key=True, index=True)
     bet = Column(Integer)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    player_session_id = Column(UUID(as_uuid=True), ForeignKey("PlayerSession.id"))
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
 
-    user = relationship("User", back_populates="bullets")
-    game_results = relationship("GameResult", back_populates="bullet")
+    #player_session = relationship("User", back_populates="User")
+    #game_results = relationship("GameResult", back_populates="GameResult")
