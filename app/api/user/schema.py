@@ -4,10 +4,9 @@
 from datetime import date, datetime
 from typing import Optional, List, Union
 from uuid import UUID
-import re
 
 from fastapi_camelcase import CamelModel
-from pydantic import EmailStr, validator, Field
+from pydantic import Field
 
 from app.api.auth.schema import TokenDetail, TokenResponse
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse

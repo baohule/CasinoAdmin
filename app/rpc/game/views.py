@@ -6,10 +6,8 @@ from datetime import datetime
 from typing import List, Optional
 
 import pytz
-import socketio
 from py_linq import Enumerable
 from pydantic import BaseModel, Field
-from realtime import timestamp
 
 from app.rpc import socket
 
@@ -18,14 +16,14 @@ from fastapi import Request
 from app.api.game.models import GameList
 from app.api.user.models import User
 from app.rpc.user.schema import BaseUser
-from app.rpc.game.schema import PlayerBet
+from app.rpc.game.schema import PlayerBet, RoomList, GameRoom
 from app.rpc.game.schema import (
     PagedListAllGamesResponse,
     ListAllGames,
 )
 from app.shared.schemas.ResponseSchemas import BaseResponse
-from app import redis
-
+# from app import redis
+redis = None
 
 def get_all_games(context: ListAllGames, request: Request):
     """
@@ -47,25 +45,6 @@ def get_all_games(context: ListAllGames, request: Request):
 def insert_player_bet_history(content: PlayerBet):
     """
     """
-
-
-class GameRoom(BaseModel):
-    """
-    This class is used to represent a game room.
-    """
-
-    game_id: Optional[int]
-    room_name: Optional[str]
-    players: Optional[List[BaseUser]]
-    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
-
-
-class RoomList(BaseModel):
-    """
-    This class is used to represent a list of game rooms.
-    """
-
-    rooms: List[GameRoom]
 
 
 async def add_player_to_room(session: BaseModel, context: PlayerBet):

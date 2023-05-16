@@ -3,6 +3,8 @@
 """
 
 import datetime
+import uuid
+
 import pytz
 from sqlalchemy import (
     Column,
@@ -87,7 +89,7 @@ class PlayerSession(ModelMixin):
     """
     __tablename__ = "PlayerSession"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, unique=True, index=True, default=uuid.uuid4())
     gameSessionId = Column(
         UUID(as_uuid=True),
         ForeignKey("GameSession.id", ondelete="CASCADE", link_to_name=True),
@@ -112,7 +114,7 @@ class PlayerSession(ModelMixin):
     )
     betAmount = Column(Integer, nullable=False)
     betLines = Column(Integer, nullable=True)
-    betResult = Column(Integer, nullable=False)
+    betResult = Column(Integer, nullable=True)
     createdAt = Column(DateTime, default=lambda: datetime.datetime.now(pytz.utc))
 
     @classmethod

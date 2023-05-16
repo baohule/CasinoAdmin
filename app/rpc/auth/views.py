@@ -12,9 +12,8 @@ from app.api.auth.views import start_otp_login, verify_otp_login
 from app.api.user.models import User
 from app.rpc.user.schema import User as UserSchema
 from app.rpc.user.schema import UserResponse
-from app.shared.helper.session_state import SocketSession, Session
+from app.rpc.game.schema import Session, SocketSession
 from app.shared.middleware.json_encoders import ModelEncoder
-from app import redis
 from app.rpc import socket
 
 logger = logging.getLogger("auth")

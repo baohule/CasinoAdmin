@@ -1,22 +1,29 @@
 """
 @author: Kuro
 """
-import uvicorn
-from fastapi.logger import logger
-from fastapi_socketio import SocketManager
-from py_linq import Enumerable
+import os
 
-from app.api.auth.schema import OTPLoginStart, OTPLoginStartResponse
-from app.api.auth.views import start_otp_login
+from py_linq import Enumerable
 from settings import Config as config
 from app.endpoints.routes import add_routes
 from app import app
-
-app = add_routes(app)
-
 import asyncio
 from uvicorn import Server, Config
+import logging
 
+logging.basicConfig(
+        filename=f"{os.getcwd()}/logs/runtime.log",
+        filemode='a',
+        level=logging.DEBUG,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+        datefmt="%Y-%m-%d %H:%M:%S",
+        force=True,
+    )
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
+
+app = add_routes(app)
 
 class SocketServer(Server):
     async def run(self, sockets=None):

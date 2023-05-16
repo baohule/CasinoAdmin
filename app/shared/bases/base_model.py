@@ -9,10 +9,8 @@ from datetime import datetime, timedelta
 from enum import Enum
 from operator import or_
 from random import randint, choice
-import pytz
-from faker import Faker
 from types import SimpleNamespace
-from typing import Type, Union, Tuple, List, Any, Generic, Iterable, Optional
+from typing import Type, Union, Tuple, List, Any, Generic
 from typing import TypeVar
 
 import pytz
@@ -20,7 +18,6 @@ from faker import Faker
 from fastapi.exceptions import HTTPException
 from pydantic import BaseModel
 from sqlalchemy import (
-    func,
     and_,
     create_engine,
     MetaData,
@@ -30,7 +27,6 @@ from sqlalchemy import (
     Integer,
     Boolean,
     Interval,
-    Table, Column,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.engine import Row
@@ -42,21 +38,18 @@ from sqlalchemy_mixins.activerecord import ActiveRecordMixin
 from sqlalchemy_mixins.inspection import InspectionMixin
 from sqlalchemy_mixins.smartquery import SmartQueryMixin
 from starlette.requests import Request
-from typing_extensions import T
 
 from app.api.auth.schema import UserClaim
 from app.endpoints.urls import APIPrefix
+from app.shared.auth.password_handler import verify_password
 from app.shared.exception.exceptions import PredicateConditionException
-from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
+from app.shared.schemas.ResponseSchemas import BaseResponse
 from app.shared.schemas.page_schema import PagedResponse
 from settings import Config
-from app.shared.auth.password_handler import get_password_hash, verify_password
+from settings import base_dir
 
-# from app.shared.helper.logger import StandardizedLogger
-
-# logger = StandardizedLogger(__name__)
 logging.basicConfig(
-    filename='../../app.log',
+    filename=f'{base_dir}/logs/base_models.log',
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s %(name)s %(message)s',
     datefmt='%Y-%m-%d %H:%M:%S',
@@ -65,7 +58,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger("base_model")
 logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.DEBUG)
+
 ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
+T = TypeVar("T")
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()

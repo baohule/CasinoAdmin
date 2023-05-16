@@ -13,7 +13,7 @@ class BaseResponse(ORMCamelModel):
     Base Response abstraction for standardized returns
     """
 
-    success: bool
+    success: bool = False
     error: Optional[str]
     response: Optional[Optional[Union[str, dict, List[dict], UUID]]]
 

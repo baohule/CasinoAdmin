@@ -1,312 +1,503 @@
 """
 @author: Kuro
 """
+import json
+from io import StringIO
+from typing import Type, TypeVar, List, Optional, Any
 
 import aioredis
 import asyncio
 import async_timeout
 import contextlib
+
+from aioredis import Redis
+from py_linq import Enumerable
+from py_linq.core import RepeatableIterable
+from pydantic import BaseModel, BaseConfig, Field
+
+from app.api.user.models import User
+from app.api.user.schema import User as UserSchema
+from app.rpc.game.schema import Session
+
+from app.shared.middleware.json_encoders import ModelEncoder
 from settings import Config
 
 
-class RedisServices:
+# from app import logging
+#
+# logger = logging.getLogger("redis_services")
+#
+# # logger.addHandler(logging.StreamHandler())
+# logger.setLevel(logging.DEBUG)
 
-    def __init__(self):
-        self.redis = None
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.init_redis())
+
+class SocketSession(BaseModel):
+    """
+    The NestedSession class is used to represent a nested JSON object that is stored in Redis.
+    """
+    session_id: str
+    session: Session
 
 
-    async def init_redis(self):
+class Online(BaseModel):
+    """
+    The Online class is used to represent a list of users that are currently online.
+    """
+    users: List[UserSchema] = []
+
+
+class Socket(BaseModel):
+    """
+    The Sessions class is used to represent a list of sessions that are currently active.
+    """
+    sessions: Optional[List[SocketSession]] = []
+
+
+class Sockets(BaseModel):
+    __root__: List[Socket] = []
+    __self: __root__
+
+
+T = TypeVar('T', bound=BaseModel)
+
+
+class RedisMixin(BaseModel, Enumerable):
+    """
+
+    The goal of this model is to create an SQLALchemy-like redis mixin that
+    gives us dot notation access and feature access to query our redis database.
+    we do this with the py_linq lib's Enumerable which gives us a lot of the same
+    features that SQLALchemy does. We also use the pydantic BaseModel to give us
+    dot notation access to our redis database.
+
+    """
+
+    class Config(BaseConfig):
+        arbitrary_types_allowed = True
+
+    _instance: Any = None
+    redis: Optional[Redis] = None
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        for k, v in kwargs.items():
+            self.__setattr__(k, v)
+
+        # loop = asyncio.get_event_loop() or asyncio.new_event_loop()
+        # loop.run_until_complete(self.init_redis())
+
+    # def __new__(cls, **kwargs) -> Enumerable:
+    #     # Singleton to avoid multiple connections to Redis
+    #     if cls._instance is None:
+    #         cls._instance = super().__new__(cls)
+    #     return cls._instance
+
+    @classmethod
+    async def init_redis(cls):
         """
         This is an asynchronous function that creates a Redis client using the aioredis library with the specified host and database.
         :return: The `init_redis` function is returning an instance of an `aioredis.Redis` object, which is created using the `aioredis.create_redis` method. This object represents a
         connection to a Redis server, which can be used to execute Redis commands and interact with the Redis data store.
         """
-        self.redis = await aioredis.create_redis_pool(address=Config.redis_host, db=0)
+        cls.redis = Redis(await aioredis.create_redis_pool(address=Config.redis_host, db=0))
+        return cls.redis
 
-    async def create_stream(self, name: str, fields: dict) -> str:
-        """
-        This Python function creates a Redis stream with a given name and fields if it does not already exist.
 
-        :param name: A string representing the name of the stream to be created
-        :type name: str
-        :param fields: The `fields` parameter is a dictionary that contains the key-value pairs of the fields to be added to the stream. The keys represent the field names and the values
-        represent the field values
-        :type fields: dict
-        :return: If the stream with the given name already exists, the function will return the string "Stream already exists". If the stream does not exist, the function will create a new
-        stream with the given name and fields using the Redis `xadd` command, and return a string indicating that the stream was created with the given name and fields.
+    @classmethod
+    async def read(cls, *args, **kwargs) -> Optional[T]:
         """
-        exists = await self.redis.exists(name)
-        if exists:
-            return "Stream already exists"
-        await self.redis.xadd(name, fields)
-        return f"Stream {name} created with fields {fields}"
+    The read function is used to read a single object from the database.
+    It takes in any number of keyword arguments, and returns an instance of the
+    class that called it if there is a match.
+    If no match exists, None will be returned instead.
 
-    async def write_stream(self, name: str, fields: dict) -> str:
-        """
-        This Python function writes a dictionary of fields to a Redis stream and returns a confirmation message.
+    Args:
+        cls: Create a new instance of the class that called read
+        *args: Accept any number of arguments
+        **kwargs: Pass keyword arguments to the function
 
-        :param name: The name parameter is a string that represents the name of the Redis stream to which the fields will be written
-        :type name: str
-        :param fields: The `fields` parameter is a dictionary that contains the data to be written to the Redis stream. The keys of the dictionary represent the field names, and the values
-        represent the field values
-        :type fields: dict
-        :return: a string that indicates that the `fields` dictionary has been written to the Redis stream with the given `name`. The string includes the `fields` dictionary and the `name`
-        of the stream.
-        """
-        await self.redis.xadd(name, fields)
-        await self.redis.close()
-        return f"{fields} writen to {name}"
+    Returns:
+        The first object that matches the kwargs
+"""
+        redis_data = json.loads(await cls.redis.get(cls.__name__.lower()))
+        print(redis_data)
+        if not redis_data:
+            return
+        return (
+            Enumerable(
+                redis_data
+        ).where(
+            # Filter the list of objects to only include objects that have a key from kwargs
+            lambda _object: any(
+                _object.get(key) == value for key, value in kwargs.items()
+            )
+        )
+                .first(lambda _object: _object and cls(**_object))
+        )
 
-    async def stream_info(self, stream: str) -> dict:
+    @classmethod
+    async def read_all(cls, **kwargs):
         """
-        This Python function retrieves information about a Redis stream and returns it as a dictionary.
+    The read_all function takes in a class and any number of keyword arguments.
+    It then returns a list of objects that have the same key-value pairs as the kwargs passed in.
 
-        :param stream: The `stream` parameter is a string that represents the name of the Redis stream for which we want to retrieve information
-        :type stream: str
-        :return: The function `stream_info` returns a dictionary containing information about the Redis stream specified by the `stream` parameter. The information is obtained using the
-        `xinfo_stream` command from the Redis client library, and the function is an asynchronous function that uses the `await` keyword to wait for the response from Redis before
-        returning the result. The Redis client connection is also closed after the response is obtained.
-        """
-        response = await self.redis.xinfo_stream(stream)
-        await self.redis.close()
-        return response
+    Args:
+        cls: Reference the class that is calling this function
+        **kwargs: Pass in a dictionary of arguments
 
-    async def delete_msg(self, stream: str, ids: list) -> str:
-        """
-        This is an asynchronous Python function that deletes messages with given IDs from a Redis stream and returns a confirmation message.
+    Returns:
+        A list of objects that match the kwargs passed to it
 
-        :param stream: The name of the Redis stream from which the messages will be deleted
-        :type stream: str
-        :param ids: The `ids` parameter is a list of message IDs that need to be deleted from the Redis stream specified by the `stream` parameter
-        :type ids: list
-        :return: a string that says "msg id {id} on stream {stream} deleted", where {id} and {stream} are placeholders for the actual values passed as arguments to the function. However,
-        there seems to be an error in the code as the variable "id" is not defined anywhere in the function. It should be replaced with "ids" to match the parameter name
-        """
-        await self.redis.xdel(stream, ids)
-        await self.redis.close()
-        return f"msg id {id} on stream {stream} deleted"
+    """
+        instance = cls()
+        return (
+            Enumerable(
+                await instance.redis.get(
+                    cls.__name__.lower()
+                )
+            ).where(
+                # Filter the list of objects to only include objects that have a key from kwargs
+                lambda _object: any(
+                    _object.get(key) == value for key, value in kwargs.items()
+                )
+            )
+            .select(lambda _object: _object and cls(**_object))
+            .to_list()
+        )
 
-    async def delete_stream(self, name: str) -> str:
+    @classmethod
+    def filter_kwargs(cls, kwargs: dict, additional_filters: list = None):
         """
-        This Python function deletes a Redis stream with the given name and returns a message confirming the deletion.
+    The filter_kwargs function is used to remove any identity targets from the kwargs.
+    This means that we would return only items that do not have id or _id in the kwargs,
+    additionally we want to remove any items that have a value of None. This function is
+    used by both create and update methods.
 
-        :param name: The name of the stream that needs to be deleted
-        :type name: str
-        :return: The function `delete_stream` returns a string that says "Stream {name} destroyed", where `{name}` is the value of the `name` parameter passed to the function.
-        """
-        await self.redis.delete(name)
-        await self.redis.close()
-        return f"Stream {name} destroyed"
+    Args:
+        cls: Pass in the class that is being used to instantiate an object
+        kwargs: Pass keyword arguments to a function
 
-    async def create_group(self, stream: str, group: str) -> str:
-        """
-        This is an asynchronous Python function that creates a Redis stream consumer group and returns a response message indicating whether the group was successfully created or not.
+    Returns:
+        A dictionary of key/value pairs that are not none
 
-        :param stream: The name of the Redis stream on which the group is to be created
-        :type stream: str
-        :param group: The `group` parameter is a string representing the name of the consumer group that you want to create
-        :type group: str
-        :return: The function `create_group` returns a string that either confirms the successful creation of a Redis stream consumer group or provides an error message if the creation
-        fails. The string will indicate the name of the stream and the name of the group that was created.
-        """
-        try:
-            await self.redis.xgroup_create(stream, group)
-            response = f"Group created on {stream} with name {group}"
-        except exceptions.ResponseError as e:
-            response = str(e)
-        await self.redis.close()
-        return response
 
-    async def groups_info(self, stream: str) -> dict:
-        """
-        This Python function retrieves information about consumer groups from a Redis stream.
+    """
+        return {
+            key: value for key, value in kwargs.items()
+            if key and value
+               and key in ["id", "_id", "Id"] or additional_filters and key in additional_filters
+        }
 
-        :param stream: The `stream` parameter is a string that represents the name of the Redis stream for which we want to retrieve information about the consumer groups
-        :type stream: str
-        :return: The function `groups_info` returns a dictionary containing information about the consumer groups associated with the Redis stream specified by the `stream` parameter. The
-        information is obtained using the `xinfo_groups` method of the Redis client object `redis`. The Redis client object is closed after the information is obtained.
+    @classmethod
+    async def update(cls, **kwargs):
         """
-        response = await self.redis.xinfo_groups(stream)
-        await self.redis.close()
-        return response
+    The update function takes in a dictionary of key-value pairs and updates the
+        object with those values. The function first filters out any keys that are not
+        part of the class's schema, then it checks to see if an object exists with
+        those filtered key-value pairs. If one does exist, it creates a new dictionary
+        from that existing object and merges in the original kwargs passed into update().
 
-    async def delete_group(self, stream: str, group: str) -> str:
-        """
-        This Python function deletes a Redis stream group and returns a confirmation message.
+    Args:
+        cls: Pass the class object to the function
+        **kwargs: Pass a variable number of keyword arguments to the function
 
-        :param stream: The name of the Redis stream from which the group needs to be deleted
-        :type stream: str
-        :param group: The `group` parameter is a string representing the name of the consumer group that needs to be deleted from the Redis stream specified by the `stream` parameter
-        :type group: str
-        :return: a string that says "Group {group} deleted on stream {stream}", where {group} and {stream} are the values passed as arguments to the function.
-        """
-        await self.redis.xgroup_destroy(stream, group)
-        return f"Group {group} deleted on stream {stream}"
+    Returns:
+        A class instance
+    """
+        instance = cls._instance
+        target = cls.filter_kwargs(kwargs)
+        if _object := await cls.read(**target):
+            new_object = _object.dict()
+            new_object.update(kwargs)
+            await instance.redis.set(
+                cls.__name__.lower(),
+                new_object
+            )
+            return cls(**new_object)
 
-    async def consumers_info(self, stream: str, group: str) -> dict:
-        """
-        This Python function retrieves information about consumers in a Redis stream group.
+    #@classmethod
+    async def create(self, context: str = None, **kwargs):
+        target = self.filter_kwargs(kwargs, additional_filters=["phone"])
+        key = self.__class__.__name__.lower()
+        redis = await self.init_redis()
+        object_json = self.dict(exclude={'redis'}, exclude_none=True, exclude_unset=True)
+        redis_data = await redis.get(key)
 
-        :param stream: The name of the Redis stream to retrieve consumer information from
-        :type stream: str
-        :param group: The `group` parameter is a string that represents the name of the consumer group for which we want to retrieve information. In Redis, a consumer group is a group of
-        consumers that consume messages from a stream. The group ensures that each message is consumed by only one consumer in the group
-        :type group: str
-        :return: The function `consumers_info` returns a dictionary containing information about the consumers of a Redis stream in a specific consumer group. The information includes the
-        name of each consumer, the number of pending messages for each consumer, and the idle time of each consumer.
-        """
-        return await self.redis.xinfo_consumers(stream, group)
+        async def _insert_key(node, data: dict = None):
+            if isinstance(node, Enumerable):
+                for child in node:
+                    if isinstance(child, dict):
+                        if all(item in child.items() for item in object_json.items()):
+                            return
+                    elif isinstance(child, Enumerable):
+                        await _insert_key(child)
+                if not any(isinstance(x, str) for x in node):
+                    node.append(data)
 
-    async def delete_consumer(self, stream: str, group: str, consumer: str) -> str:
         """
-        This Python function deletes a consumer from a Redis stream group.
+        data types in object oriented programming:
+        
+        
+        hash: {'key': 'value'} -> {'name': 'mike'} 
+        list: ['value1', 'value2'] -> ['mike', 'joe']
+        set: {'value1', 'value2'} -> {'mike', 'joe'}
+        sorted set: {'value1': 1, 'value2': 2} -> {'mike': 1, 'joe': 2}
+        now lets explain hashes vs binanry tree vs linked list
+        hash is a single item with a key value structure
+        a binary tree is a data structure that has a root node and two children nodes
+        a linked list is a data structure that has a head node and a tail node
+        
+        [             
+            { 1: {
+            
+                "person1": {
+                        "thisngh1": "none",
+                        "thign2": {
+                                ...
+                            }
+                },
+                "person2": "none"
+        },             
+            { 2: {
+            
+                "person1": {
+                    
+                },
+                "person2": {
+                   
+            }
+        }
+    ]
+        
+            
+            
+            
+        
+        
+        
+        """
 
-        :param stream: The name of the Redis stream from which the consumer
-        needs to be deleted
-        :type stream: str
-        :param group: The name of the consumer group from which the consumer
-        needs to be deleted
-        :type group: str
-        :param consumer: The `consumer` parameter is a string that represents
-        the name of the consumer that needs to be deleted from a Redis Stream
-        consumer group
-        :type consumer: str
-        :return: The function `delete_consumer` returns a string that says
-        "Consumer {consumer} deleted on group {group}", where `{consumer}`
-        and `{group}` are the values passed as
-        arguments to the function.
-        """
-        await self.redis.xgroup_delconsumer(stream, group, consumer)
-        return f"Consumer {consumer} deleted on group {group}"
 
-    async def reader(self, channel):
-        """
-        This is an asynchronous function that continuously reads
-        messages from a Redis Pub/Sub channel and prints them,
-        until it receives a "STOP" message.
 
-        :param channel: The `channel` parameter is an instance of the `aioredis.client.PubSub` class, which represents a Redis Pub/Sub channel. This channel can be used to publish messages
-        to subscribers who have subscribed to the channel. The `reader` function is an asynchronous coroutine that reads messages from the
-        :type channel: aioredis.client.PubSub
-        """
-        while True:
-            with contextlib.suppress(asyncio.TimeoutError):
-                async with async_timeout.timeout(1):
-                    message = await channel.get_message(ignore_subscribe_messages=True)
-                    if message is not None:
-                        print(f"(Reader) Message Received: {message}")
-                        if message["data"] == "STOP":
-                            print("(Reader) STOP")
-                            break
-                    await asyncio.sleep(0.01)
 
-    async def subscribe(self, channels: list):
-        """
-        This function subscribes to Redis pub/sub
-        channels and creates a task to read messages from them.
 
-        :param channels: A list of channel names to
-        subscribe to in Redis pub/sub
-        :type channels: list
-        """
-        pubsub = self.redis.pubsub()
-        await pubsub.subscribe(*channels)
-        asyncio.create_task(self.reader(pubsub))
+        if redis_data:
+            master_object = Enumerable(json.loads(redis_data))
+            await _insert_key(master_object, object_json)
+            await redis.set(key, json.dumps(master_object.to_list()))
+        else:
+            master_object = [object_json]
+            await redis.set(key, json.dumps(master_object))
 
-    async def publish(self, channels: list, message: dict):
-        """
-        This is an asynchronous Python function that publishes
-        a message to one or more Redis channels.
+        return self.__class__(**kwargs)
 
-        :param channels: A list of channel names to which the
-        message should be published. These channels should already exist
-        in the Redis server
-        :type channels: list
-        :param message: The `message` parameter is a dictionary that
-        contains the data to be published to the specified channels. It
-        could contain any key-value pairs that are relevant to
-        the application's use case. The contents of the dictionary will
-        be sent as a message to all the channels specified in the `channels` parameter
-        :type message: dict
-        """
-        await self.redis.publish(*channels, message)
+        # if not await cls.read(**target)
+        #     await cls.redis.set(
+        #         cls.__name__.lower(),
+        #         json.dumps([cls.json()])
+        #     )
+        #     return cls(**kwargs)
 
-    async def consume_new_group_event(self, consumer: str, stream: str, group: str) -> list:
-        """
-        This function consumes new events from a Redis stream using the XREADGROUP command.
 
-        :param consumer: The name of the consumer that wants to read messages from the stream
-        :type consumer: str
-        :param stream: The `stream` parameter is a string that represents the name of the Redis
-        stream that the consumer wants to read from
-        :type stream: str
-        :param group: The `group` parameter is a string that represents the name of the consumer
-        group that the consumer belongs to. In Redis, a consumer group is a group of consumers that
-        consume messages from a stream. When a message is consumed by a consumer in a group, it is
-        marked as read and is not
-        :type group: str
-        :return: The function `consume_new_group_event` returns a list of messages that have been
-        consumed by the specified consumer from the specified stream in the specified group. The
-        messages are returned as a list of tuples, where each tuple contains the ID of the message
-        and a dictionary of its fields and values.
-        """
-        return await self.redis.xreadgroup(group, consumer, {stream: ">"})
+class SomeModel(RedisMixin):
+    id: Optional[int]
+    name: Optional[dict]
+    age: Optional[int]
 
-    async def consume_pending_group_events(self, consumer: str, stream: str, group: str) -> list:
-        """
-        This function consumes pending events from a Redis stream for a specific consumer group.
 
-        :param consumer: The name of the consumer that wants to read events from the stream
-        :type consumer: str
-        :param stream: The `stream` parameter is a string that represents the name of the Redis
-        stream from which the consumer wants to read pending events
-        :type stream: str
-        :param group: The name of the consumer group that wants to consume events from the stream
-        :type group: str
-        :return: The function `consume_pending_group_events` returns a list of pending events from
-        a Redis stream for a specific consumer group and stream. The events are consumed by the
-        specified consumer and have not yet been acknowledged as processed.
-        """
-        return await self.redis.xreadgroup(group, consumer, {stream: "0"})
+async def print_model():
+    model = SomeModel(id=1, name={"first": "mike", "last": "brown"}, age=20)
+    await model.init_redis()
+    await model.create(context="users")
+
+
+asyncio.run(print_model())
 
 #
-# class Register(object):
+# class RedisCRUD:
 #     """
-#     This class is used to register a function as a decorator. The function that is registered as a decorator will be called when the decorator is used on another function.
+#     The RedisCRUD class is a generic class that can be used to perform CRUD operations on Redis.
 #     """
-#     def __init__(self, **kwargs):
-#         self.result = None
-#         self.stream = kwargs.get("stream")
-#         self.group = kwargs.get("group")
-#         self.consumer = kwargs.get("consumer")
 #
-#     def __call__(self, fn):
-#         async def wrap(*args, **kwargs):
-#             await create_stream(self.stream, {"stream_created": True})
-#             await create_group(self.stream, self.group)
-#             kwargs["stream"] = self.stream
-#             kwargs["group"] = self.group
-#             kwargs["consumer"] = self.consumer
-#             self.result = await fn(*args, **kwargs)
-#             return self.result
+#     def __init__(self, redis_client: Redis):
+#         self.redis = redis_client
 #
-#         return wrap
+#     # async def get(self, key: str, model_cls: Type[T] = None) -> Optional[Any]:
+#     #     """
+#     # The get function takes a key and a model class as arguments.
+#     # It then attempts to retrieve the data from Redis using the given key.
+#     # If it succeeds, it parses that data into an instance of the given model class and returns that instance.
+#     # Otherwise, if no such value exists in Redis for this key, None is returned.
+#     #
+#     # Args:
+#     #     self: Represent the instance of the class
+#     #     key: str: Specify the key of the data to be retrieved
+#     #     model_cls: Type[T]: Specify the type of the object that will be returned
+#     #
+#     # Returns:
+#     #     An instance of the model_cls class if data is not none
+#     #
+#     # """
+#     #     data = self.redis.get(key)
+#     #     if data is None:
+#     #         return None
+#     #
+#     #     # if isinstance(data, dict):
+#     #     #     return model_cls(**{k: self.get(k, v) for k, v in data.items()})
+#     #     #
+#     #     # if isinstance(data, list):
+#     #     #     return [json.dumps(item) for item in data]
+#     #     json_data = json.loads(data)
+#     #     if isinstance(model_cls, Sockets):
+#     #         return Sockets(*json_data)
+#     #
+#     #     if isinstance(json_data, list):
+#     #         return [model_cls.parse_raw(item) for item in json_data]
+#     #
+#     #     # loaded_json = [json.loads(item) for item in json_data if item]
+#     #     logger.info(json_data)
+#     #     return model_cls(**json_data)
 #
+#     async def set(self, key: str, value) -> None:
+#         """
+#     The set function takes a key and value as parameters.
+#     The value is converted to JSON, then the key and data are passed to Redis's set function.
 #
-# async def ack_stream(stream: str, group: str, ids: list):
-#     data = await redis.xack(stream, group, *ids)
-#     return data
+#     Args:
+#         self: Represent the instance of the object itself
+#         key: str: Set the key of the value
+#         value: T: Type check the value being set
 #
+#     Returns:
+#         None
 #
-# async def handle_consumer_data(consumer_data: list, stream: str, group: str):
-#     pending_ids = []
-#     pending_data = []
-#     for _, e in consumer_data:
-#         for x in e:
-#             pending_ids.append(x[0])
-#             pending_data.append(x[1])
-#     if pending_ids:
-#         await ack_stream(stream, group, pending_ids)
-#     return pending_data
+#     """
+#         data = json.dumps(value, cls=ModelEncoder)
+#         self.redis.set(key, data)
+#
+#     async def delete_session_child(self, redis_key: str, lookup_key: str, lookup_value: str) -> None:
+#         """
+#     The delete_child function is used to delete a child object from a parent object.
+#
+#     Args:
+#         self: Reference the instance of the class
+#         redis_key: str: Specify the key in redis that we want to delete a child from
+#         lookup_key: str: Find the item to delete
+#
+#     Returns:
+#         None, but it should return the items_clean variable
+#
+#     """
+#         redis_items: Enumerable = await self.get_sessions()
+#         print(redis_items)
+#         items_clean = Socket(
+#             sessions=redis_items.where(
+#                 lambda item: item.dict().get(lookup_key) != lookup_value
+#             ).to_list()
+#         )
+#         await self.redis.set(redis_key, items_clean.sessions)
+#
+#     async def list(self, prefix: str, model_cls: Type[T]) -> List[T]:
+#         """
+#     The list function returns a list of all objects in the database that match
+#     the given prefix. The model_cls argument is used to determine which class to
+#     use when deserializing the object from JSON.
+#
+#     Args:
+#         self: Represent the instance of the class
+#         prefix: str: Specify the prefix of the keys that will be returned
+#         model_cls: Type[T]: Specify the type of model class that will be returned
+#
+#     Returns:
+#         A list of all the keys that match the prefix
+#
+#     """
+#         keys = await self.redis.keys(f'{prefix}*')
+#         return [await self.get(key, model_cls=model_cls) for key in keys]
+#
+#     async def get_sessions(self) -> Optional[Enumerable]:
+#         """
+#         The get_session_children function takes a key as an argument and returns a Session object
+#         if the key exists in Redis. Otherwise, it returns None.
+#         """
+#         sockets = Enumerable(await self.get('sockets', Sockets))
+#         logger.info(sockets)
+#
+#         return sockets
+#
+#     async def get_session(self, lookup_key: str = None, session_id: str = None) -> Optional[SocketSession]:
+#         """
+#         The get_session function takes a key as an argument and returns a Session object
+#         if the key exists in Redis. Otherwise, it returns None.
+#         """
+#         sessions: Enumerable = await self.get_sessions()
+#         redis_item = sessions.first(lambda item: item.session.get(lookup_key))
+#         if session_id:
+#             redis_item = sessions.first(lambda item: item.session_id == session_id)
+#
+#         return redis_item and Session.construct(redis_item)
+#
+#     async def get_online_users(self) -> Online:
+#         """
+#         The get_session function takes a key as an argument and returns a Session object
+#         if the key exists in Redis. Otherwise, it returns None.
+#         """
+#
+#         return Online(users=await self.list('user:', UserSchema))
+#
+#     async def get_user(self, phone: str) -> Optional[UserSchema]:
+#         """
+#     The get_user function returns a user object from the online_users table.
+#         Args:
+#             phone (str): The phone number of the user to be returned.
+#
+#     Args:
+#         self: Refer to the class itself
+#         phone: str: Specify the type of data that will be passed to the function
+#
+#     Returns:
+#         The first user in the list of users that matches the phone number
+#     """
+#         online = await self.get('online_users', model_cls=Online)
+#         users = Enumerable(online.users)
+#         return users.first(lambda x: x.phone == phone)
+#
+# #
+# # class Register(object):
+# #     """
+# #     This class is used to register a function as a decorator. The function that is registered as a decorator will be called when the decorator is used on another function.
+# #     """
+# #     def __init__(self, **kwargs):
+# #         self.result = None
+# #         self.stream = kwargs.get("stream")
+# #         self.group = kwargs.get("group")
+# #         self.consumer = kwargs.get("consumer")
+# #
+# #     def __call__(self, fn):
+# #         async def wrap(*args, **kwargs):
+# #             await create_stream(self.stream, {"stream_created": True})
+# #             await create_group(self.stream, self.group)
+# #             kwargs["stream"] = self.stream
+# #             kwargs["group"] = self.group
+# #             kwargs["consumer"] = self.consumer
+# #             self.result = await fn(*args, **kwargs)
+# #             return self.result
+# #
+# #         return wrap
+# #
+# #
+# # async def ack_stream(stream: str, group: str, ids: list):
+# #     data = await redis.xack(stream, group, *ids)
+# #     return data
+# #
+# #
+# # async def handle_consumer_data(consumer_data: list, stream: str, group: str):
+# #     pending_ids = []
+# #     pending_data = []
+# #     for _, e in consumer_data:
+# #         for x in e:
+# #             pending_ids.append(x[0])
+# #             pending_data.append(x[1])
+# #     if pending_ids:
+# #         await ack_stream(stream, group, pending_ids)
+# #     return pending_data

@@ -32,7 +32,7 @@ Methods:
 - append_bullet_list: adds a new bullet to the list and returns bullet information.
 - fishout: returns information about all the available fish in the game.
 - bigfish_chance: returns the chance to kill a big fish based on total bet and RTP (Return to player percentage).
-- kill_big_fish: determines if the big fish is killed based on chance (with probability of bigwin) and updates game result accordingly.
+- kill_big_fish: determines if the big fish is killed based on chance (with probability of big_win) and updates game result accordingly.
 - get_prob_distribution: returns the probability distribution for hitting a fish based on its property value.
 
 Fields:
@@ -41,7 +41,7 @@ Fields:
 - seed_value: seed value for deterministic pseudo-random number generation
 - reward_pool: total reward pool
 - total_bet: total bet amount
-- bigwin: flag for big win
+- big_win: flag for big win
 """
 
 class TestFishGame:
@@ -56,7 +56,7 @@ class TestFishGame:
             user = User.where(id=owner_id).first()
             user.creditAccount.balance = 200
             user.save()
-            bullet = Bullet(id=bullet_id, bet=bet_amount, user_id=owner_id)
+            bullet = Bullet(id=bullet_id, bet=bet_amount,owner_id)
             bullet.save()
 
             # Act
@@ -69,7 +69,7 @@ class TestFishGame:
     def test_fish_hit_success(self):
         # Arrange
         with db():
-            game = FishGame(db.session)
+            game = FishGame()
             bullet_id = 1
             owner_id = 1
             fish_id = 1
