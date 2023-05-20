@@ -6,12 +6,12 @@ from enum import Enum
 from typing import Optional, Union, List, Dict
 from uuid import UUID
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import Field
 
 from app.api.agent.schema import AgentQuota
 from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 from app.shared.schemas.page_schema import (
     GetOptionalContextPages,
     Filter,
@@ -19,13 +19,13 @@ from app.shared.schemas.page_schema import (
 )
 
 
-class User(ORMCamelModel):
+class User(ORMSchema):
     id: Optional[int]
     phone: Optional[str]
     username: Optional[str]
 
 
-class UserCredit(ORMCamelModel):
+class UserCredit(ORMSchema):
     """
     `UserCredit` is a class that is used to represent a user credit
     """
@@ -36,7 +36,7 @@ class UserCredit(ORMCamelModel):
     owner: Optional[User]
 
 
-class GetUserCredit(CamelModel):
+class GetUserCredit(Schema):
     """
     `GetUserCredit` is a class that is used to represent a request
     """
@@ -52,7 +52,7 @@ class GetUserCreditResponse(BaseResponse):
     response: Optional[UserCredit]
 
 
-class UpdateUserCredit(CamelModel):
+class UpdateUserCredit(Schema):
     """
     `UpdateUserCredit` is a class that is used to represent a request
     """
@@ -69,7 +69,7 @@ class UpdateUserCreditResponse(BaseResponse):
     response: Optional[UserCredit]
 
 
-class DeleteUserCredit(CamelModel):
+class DeleteUserCredit(Schema):
     """
     `DeleteUserCredit` is a class that is used to represent a request
     """
@@ -85,7 +85,7 @@ class DeleteUserCreditResponse(BaseResponse):
     response: Optional[UUID]
 
 
-class CreateUserCredit(CamelModel):
+class CreateUserCredit(Schema):
     """
     `CreateUserCredit` is a class that is used to represent a request
     """
@@ -102,7 +102,7 @@ class CreateUserCreditResponse(BaseResponse):
     response: Optional[UserCredit]
 
 
-class AgentQuta(ORMCamelModel):
+class AgentQuta(ORMSchema):
     """
     `AgentQuta` is a class that is used to represent a user credit
     """
@@ -121,7 +121,7 @@ class UpdateAgentQuotaResponse(BaseResponse):
     response: Optional[AgentQuta]
 
 
-class UpdateAgentQuota(CamelModel):
+class UpdateAgentQuota(Schema):
     """
     `UpdateAgentQuota` is a class that is used to represent a request
     """
@@ -130,7 +130,7 @@ class UpdateAgentQuota(CamelModel):
     quota: AgentQuota
 
 
-class Status(ORMCamelModel):
+class Status(ORMSchema):
     """
     `Approval` is a class that is used to represent a user approval
     """
@@ -139,7 +139,7 @@ class Status(ORMCamelModel):
     approval: Optional[str] = Field(default=None)
 
 
-class MakeDeposit(ORMCamelModel):
+class MakeDeposit(ORMSchema):
     """
     `Deposit` is a class that is used to represent a user deposit
     """
@@ -150,7 +150,7 @@ class MakeDeposit(ORMCamelModel):
     status: Optional[Status]
 
 
-class BalanceDeposit(CamelModel):
+class BalanceDeposit(Schema):
     """
     `BalanceDeposit` is a class that is used to represent a request
     """
@@ -159,7 +159,7 @@ class BalanceDeposit(CamelModel):
     amount: Optional[int]
 
 
-class BalanceWithdrawal(CamelModel):
+class BalanceWithdrawal(Schema):
     """
     `BalanceWithdrawal` is a class that is used to represent a request
     """
@@ -176,7 +176,7 @@ class DepositResponse(BaseResponse):
     response: Optional[MakeDeposit]
 
 
-class MakeWithdrawal(ORMCamelModel):
+class MakeWithdrawal(ORMSchema):
     """
     `Withdrawal` is a class that is used to represent a user withdrawal
     """
@@ -187,7 +187,7 @@ class MakeWithdrawal(ORMCamelModel):
     status: Optional[Status]
 
 
-class GetWithdrawal(CamelModel):
+class GetWithdrawal(Schema):
     """
     `GetWithdrawal` is a class that is used to represent a request
     """
@@ -197,7 +197,7 @@ class GetWithdrawal(CamelModel):
     approvedById: Optional[UUID] = Field(default=None, description="optional")
 
 
-class GetDeposit(CamelModel):
+class GetDeposit(Schema):
     """
     `GetDeposit` is a class that is used to represent a request
     """
@@ -207,7 +207,7 @@ class GetDeposit(CamelModel):
     approvedById: Optional[UUID] = Field(default=None, description="optional")
 
 
-class ApproveDeposit(CamelModel):
+class ApproveDeposit(Schema):
     """
     `ApproveDeposit` is a class that is used to represent a request
     """
@@ -216,7 +216,7 @@ class ApproveDeposit(CamelModel):
     approvedById: Optional[UUID]
 
 
-class ApproveWithdrawal(CamelModel):
+class ApproveWithdrawal(Schema):
     """
     `ApproveWithdrawal` is a class that is used to represent a request
     """
@@ -249,7 +249,7 @@ class WithdrawalResponse(BaseResponse):
     response: Optional[MakeWithdrawal]
 
 
-class WithdrawalContext(CamelModel):
+class WithdrawalContext(Schema):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """
@@ -297,7 +297,7 @@ class GetUserWithdrawalsResponse(BaseResponse):
     response: Optional[GetUserWithdrawalPages]
 
 
-class DepositContext(CamelModel):
+class DepositContext(Schema):
     """
     `WithdrawalContext` is a class that is used to represent a context
     """

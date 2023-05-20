@@ -29,6 +29,8 @@ def safe(function):
             return function(*args, **kwargs)
         except Exception as e:
             logger.error(e)
+            cls = args[0].__class__.__name__
+
             return SafeException(success=False, error=f"Caught Error: {e.args[0]}")
 
     return run

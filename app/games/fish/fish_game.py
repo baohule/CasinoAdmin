@@ -12,7 +12,7 @@ from app.api.game.models import Paths, GameSession
 from app.api.user.models import User
 from app.games.fish.models import GameResult, BetEvent, Reward
 from app.games.fish.schema import Objective
-from app.rpc.game.schema import Session
+
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
 

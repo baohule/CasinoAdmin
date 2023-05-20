@@ -66,7 +66,7 @@ class GameProbability:
             return BaseResponse()
 
     @classmethod
-    def check_win(cls, objective: Objective, user: User, event_id):
+    def check_win(cls, reward: Reward, user: User, event_id):
         """
         The check_win function is used to determine if the user has won or lost.
         The function takes in a fish object, a user object, and the bullet_id of the bullet that hit it.
@@ -107,7 +107,7 @@ class GameProbability:
             return _save_results(objective.reward, event_id)
 
     @staticmethod
-    def get_prob_distribution(difficulty: int) -> int:
+    def get_probability_distribution(difficulty: int) -> int:
         """
         Returns the probability distribution for hitting a fish based on its property value.
         Assumes higher property values have lower probabilities.

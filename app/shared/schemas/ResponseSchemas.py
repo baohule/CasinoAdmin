@@ -4,11 +4,11 @@
 from typing import Optional, List, Union, Any
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 from app.shared.schemas.page_schema import PagedResponse
 
 
-class BaseResponse(ORMCamelModel):
+class BaseResponse(ORMSchema):
     """
     Base Response abstraction for standardized returns
     """

@@ -5,11 +5,24 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-import pandas as pd
-from pydantic import Field, BaseModel, validator
-from socketio import AsyncNamespace
+import pytz
+from pydantic import Field, BaseModel
 
-from app.api.user.schema import User
+from app.api.game.schema import PagedGameItems
+from app.api.user.schema import User, UserCredit
+from app.shared.schemas.ResponseSchemas import PagedBaseResponse
+from app.shared.schemas.orm_schema import ORMSchema
+from app.shared.schemas.page_schema import GetOptionalContextPages, Params
+
+
+
+
+
+class PhoneNumber(BaseModel):
+    __self__: Dict[str, str] = Field(default={"": {}})
+
+
+
 
 
 class LoginRoomResult(BaseModel):
@@ -60,11 +73,12 @@ class LoginResponse(BaseModel):
     seatId: int
 
 
-# initialize tableList
-table_list = [[None] * 9 for _ in range(3)]
-table_list[0][-1] = 0
-table_list[1][-1] = 0
-table_list[2][-1] = 0
+#
+# # initialize tableList
+# table_list = [[None] * 9 for _ in range(3)]
+# table_list[0][-1] = 0
+# table_list[1][-1] = 0
+# table_list[2][-1] = 0
 
 
 class ClickOdd(BaseModel):
@@ -96,34 +110,41 @@ class GameInfo(BaseModel):
     gametype: int
 
 
-class FishNamespace(AsyncNamespace):
-    pool: float = 0
-    betCount: List[int] = [1, 5, 10, 20, 30, 50, 100]
-    fishList: dict = {}
-    virtualPool: float = 0
+# class FishNamespace():
+#     pool: float = 0
+#     betCount: List[int] = [1, 5, 10, 20, 30, 50, 100]
+#     fishList: dict = {}
+#     virtualPool: float = 0
 
 
 class GameConfig(BaseModel):
     paths: List[ClickOdd] = [
         ClickOdd(
-            **{"click": 10, "percent": 5, "cycle": 2, "minpool": 1, "maxpool": 10}
+            click=10, percent=5, cycle=2, minpool=1, maxpool=10
         ),
         ClickOdd(
-            **{"click": 20, "percent": 10, "cycle": 3, "minpool": 2, "maxpool": 20}
+            click=20, percent=10, cycle=3, minpool=2, maxpool=20
         ),
         ClickOdd(
-            **{"click": 50, "percent": 20, "cycle": 4, "minpool": 5, "maxpool": 50}
+            click=50, percent=20, cycle=4, minpool=5, maxpool=50
         ),
         ClickOdd(
-            **{"click": 100, "percent": 30, "cycle": 5, "minpool": 10, "maxpool": 100}
+            click=100, percent=30, cycle=5, minpool=10, maxpool=100
         ),
         ClickOdd(
-            **{"click": 200, "percent": 50, "cycle": 6, "minpool": 15, "maxpool": 200}
+            click=200, percent=50, cycle=6, minpool=15, maxpool=200
         ),
         ClickOdd(
-            **{"click": 300, "percent": 80, "cycle": 7, "minpool": 20, "maxpool": 300}
+            click=300, percent=80, cycle=7, minpool=20, maxpool=300
         ),
+        ClickOdd(
+            click=500, percent=100, cycle=8, minpool=30, maxpool=500
+        ),
+        ClickOdd(
+            click=1000, percent=150, cycle=9, minpool=50, maxpool=1000
+        )
     ]
+
 
 
 class CurrentUser(BaseModel):
@@ -135,33 +156,34 @@ bet_count = [1, 2, 3]
 pro = [0.2, 0.3, 0.4]
 
 
-class FishNamespace:
-    def __init__(self):
-        self.del_fish_list = None
-        self.fish_list: Dict[str, Dict[int, Fish]] = {}
+#
+# class FishNamespace:
+#     def __init__(self):
+#         self.del_fish_list = None
+#         self.fish_list: Dict[str, Dict[int, Fish]] = {}
+#
+#     def delete_fish(self, table_obj: Dict[int, Fish], fish_id: int) -> None:
+#         if fish := table_obj.get(fish_id):
+#             fish.deleted = True
+#             self.del_fish_list.append(fish)
+#             del table_obj[fish_id]
+#
+#     @validator("fish_id")
+#     def validate_fish_id(cls, v):
+#         if not isinstance(v, int):
+#             raise ValueError("fish_id must be an integer")
+#         elif v < 0:
+#             raise ValueError("fish_id must be non-negative")
+#         return v
 
-    def delete_fish(self, table_obj: Dict[int, Fish], fish_id: int) -> None:
-        if fish := table_obj.get(fish_id):
-            fish.deleted = True
-            self.del_fish_list.append(fish)
-            del table_obj[fish_id]
-
-    @validator("fish_id")
-    def validate_fish_id(cls, v):
-        if not isinstance(v, int):
-            raise ValueError("fish_id must be an integer")
-        elif v < 0:
-            raise ValueError("fish_id must be non-negative")
-        return v
-
-    # @validator("fish_type")
-    # def validate_fish_type(cls, v):
-    #     if not isinstance(v, int):
-    #         raise ValueError("fish_type must be an integer")
-    #     elif v < 0 or v >= len():
-    #         raise ValueError(f"fish_type {v} out of range")
-    #     return v
-    #
+# @validator("fish_type")
+# def validate_fish_type(cls, v):
+#     if not isinstance(v, int):
+#         raise ValueError("fish_type must be an integer")
+#     elif v < 0 or v >= len():
+#         raise ValueError(f"fish_type {v} out of range")
+#     return v
+#
 
 
 class HitTimes:
@@ -181,19 +203,20 @@ class Boom:
     pass
 
 
-def RandomNumBoth(Min: int, Max: int) -> int:
-    """
-    The function generates a random integer between a minimum and maximum value.
-
-    :param Min: The minimum value of the range from which a random number will be generated
-    :type Min: int
-    :param Max: The maximum value that the random number can take
-    :type Max: int
-    :return: The function `RandomNumBoth` returns a random integer between the minimum value `Min` and the maximum value `Max`.
-    """
-    Range = Max - Min
-    Rand = pd.core.dtypes.common.random.rand()
-    return Min + round(Rand * Range)
+#
+# def RandomNumBoth(Min: int, Max: int) -> int:
+#     """
+#     The function generates a random integer between a minimum and maximum value.
+#
+#     :param Min: The minimum value of the range from which a random number will be generated
+#     :type Min: int
+#     :param Max: The maximum value that the random number can take
+#     :type Max: int
+#     :return: The function `RandomNumBoth` returns a random integer between the minimum value `Min` and the maximum value `Max`.
+#     """
+#     Range = Max - Min
+#     Rand = pd.core.dtypes.common.random.rand()
+#     return Min + round(Rand * Range)
 
 
 class Fish(BaseModel):
@@ -230,7 +253,7 @@ class FishOut(BaseModel):
         onlienPepole: int = 0
         tableMax: int = 10
         seatMax: int = 4
-        tableList: List[str]  #  = Field(default_factory=lambda: [[None] * 5] * 10)
+        tableList: List[str]  # = Field(default_factory=lambda: [[None] * 5] * 10)
 
 
 class Objective(BaseModel):
@@ -270,3 +293,83 @@ class Paths(BaseModel):
     """
 
     __self__: List[Path] = []
+
+
+class UserSchema:
+    pass
+
+
+class Online(BaseModel):
+    """
+    The Online class is used to represent a list of users that are currently online.
+    """
+
+    users: List[UserSchema] = []
+
+
+class PlayerBet(ORMSchema):
+    id: Optional[int]
+    game_id: Optional[int]
+    balance: Optional[UserCredit]
+    winscore: Optional[int]
+    betscore: Optional[int]
+    betline: Optional[int]
+    ip: Optional[str]
+
+
+class PagedListAllGamesResponse(PagedBaseResponse):
+    success: bool
+    response: Optional[PagedGameItems]
+
+
+class ListAllGames(GetOptionalContextPages):
+    params: Params
+
+
+class GameRoom(BaseModel):
+    """
+    This class is used to represent a game room.
+    """
+
+    game_id: Optional[int]
+    room_name: Optional[str]
+    players: Optional[List[User]]
+    created_at: datetime = Field(default_factory=lambda: datetime.now(pytz.utc))
+
+
+class RoomList(BaseModel):
+    """
+    This class is used to represent a list of game rooms.
+    """
+
+    rooms: List[GameRoom]
+
+
+class Game(BaseModel):
+    game_id: Optional[int] = Field(default=None)
+    room: Optional[GameRoom] = Field(default=None)
+    paths: Optional[Paths] = Field(default=None)
+
+
+class Session(BaseModel):
+    sid: Optional[str] = Field(default=None)
+    state: Optional[str] = Field(default=None)
+    user: Optional[User] = Field(default=None)
+    game: Optional[Game] = Field(default=None)
+
+
+
+class Socket(BaseModel):
+    """
+    The Sessions class is used to represent a list of sessions that are currently active.
+    """
+    socket_id: str
+    sessions: Optional[List[Session]] = []
+
+class SocketSession(BaseModel):
+    """
+    The NestedSession class is used to represent a nested JSON object that is stored in Redis.
+    """
+    session: Session
+
+

@@ -15,9 +15,9 @@ from app.api.auth.schema import (
 )
 from app.api.auth.views import start_otp_login, verify_otp_login
 from app.api.user.models import User
+from app.games.fish.schema import SocketSession, Session
 from app.rpc.user.schema import User as UserSchema
 from app.rpc.user.schema import UserResponse
-from app.rpc.game.schema import Session, SocketSession
 from app.shared.middleware.json_encoders import ModelEncoder
 from app.rpc import socket
 
@@ -110,7 +110,7 @@ async def update_online_users(user, online=True):
     set to False, it means the user is offline. The function updates the "online" attribute of the user, defaults to True (optional)
     :return: a list of online users, which are instances of the `UserSchema` class.
     """
-    user.update(**dict(online=online))
+    user.update(online=online)
     user.session.commit()
     online_users = [
         json.dumps(UserSchema.from_orm(user).dict(), cls=ModelEncoder)
@@ -152,27 +152,13 @@ async def log_in(socket_id, _context) -> UserResponse:
     logger.info("login")
     socket.emit("loginResult", "login")
     token = get_auth_token(socket)
-    socket_session = SocketSession.construct(**await socket.get_session(socket_id))
-    user = None
-    if token:
-        user = User.read(accessToken=token)
+    if user := User.read(accessToken=token):
         logger.info(f"user: {json.dumps(user.to_dict(), cls=ModelEncoder)}")
-
-    for session in socket_session.dict().values():
-        if access_token := session["user"].get("accessToken"):
-            user = User.read(accessToken=access_token)
-            logger.info(f"user: {user} - {socket_session}")
-            break
-
-    if user:
-        socket_session = SocketSession.construct(socket.session(socket_id))
         response = UserResponse(success=True, response=user)
         session = Session(sid=socket_id, user=user, state="login_success")
-        socket_session = socket_session.dict()
-        socket_session[user.phoneNumber] = session.json()
-        logger.info(socket_session)
         await update_online_users(user)
-        await socket.save_session(socket_id, socket_session)
+        await socket.save_session(socket_id. session.dict())
+        logger.info(f'saved session: {session.dict()}')
         await socket.emit("loginResult", response.json())
 
         return response

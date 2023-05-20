@@ -1,0 +1,229 @@
+{
+  "LoginRoomResult": {
+    "success": true,
+    "session_id": "random_session_id"
+  },
+  "PlayerOut": {
+    "user_id": 1234,
+    "session_id": "random_session_id"
+  },
+  "HitResult": {
+    "success": true,
+    "updated_fish": {
+      "fish_1": 10,
+      "fish_2": 20,
+      "fish_3": 5
+    }
+  },
+  "UserScore": {
+    "user_id": 1234,
+    "score": 1000
+  },
+  "ProCount": {
+    "pro_count": [
+      [
+        [
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6
+        ]
+      ],
+      [
+        [
+          7,
+          8,
+          9
+        ],
+        [
+          10,
+          11,
+          12
+        ]
+      ]
+    ]
+  },
+  "BetArr": {
+    "pro_count": {
+      "pro_count": [
+        [
+          [
+            1,
+            2,
+            3
+          ],
+          [
+            4,
+            5,
+            6
+          ]
+        ],
+        [
+          [
+            7,
+            8,
+            9
+          ],
+          [
+            10,
+            11,
+            12
+          ]
+        ]
+      ]
+    },
+    "hit_times": [
+      [
+        1,
+        2
+      ],
+      [
+        3,
+        4
+      ]
+    ],
+    "prop_fish_hit_count": [
+      10,
+      20,
+      30
+    ]
+  },
+  "LoginResponse": {
+    "tableId": 1,
+    "seatId": 2
+  },
+  "ClickOdd": {
+    "click": 10,
+    "percent": 5,
+    "cycle": 2,
+    "minpool": 1,
+    "maxpool": 10
+  },
+  "Player": {
+    "username": "test1",
+    "table_id": 1,
+    "seat_id": 2
+  },
+  "Pool": {
+    "pool": 1000
+  },
+  "FishInfo": {
+    "fish_id": 1,
+    "hitInfo": "some hit info"
+  },
+  "GameInfo": {
+    "totalwin": 500,
+    "totalbet": 1000,
+    "gametype": 1
+  },
+  "GameConfig": {
+    "paths": [
+      {
+        "click": 10,
+        "percent": 5,
+        "cycle": 2,
+        "minpool": 1,
+        "maxpool": 10
+      },
+      {
+        "click": 20,
+        "percent": 10,
+        "cycle": 3,
+        "minpool": 2,
+        "maxpool": 20
+      },
+      {
+        "click": 50,
+        "percent": 20,
+        "cycle": 4,
+        "minpool": 5,
+        "maxpool": 50
+      },
+      {
+        "click": 100,
+        "percent": 30,
+        "cycle": 5,
+        "minpool": 10,
+        "maxpool": 100
+      },
+      {
+        "click": 200,
+        "percent": 50,
+        "cycle": 6,
+        "minpool": 15,
+        "maxpool": 200
+      },
+      {
+        "click": 300,
+        "percent": 80,
+        "cycle": 7,
+        "minpool": 20,
+        "maxpool": 300
+      }
+    ]
+  },
+  "CurrentUser": {
+    "playerclick": 100
+  },
+  "Fish": {
+    "fish_id": 1,
+    "fish_type": 2,
+    "fish_path": "path/to/fish.png",
+    "coin": 10,
+    "fish_count": 5
+  },
+  "FishOut": {
+    "fishOutList": [
+      1,
+      2,
+      3
+    ],
+    "fishOutProMax": 20
+  },
+  "Objective": {
+    "id": 1,
+    "reward": 1000,
+    "hit_times": 5,
+    "type": 1
+  },
+  "Path": {
+    "id": 1,
+    "duraton": "2022-02-01T00:00:00+00:00",
+    "starting": 1.0,
+    "middle": 2.0,
+    "destination": 3.0,
+    "taken": false
+  },
+  "Paths": {
+    "__self__": [
+      {
+        "id": 1,
+        "duraton": "2022-01-01T00:00:00+00:00",
+        "starting": 1.0,
+        "middle": 2.0,
+        "destination": 3.0,
+        "taken": false
+      },
+      {
+        "id": 2,
+        "duraton": "2022-02-01T00:00:00+00:00",
+        "starting": 2.0,
+        "middle": 3.0,
+        "destination": 4.0,
+        "taken": true
+      },
+      {
+        "id": 3,
+        "duraton": "2022-03-01T00:00:00+00:00",
+        "starting": 3.0,
+        "middle": 4.0,
+        "destination": 5.0,
+        "taken": false
+      }
+    ]
+  }
+}

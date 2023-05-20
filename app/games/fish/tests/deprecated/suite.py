@@ -56,7 +56,7 @@ class TestFishGame:
             user = User.where(id=owner_id).first()
             user.balance.amount = 200
             user.save()
-            bullet = Bullet(id=bullet_id, bet=bet_amount,owner_id)
+            bullet = Bullet(id=bullet_id, bet=bet_amount)
             bullet.save()
 
             # Act

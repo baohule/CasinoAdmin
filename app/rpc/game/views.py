@@ -9,6 +9,7 @@ import pytz
 from py_linq import Enumerable
 from pydantic import BaseModel, Field
 
+from app.games.fish.schema import ListAllGames, PagedListAllGamesResponse, PlayerBet, GameRoom, RoomList, Session
 from app.rpc import socket
 
 from fastapi import Request
@@ -16,11 +17,7 @@ from fastapi import Request
 from app.api.game.models import GameList
 from app.api.user.models import User
 from app.rpc.user.schema import BaseUser
-from app.rpc.game.schema import PlayerBet, RoomList, GameRoom
-from app.rpc.game.schema import (
-    PagedListAllGamesResponse,
-    ListAllGames,
-)
+
 from app.shared.schemas.ResponseSchemas import BaseResponse
 
 # from app import redis
@@ -48,7 +45,7 @@ def insert_player_bet_history(content: PlayerBet):
     """ """
 
 
-async def add_player_to_room(session: BaseModel, context: PlayerBet):
+async def add_player_to_room(session: Session, context: PlayerBet):
     """
     This function is used to add a player to a game room.
     :return:
@@ -84,7 +81,7 @@ async def add_player_to_room(session: BaseModel, context: PlayerBet):
         return active_rooms.json()
 
 
-async def get_active_rooms(session: BaseModel, context: PlayerBet):
+async def get_active_rooms(session: Session, context: PlayerBet):
     """
     This function is used to create a new game room.
     :param session:
@@ -153,7 +150,7 @@ async def login_room(socket_id, context: PlayerBet):
     if not socket_session:
         return BaseResponse(success=False, error="Session not found, log in again")
     session_data = Enumerable(socket_session.dict().values()).first()
-    session = BaseModel(**session_data)
+    session = Session(**session_data)
     active_room = get_active_rooms(session, context)
     if not active_room:
         return BaseResponse(success=False, error="No room available")

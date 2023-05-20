@@ -5,12 +5,12 @@ from datetime import date, datetime
 from typing import Optional, List, Union
 from uuid import UUID
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import Field
 
 from app.api.auth.schema import TokenDetail, TokenResponse
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 
 from typing import Optional
 from pydantic import BaseModel
@@ -18,12 +18,12 @@ from pydantic import BaseModel
 from app.shared.schemas.page_schema import GetPages, PagedResponse
 
 
-class UserCredit(ORMCamelModel):
+class UserCredit(ORMSchema):
     balance: Optional[float]
     updatedAt: Optional[datetime]
 
 
-class User(ORMCamelModel):
+class User(ORMSchema):
     id: Optional[int]
     phone: Optional[str]
     firstName: Optional[str]
@@ -32,9 +32,10 @@ class User(ORMCamelModel):
     username: Optional[str]
     createdAt: Optional[datetime]
     active: Optional[bool]
+    accessToken: Optional[str]
 
 
-class BaseUser(ORMCamelModel):
+class BaseUser(ORMSchema):
     """
     `User` is a class that is used to validate the data that is being passed to the `/user` route.
     """
@@ -76,7 +77,7 @@ class AdminUserCreateResponse(TokenResponse):
     response: Optional[Union[BaseUser, TokenDetail]]
 
 
-class AdminUserCreate(CamelModel):
+class AdminUserCreate(Schema):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
@@ -86,7 +87,7 @@ class AdminUserCreate(CamelModel):
     username: str
 
 
-class AgentUserCreate(CamelModel):
+class AgentUserCreate(Schema):
     """
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
@@ -97,7 +98,7 @@ class AgentUserCreate(CamelModel):
     quota: Optional[int]
 
 
-class UserLogin(CamelModel):
+class UserLogin(Schema):
     """
     A class that is used to validate the data that is being passed to the `/login` route.
     """
@@ -106,7 +107,7 @@ class UserLogin(CamelModel):
     password: str
 
 
-class AdminLogin(CamelModel):
+class AdminLogin(Schema):
     """
     This is a class that is used to validate the data that is being passed to the `/admin/login` route.
 
@@ -119,7 +120,7 @@ class AdminLogin(CamelModel):
         schema_extra = {"example": {"email": "test@test.com", "password": "1234567"}}
 
 
-class AgentLogin(CamelModel):
+class AgentLogin(Schema):
     """
     This is a class that is used to validate the data that is being passed to the route.
 
@@ -142,7 +143,7 @@ class UserResponse(BaseResponse):
     success: Optional[bool]
 
 
-class GetUser(CamelModel):
+class GetUser(Schema):
     """
     `GetUser` is a class that is used to validate the data that is being passed to the `/user/{userId}` route.
     """
@@ -150,7 +151,7 @@ class GetUser(CamelModel):
     id: int
 
 
-class AdminBaseResponse(ORMCamelModel):
+class AdminBaseResponse(ORMSchema):
     """
     `UserBaseResponse` is a class that is used to validate the data that is being passed to the `/user/{userId}` route.
 
@@ -165,7 +166,7 @@ class AdminBaseResponse(ORMCamelModel):
     response: Optional[UUID]
 
 
-class AdminUpdateName(CamelModel):
+class AdminUpdateName(Schema):
     """
     This is a class that is used to validate the data that is being passed to the `/user/{userId}/update/name` route.
 
@@ -184,7 +185,7 @@ class AdminUpdateNameResponse(BaseResponse):
     error: Optional[str]
 
 
-class CLaimAuthPayload(ORMCamelModel):
+class CLaimAuthPayload(ORMSchema):
     """
     This class is used to claim a user's account
     """
@@ -193,7 +194,7 @@ class CLaimAuthPayload(ORMCamelModel):
     phone: str
 
 
-class IGetUserList(CamelModel):
+class IGetUserList(Schema):
     filter: Optional[GetUser]
 
 
@@ -213,7 +214,7 @@ class GeneratePassword(BaseModel):
     id: int = Field(..., alias="userId")
 
 
-class NewPassword(CamelModel):
+class NewPassword(Schema):
     password: Optional[str]
 
 

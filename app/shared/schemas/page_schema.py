@@ -2,14 +2,14 @@
 @author: Kuro
 """
 from fastapi.types import Any
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from typing import List, Optional, Dict
 from uuid import UUID
 
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema, Schema
 
 
-class Params(CamelModel):
+class Params(Schema):
     page: int
     size: int
 
@@ -17,34 +17,34 @@ class Params(CamelModel):
         schema_extra = {"example": {"page": "1", "size": "10"}}
 
 
-class Filter(CamelModel):
+class Filter(Schema):
     filter: Optional[Dict[str, UUID]]
 
 
-class Post(CamelModel):
+class Post(Schema):
     post_id: UUID
 
 
-class GetOptionalContextPages(CamelModel):
+class GetOptionalContextPages(Schema):
     context: Optional[Filter]
     params: Params
 
 
-class GetNoContextPages(CamelModel):
+class GetNoContextPages(Schema):
     params: Params
 
 
-class GetPages(CamelModel):
+class GetPages(Schema):
     context: Filter
     params: Params
 
 
-class GetCommentPages(CamelModel):
+class GetCommentPages(Schema):
     context: Post
     params: Params
 
 
-class PagedResponse(ORMCamelModel):
+class PagedResponse(ORMSchema):
     items: List[Any]
     page: int
     page_size: int
