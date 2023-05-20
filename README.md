@@ -1,5 +1,6 @@
 # CasinoAdmin Backend
 
+
 CasinoAdmin is a python 3.9 FastAPI Framework application
 
 ## Installation
@@ -54,7 +55,7 @@ Assuming you have docker installed, running the application is easy!
 ```bash
 docker build -t CasinoAdmin:backend .
 docker run -t -i -d --name CasinoAdmin -p 80:80 CasinoAdmin:backend
-docker exec insiders-backend alembic upgrade head
+docker exec CasinoAdmin alembic upgrade head
 ```
 
 That's it! happy hacking ^^v
