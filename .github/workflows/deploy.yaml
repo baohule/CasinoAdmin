@@ -6,7 +6,7 @@ name: Dev
 on:
   # Triggers the workflow on push or pull request events but only for the master branch
   push:
-    branches: [ jerry ]
+    branches: [ development ]
 
 
   # Allows you to run this workflow manually from the Actions tab
@@ -81,9 +81,10 @@ jobs:
           key: ${{ env.SERVER_KEY }}
           port: 22
           script: |
+            cd CasinoAdmin
             docker logout
             docker login -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }} ${{ env.REGISTRY }}
             docker stop webapi || true && docker rm webapi || true
             docker rmi ${{ needs.build.outputs.tags }}
             docker pull ${{ needs.build.outputs.tags }}
-            docker run -d -p 8000:8080 --restart always --env-file /apps/CasinoAdmin/.env --name webapi ${{ needs.build.outputs.tags }}
+            docker run -d --network host --name backend  --env-file ./.env --name webapi ${{ needs.build.outputs.tags }}
