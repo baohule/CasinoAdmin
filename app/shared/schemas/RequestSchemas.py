@@ -4,11 +4,11 @@
 from typing import Optional
 from uuid import UUID
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import BaseModel, validator
 
 
-class BaseRequest(CamelModel):
+class BaseRequest(Schema):
     """
     Request factory for our abstract input class
     """

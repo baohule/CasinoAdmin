@@ -3,7 +3,7 @@
 """
 import json
 from io import StringIO
-from typing import Type, TypeVar, List, Optional, Any
+from typing import Type, TypeVar, List, Optional, Any, Dict, Union
 
 import aioredis
 import asyncio
@@ -22,6 +22,9 @@ from app.rpc.game.schema import Session
 from app.shared.middleware.json_encoders import ModelEncoder
 from settings import Config
 
+from typing import TypeVar
+
+SchemaType = TypeVar("SchemaType", bound=BaseModel)
 
 # from app import logging
 #
@@ -29,36 +32,6 @@ from settings import Config
 #
 # # logger.addHandler(logging.StreamHandler())
 # logger.setLevel(logging.DEBUG)
-
-
-class SocketSession(BaseModel):
-    """
-    The NestedSession class is used to represent a nested JSON object that is stored in Redis.
-    """
-
-    session_id: str
-    session: Session
-
-
-class Online(BaseModel):
-    """
-    The Online class is used to represent a list of users that are currently online.
-    """
-
-    users: List[UserSchema] = []
-
-
-class Socket(BaseModel):
-    """
-    The Sessions class is used to represent a list of sessions that are currently active.
-    """
-
-    sessions: Optional[List[SocketSession]] = []
-
-
-class Sockets(BaseModel):
-    __root__: List[Socket] = []
-    __self: __root__
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -185,10 +158,10 @@ class RedisMixin(BaseModel, Enumerable):
             key: value
             for key, value in kwargs.items()
             if key
-            and value
-            and key in ["id", "_id", "Id"]
-            or additional_filters
-            and key in additional_filters
+               and value
+               and key in ["id", "_id", "Id"]
+               or additional_filters
+               and key in additional_filters
         }
 
     @classmethod
@@ -225,63 +198,35 @@ class RedisMixin(BaseModel, Enumerable):
         )
         redis_data = await redis.get(key)
 
-        async def _insert_key(node, data: dict = None):
-            if isinstance(node, Enumerable):
-                for child in node:
-                    if isinstance(child, dict):
-                        if all(item in child.items() for item in object_json.items()):
-                            return
-                    elif isinstance(child, Enumerable):
-                        await _insert_key(child)
-                if not any(isinstance(x, str) for x in node):
-                    node.append(data)
+        """
+        we will use hset or hmset_dict to store the data in redis
+        the data is a list of dictionaries, so we will need to convert it to a dictionary
+        then we will need to convert it back to a list of dictionaries when we read it
+        
+        """
 
-        """
-        data types in object oriented programming:
-        
-        
-        hash: {'key': 'value'} -> {'name': 'mike'} 
-        list: ['value1', 'value2'] -> ['mike', 'joe']
-        set: {'value1', 'value2'} -> {'mike', 'joe'}
-        sorted set: {'value1': 1, 'value2': 2} -> {'mike': 1, 'joe': 2}
-        now lets explain hashes vs binanry tree vs linked list
-        hash is a single item with a key value structure
-        a binary tree is a data structure that has a root node and two children nodes
-        a linked list is a data structure that has a head node and a tail node
-        
-        [             
-            { 1: {
-            
-                "person1": {
-                        "thisngh1": "none",
-                        "thign2": {
-                                ...
-                            }
-                },
-                "person2": "none"
-        },             
-            { 2: {
-            
-                "person1": {
-                    
-                },
-                "person2": {
-                   
-            }
-        }
-    ]
-        
-            
-            
-            
-        
-        
-        
-        """
+        def _insert_key(master_object, object_json, target_mapping):
+            for key, value in target_mapping.items():
+                if isinstance(value, dict):
+                    _insert_key(master_object[key], object_json[key], value)
+                else:
+                    master_object[key] = object_json[key]
+            return master_object
+
+        def __insert_hmkeys(master_object, object_json, target_mapping):
+            _redis_data = redis.hscan(key)  # returns a tuple of (cursor, {key: value})
+            for key, value in redis_data.items():
+                if isinstance(value, dict):
+                    _insert_key(master_object[key], object_json[key], value)
+                else:
+                    master_object[key] = object_json[key]
+
+            return master_object
 
         if redis_data:
             master_object = Enumerable(json.loads(redis_data))
-            await _insert_key(master_object, object_json)
+            # await _insert_key(master_object, object_json, target_mapping=target)
+
             await redis.set(key, json.dumps(master_object.to_list()))
         else:
             master_object = [object_json]
@@ -311,7 +256,50 @@ async def print_model():
 
 asyncio.run(print_model())
 
-#
+"""
+deprecated code:
+
+# 
+        # async def _insert_key(
+        #         node: Union[Enumerable, dict],
+        #         data: Union[dict, SchemaType] = None,
+        #         target_mapping: Dict[str, List[str]] = Field(default_factory=dict)
+        # ):
+        #     if isinstance(node, Enumerable):
+        #         node = node.select(
+        #             lambda nested_item: (
+        #                           _target := target_mapping.get(nested_item)
+        #                       ) and isinstance(nested_item, dict)
+        #                       and any(_target == k and v == target_mapping.get(k) for k, v in nested_item.items())
+        #         ).first()
+        #         for child in node:
+        #             if isinstance(child, dict):
+        #                 if all(item in child.items() for item in object_json.items()):
+        #                     return
+        #             elif isinstance(child, Enumerable):
+        #                 await _insert_key(child)
+        #         if not any(isinstance(x, str) for x in node):
+        #             node.append(data)
+        #     elif isinstance(node, dict):
+        #         if all(item in node.items() for item in object_json.items()):
+        #             return
+        #         for _key, value in node.items():
+        #             if isinstance(value, dict):
+        #                 await _insert_key(value)
+        #             elif isinstance(value, Enumerable):
+        #                 await _insert_key(value)
+        #         node.update(data)
+
+
+
+
+
+
+
+
+
+"""
+"""
 # class RedisCRUD:
 #     """
 #     The RedisCRUD class is a generic class that can be used to perform CRUD operations on Redis.

@@ -60,15 +60,15 @@ logger = logging.getLogger("base_model")
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
-ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
-T = TypeVar("T")
+
 
 mapper_registry = registry()
 DeclarativeBase = declarative_base()
 Base = mapper_registry.generate_base(
     cls=(DeclarativeBase, ActiveRecordMixin, SmartQueryMixin, InspectionMixin)
 )
-
+ModelType = TypeVar("ModelType", bound=AllFeaturesMixin)
+T = TypeVar("T")
 
 class UserTypeEnum(Enum):
     """
@@ -80,6 +80,26 @@ class UserTypeEnum(Enum):
     user = "user"
 
 
+
+### wrute ne a quick func wrapper
+
+# func wrapper
+def func_wrapper(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logger.error(e)
+            raise HTTPException(status_code=500, detail=str(e))
+
+    return wrapper
+
+
+@func_wrapper
+def some_thing():
+    pass
+
+
 class ModelMixin(AllFeaturesMixin):
     """
     Generic Mixin Model to provide helper functions that all Model classes need
@@ -88,7 +108,7 @@ class ModelMixin(AllFeaturesMixin):
     __abstract__ = True
 
     @classmethod
-    def get_or_create(cls: ModelType, *_, **kwargs) -> ModelType:
+    def get_or_create(cls: ModelType, *_, **kwargs) -> Generic[T]:
         """
         The get_or_create function is a helper function that will
         either get an object or create it if it doesn't exist.
@@ -408,7 +428,7 @@ class ModelMixin(AllFeaturesMixin):
             return
 
     @classmethod
-    def read(cls, **kwargs) -> ModelType:
+    def read(cls, **kwargs) -> Generic[T]:
         """
         > It takes a class and a dictionary of keyword arguments, and returns an
         instance of that class with the data from the database
@@ -427,9 +447,10 @@ class ModelMixin(AllFeaturesMixin):
         :param cls: The class that is calling the method
         :return: The first row of the table that matches the query.
         """
+
         try:
             return cls.where(**kwargs).all()
-        except Exception as e:
+        except IntegrityError as e:
             logger.error(e)
             cls.session.rollback()
             return

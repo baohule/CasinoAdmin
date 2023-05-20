@@ -3,15 +3,15 @@
 """
 from typing import Optional
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import Field, EmailStr, BaseModel
 from uuid import UUID
 
 from app.shared.schemas.ResponseSchemas import BaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 
 
-class UserRecovery(CamelModel):
+class UserRecovery(Schema):
     """
     The UserRecovery class is a model that contains the information about a user's password recovery
     """
@@ -26,7 +26,7 @@ class UserRecovery(CamelModel):
         }
 
 
-class Recovery(CamelModel):
+class Recovery(Schema):
     """
     The Recovery class is a model that represents a recovery
     """
@@ -65,7 +65,7 @@ class RecoveryResponse(BaseResponse):
     recovery_token: Optional[str]
 
 
-class SMSStart(CamelModel):
+class SMSStart(Schema):
     """
     SMSStart class is a model that represents the start of an SMS message
     """
@@ -81,7 +81,7 @@ class SMSStart(CamelModel):
 
 
 # The EmailStart class is a model that contains the data fields for the start of an email
-class EmailStart(CamelModel):
+class EmailStart(Schema):
     email: str
 
     class Config:
@@ -92,7 +92,7 @@ class EmailStart(CamelModel):
         }
 
 
-class SMSLogin(CamelModel):
+class SMSLogin(Schema):
     """
     SMSLogin class is a model that represents the start of an SMS message
     """
@@ -105,7 +105,7 @@ class SMSLogin(CamelModel):
 
 
 #
-class EmailLogin(CamelModel):
+class EmailLogin(Schema):
     """
     The EmailLogin class is a model that represents a user's login credentials
     """
@@ -146,7 +146,7 @@ class EmailStartResponse(BaseResponse):
     error: Optional[str]
 
 
-class LoginResponse(CamelModel):
+class LoginResponse(Schema):
     # The OTPLoginResponse is a model that represents the response from the
     # OTP login endpoint
     access_token: Optional[str]
@@ -159,7 +159,7 @@ class LoginResponse(CamelModel):
 
 #
 #
-class OIDLogin(CamelModel):
+class OIDLogin(Schema):
     """
     OIDLogin is a class that represents a user's login to the system
     """
@@ -204,7 +204,7 @@ class CreateUserResponse(BaseResponse):
     response: Optional[LoginResponse]
 
 
-class UserClaim(ORMCamelModel):
+class UserClaim(ORMSchema):
     """
     The UserClaim class is a model that represents a user's claim
     """
@@ -226,7 +226,7 @@ class EmailLoginResponse(BaseResponse):
     response: Optional[UserClaim]
 
 
-class TokenDetail(ORMCamelModel):
+class TokenDetail(ORMSchema):
     access_token: str
     user_claim: UserClaim
 
@@ -236,16 +236,16 @@ class TokenResponse(BaseResponse):
     response: Optional[TokenDetail]
 
 
-class OTPLoginStart(CamelModel):
+class OTPLoginStart(Schema):
     phoneNumber: str = Field(example="+14801234567 - note the +1")
 
 
-class OTPLoginVerify(CamelModel):
+class OTPLoginVerify(Schema):
     phoneNumber: str
     code: str = Field(example="123456")
 
 
-class LoginStartResponse(ORMCamelModel):
+class LoginStartResponse(ORMSchema):
     message: Optional[str]
     phone_number: Optional[str]
 

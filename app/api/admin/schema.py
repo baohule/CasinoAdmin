@@ -5,13 +5,13 @@ from datetime import datetime
 from typing import Optional, List, Dict, Union
 from uuid import UUID
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import BaseModel, EmailStr, Field
 
 from app.api.agent.schema import AgentUser, AgentQuota
 from app.api.credit.schema import UserCredit
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 from app.shared.schemas.page_schema import (
     GetOptionalContextPages,
     PagedResponse,
@@ -20,7 +20,7 @@ from app.shared.schemas.page_schema import (
 )
 
 
-class UpdateUser(CamelModel):
+class UpdateUser(Schema):
     """
     It's a model that represents a user that is being updated.
     """
@@ -30,7 +30,7 @@ class UpdateUser(CamelModel):
     username: Optional[str]
 
 
-class RemoveUser(CamelModel):
+class RemoveUser(Schema):
     """
     It's a model that is used to remove a user from the database.
     """
@@ -38,12 +38,12 @@ class RemoveUser(CamelModel):
     id: int
 
 
-class GetAgent(CamelModel):
+class GetAgent(Schema):
     # It's a user.
     id: UUID
 
 
-class BaseUser(ORMCamelModel):
+class BaseUser(ORMSchema):
     """
     # `BaseUser` is a base class for the `User` class.
     It is used to represent the base fields that are common
@@ -57,13 +57,13 @@ class BaseUser(ORMCamelModel):
     creditAccount: Optional[UserCredit]
 
 
-class Admin(ORMCamelModel):
+class Admin(ORMSchema):
     id: UUID
     email: Optional[str]
     username: Optional[str]
 
 
-class BaseUserResponse(ORMCamelModel):
+class BaseUserResponse(ORMSchema):
     """
     It's a model that is used to return a list of users.
     """
@@ -109,7 +109,7 @@ class ListUserResponse(PagedResponse):
     items: List[BaseUserResponse]
 
 
-class GetUserlistQueryOptions(CamelModel):
+class GetUserlistQueryOptions(Schema):
     """
     GetUserlistQueryOptions is a model that is used to get a list of users.
     """
@@ -135,7 +135,7 @@ class GetUserList(GetOptionalContextPages):
     context: Optional[OptionalContextPagesFilter]
 
 
-class BatchUsers(CamelModel):
+class BatchUsers(Schema):
     """
     BatchUsers is a model that is used to update multiple users at once.
     It is used in the `/batch` endpoint.
@@ -183,7 +183,7 @@ class SetPermsResponse(BaseResponse):
     error: Optional[str]
 
 
-class SearchUser(CamelModel):
+class SearchUser(Schema):
     """
     `SearchUser` is a model that is used to search for users.
     It is used in the `/search` endpoint.
@@ -220,7 +220,7 @@ class AgentCreateResponse(BaseResponse):
     response: Optional[AgentUser]
 
 
-class AgentUpdate(CamelModel):
+class AgentUpdate(Schema):
     agentId: UUID
     quota: Optional[int]
     active: Optional[bool]
@@ -233,7 +233,7 @@ class AgentUpdateResponse(BaseResponse):
     response: Optional[AgentUser]
 
 
-class AdminUserUpdateName(CamelModel):
+class AdminUserUpdateName(Schema):
     username: str
 
 
@@ -245,7 +245,7 @@ class AdminUserUpdateNameResponse(BaseResponse):
     error: Optional[str]
 
 
-class AdminSetPassword(CamelModel):
+class AdminSetPassword(Schema):
     id: UUID
     password: str
 

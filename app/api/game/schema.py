@@ -8,7 +8,7 @@ from uuid import UUID
 from pydantic import BaseModel
 
 from app.shared.schemas.ResponseSchemas import PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 from app.shared.schemas.page_schema import (
     GetOptionalContextPages,
     PagedResponse,
@@ -16,7 +16,7 @@ from app.shared.schemas.page_schema import (
 )
 
 
-class Game(ORMCamelModel):
+class Game(ORMSchema):
     id: int
     eGameName: Optional[str]
     cGameName: Optional[str]

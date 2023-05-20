@@ -4,7 +4,7 @@
 import json
 from typing import Optional, Dict, List
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import Field, EmailStr, BaseModel, validator
 from uuid import UUID
 

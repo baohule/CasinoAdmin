@@ -5,7 +5,7 @@
 from datetime import datetime
 
 import pytz
-from sqlalchemy import Column, Integer, ForeignKey, DateTime, Text
+from sqlalchemy import Column, Integer, ForeignKey, DateTime, Text, Float
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.expression import null
@@ -36,6 +36,9 @@ class GameResult(ModelMixin):
     # bullet_id = Column(Integer, ForeignKey("Bullet.id"))
     # fish_id = Column(Integer, ForeignKey("Fish.id"))
     win = Column(Integer)
+    result = Column(Integer)
+    createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
+
     #
     # bullet = relationship("Bullet", back_populates="GameResult")
     # fish = relationship("Fish", back_populates="GameResult")
@@ -81,8 +84,9 @@ class Reward(ModelMixin):
     type: int
     """
     id = Column(Integer, primary_key=True, index=True)
-    reward = Column(Integer)
+    value = Column(Integer)
     hit_times = Column(Integer)
     type = Column(Integer)
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
+    difficulty = Column(Float, default=100.0)

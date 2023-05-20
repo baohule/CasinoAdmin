@@ -6,13 +6,13 @@ from typing import Optional, List, Union
 from uuid import UUID
 import re
 
-from fastapi_camelcase import CamelModel
+from app.shared.schemas.orm_schema import Schema
 from pydantic import EmailStr, validator, Field
 
 from app.api.auth.schema import TokenDetail, TokenResponse
 from app.shared.schemas.RequestSchemas import GetAwaitable
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
-from app.shared.schemas.orm_schema import ORMCamelModel
+from app.shared.schemas.orm_schema import ORMSchema
 
 from typing import Optional
 from pydantic import BaseModel
@@ -24,12 +24,12 @@ class UserLogin(GetAwaitable):
     phone_number: Optional[str]
 
 
-class UserCredit(ORMCamelModel):
+class UserCredit(ORMSchema):
     balance: Optional[float]
     updatedAt: Optional[datetime]
 
 
-class User(ORMCamelModel):
+class User(ORMSchema):
     id: Optional[int]
     phone: Optional[str]
     firstName: Optional[str]
@@ -50,7 +50,7 @@ class UserResponse(BaseResponse):
     response: Optional[User]
 
 
-class BaseUser(ORMCamelModel):
+class BaseUser(ORMSchema):
     """
     `User` is a class that is used to validate the data that is being passed to the `/user` route.
     """
@@ -59,6 +59,7 @@ class BaseUser(ORMCamelModel):
     phone: Optional[str]
     username: Optional[str]
     phoneNumber: Optional[str]
+    headImage: Optional[str]
     firstName: Optional[str]
     lastName: Optional[str]
     createdAt: Optional[datetime]
@@ -67,13 +68,13 @@ class BaseUser(ORMCamelModel):
     active: Optional[bool]
 
 
-class Game(ORMCamelModel):
+class Game(ORMSchema):
     id: Optional[int]
     name: Optional[str]
     users: Optional[List[User]]
 
 
-class Room(ORMCamelModel):
+class Room(ORMSchema):
     id: Optional[UUID]
     name: Optional[str]
     game: Optional[Game]
@@ -82,13 +83,13 @@ class Room(ORMCamelModel):
     updatedAt: Optional[datetime]
 
 
-class Socket(ORMCamelModel):
+class Socket(ORMSchema):
     id: Optional[str]
     rooms: Optional[List[Room]]
     user: Optional[User]
 
 
-class UserSession(ORMCamelModel):
+class UserSession(ORMSchema):
     id: Optional[int]
     game: Optional[Game] = Field(default=None)
     room: Optional[Room] = Field(default=None)
