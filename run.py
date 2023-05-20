@@ -39,8 +39,8 @@ async def run():
                 "app:app",
                 host=config.fastapi_host,
                 port=config.fastapi_port,
-                # ssl_keyfile="certs/local.key",
-                # ssl_certfile="certs/local.pem",
+                ssl_keyfile="certs/local.key",
+                ssl_certfile="certs/local.pem",
                 workers=config.workers,
             )
         },
@@ -49,6 +49,8 @@ async def run():
                 "app.rpc:app",
                 host=config.fastapi_host,
                 port=config.fastapi_port + 1,
+                ssl_keyfile="certs/local.key",
+                ssl_certfile="certs/local.pem",
             )
         },
     ]
@@ -65,13 +67,13 @@ if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(run())
 
-
-if __name__ == "__main__":
-    uvicorn.run(
-        "app.rpc:app",
-        host=config.fastapi_host,
-        port=config.fastapi_port,
-        # ssl_keyfile="certs/local.key",
-        # ssl_certfile="certs/local.pem",
-        workers=config.workers,
-    )
+#
+# if __name__ == "__main__":
+#     uvicorn.run(
+#         "app.rpc:app",
+#         host=config.fastapi_host,
+#         port=config.fastapi_port,
+#         # ssl_keyfile="certs/local.key",
+#         # ssl_certfile="certs/local.pem",
+#         workers=config.workers,
+#     )
