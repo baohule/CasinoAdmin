@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    image: 'ghcr.io/baohule/casinoadmin:latest'
+    container_name: backend
+    networks:
+      - hostnet
+    depends_on:
+      - redis
+      - postgres
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    command: |
+      sh -c "alembic revision --autogenerate -m 'New migration';
+             alembic upgrade head"
+  redis:
+    image: 'redis:latest'
+    container_name: redis
+    networks:
+      - hostnet
+  postgres:
+    image: 'postgres:latest'
+    container_name: postgres
+    networks:
+      - hostnet
+    environment:
+      - POSTGRES_USER=your_postgres_user
+      - POSTGRES_PASSWORD=your_postgres_password
+      - POSTGRES_DB=your_postgres_database
+networks:
+  hostnet:
+    external: true
