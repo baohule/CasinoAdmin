@@ -1,0 +1,7 @@
+{
+  "auths": {
+    "https://ghcr.io": {
+      "auth": "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"
+    }
+  }
+}

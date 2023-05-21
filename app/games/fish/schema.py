@@ -6,7 +6,7 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 import pandas as pd
-from pydantic import Field, BaseModel, validator
+from pydantic import Field, BaseModel
 from socketio import AsyncNamespace
 
 from app.api.user.schema import User
@@ -135,33 +135,14 @@ bet_count = [1, 2, 3]
 pro = [0.2, 0.3, 0.4]
 
 
-class FishNamespace:
-    def __init__(self):
-        self.del_fish_list = None
-        self.fish_list: Dict[str, Dict[int, Fish]] = {}
-
-    def delete_fish(self, table_obj: Dict[int, Fish], fish_id: int) -> None:
-        if fish := table_obj.get(fish_id):
-            fish.deleted = True
-            self.del_fish_list.append(fish)
-            del table_obj[fish_id]
-
-    @validator("fish_id")
-    def validate_fish_id(cls, v):
-        if not isinstance(v, int):
-            raise ValueError("fish_id must be an integer")
-        elif v < 0:
-            raise ValueError("fish_id must be non-negative")
-        return v
-
-    # @validator("fish_type")
-    # def validate_fish_type(cls, v):
-    #     if not isinstance(v, int):
-    #         raise ValueError("fish_type must be an integer")
-    #     elif v < 0 or v >= len():
-    #         raise ValueError(f"fish_type {v} out of range")
-    #     return v
-    #
+# @validator("fish_type")
+# def validate_fish_type(cls, v):
+#     if not isinstance(v, int):
+#         raise ValueError("fish_type must be an integer")
+#     elif v < 0 or v >= len():
+#         raise ValueError(f"fish_type {v} out of range")
+#     return v
+#
 
 
 class HitTimes:
@@ -230,7 +211,7 @@ class FishOut(BaseModel):
         onlienPepole: int = 0
         tableMax: int = 10
         seatMax: int = 4
-        tableList: List[str]  #  = Field(default_factory=lambda: [[None] * 5] * 10)
+        tableList: List[str]  # = Field(default_factory=lambda: [[None] * 5] * 10)
 
 
 class Objective(BaseModel):

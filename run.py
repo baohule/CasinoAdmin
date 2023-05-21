@@ -1,15 +1,16 @@
 """
 @author: Kuro
 """
+import asyncio
+import logging
 import os
 
 from py_linq import Enumerable
-from settings import Config as config
-from app.endpoints.routes import add_routes
-from app import app
-import asyncio
 from uvicorn import Server, Config
-import logging
+
+from app import app
+from app.endpoints.routes import add_routes
+from settings import Config as config
 
 logging.basicConfig(
     filename=f"{os.getcwd()}/logs/runtime.log",
