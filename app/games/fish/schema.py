@@ -5,7 +5,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional
 
-import pandas as pd
 from pydantic import Field, BaseModel
 from socketio import AsyncNamespace
 
@@ -160,21 +159,6 @@ class SkillInfo(BaseModel):
 
 class Boom:
     pass
-
-
-def RandomNumBoth(Min: int, Max: int) -> int:
-    """
-    The function generates a random integer between a minimum and maximum value.
-
-    :param Min: The minimum value of the range from which a random number will be generated
-    :type Min: int
-    :param Max: The maximum value that the random number can take
-    :type Max: int
-    :return: The function `RandomNumBoth` returns a random integer between the minimum value `Min` and the maximum value `Max`.
-    """
-    Range = Max - Min
-    Rand = pd.core.dtypes.common.random.rand()
-    return Min + round(Rand * Range)
 
 
 class Fish(BaseModel):
