@@ -1,10 +1,10 @@
 """
 @author: Kuro
 """
-from app import logging
-
 from fastapi import APIRouter, Depends, Request
 
+from app import logging
+from app.api.admin.models import Admin
 from app.api.admin.schema import (
     AgentUpdateResponse,
     AgentUpdate,
@@ -20,21 +20,17 @@ from app.api.admin.schema import (
 from app.api.agent.models import Agent
 from app.api.credit.models import Quota
 from app.api.user.models import User
-from app.shared.auth.password_handler import get_password_hash
-from app.shared.bases.base_model import Page
-from app.shared.middleware.auth import JWTBearer
 from app.api.user.schema import (
     AdminUserCreate,
     AdminUserCreateResponse,
     AgentUserCreate,
 )
-from app.api.admin.models import Admin
-from fastapi.exceptions import HTTPException
-
-# from app.shared.helper.logger import StandardizedLogger
-
+from app.shared.auth.password_handler import get_password_hash
+from app.shared.middleware.auth import JWTBearer
 # logger = StandardizedLogger(__name__)
 from app.shared.schemas.ResponseSchemas import BaseResponse
+
+# from app.shared.helper.logger import StandardizedLogger
 
 router = APIRouter(
     prefix="/api/admin",
@@ -59,9 +55,9 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
     """
     user.password = get_password_hash(user.password)
-    logger.info(f"Creating admin with email {user.email}")
+    logger.info(f"Creating admin with email {user.phone}")
     if admin := Admin.add_admin(**user.dict()):
-        logger.info(f"Admin created with email {user.email}")
+        logger.info(f"Admin created with phone {user.phone}")
         return AdminUserCreateResponse(success=True, response=admin)
     return AdminUserCreateResponse(error="Admin not created")
 

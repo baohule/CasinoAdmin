@@ -53,7 +53,7 @@ class Admin(ModelMixin):
         """
         try:
             admin_data = cls.rebuild(kwargs)
-            if cls.where(email=admin_data["email"]).first():
+            if cls.where(phone=admin_data["phone"]).first():
                 logger.info("Admin already exists")
                 return
             admin = cls(**admin_data)

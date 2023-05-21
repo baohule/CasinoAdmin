@@ -1,11 +1,9 @@
 """
 @author: Kuro
 """
-from app import logging
-from types import SimpleNamespace
-
 from fastapi import APIRouter, Depends, Request
 
+from app import logging
 from app.api.agent.models import Agent
 from app.api.agent.schema import (
     CreateAgent,
@@ -23,14 +21,12 @@ from app.api.agent.schema import (
 from app.api.credit.models import Balance
 from app.api.user.models import User
 from app.api.user.schema import GetUserListResponse, GetAllUsers, GetUserListItems
+from app.shared.auth.password_generator import generate_password
 from app.shared.auth.password_handler import get_password_hash
 from app.shared.bases.base_model import paginate
 from app.shared.middleware.auth import JWTBearer
-from app.shared.auth.password_generator import generate_password
-from app.shared.email.mailgun import send_password_email
-
 # logger = StandardizedLogger(__name__)
-from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
+from app.shared.schemas.ResponseSchemas import BaseResponse
 
 # from app.shared.helper.logger import StandardizedLogger
 
@@ -58,12 +54,12 @@ async def create_user(context: AgentCreateUser, request: Request):
 
     def _make_user(_context, _password):
         if not (
-            user_data := dict(
-                phone=context.phone,
-                password=get_password_hash(_password),
-                username=context.username.lower(),
-                headImage=context.headImage,
-            )
+                user_data := dict(
+                    phone=context.phone,
+                    password=get_password_hash(_password),
+                    username=context.username.lower(),
+                    headImage=context.headImage,
+                )
         ):
             logger.info("Invalid user data")
             return
@@ -79,7 +75,7 @@ async def create_user(context: AgentCreateUser, request: Request):
         logger.info(f"User created with id {_user.id}")
         balance = Balance.create(
             ownerId=_user.id,
-            balance=context.creditAccount and context.balance.amount or 0,
+            balance=context.creditAccount and context.creditAccount.balance or 0,
         )
         if not balance:
             return
@@ -164,7 +160,7 @@ async def get_agent(context: GetAgent, request: Request):
 
 @router.post("/get_agent_users", response_model=GetAgentUsersResponse)
 async def get_agent_users(
-    context: GetAgentUsers, request: Request
+        context: GetAgentUsers, request: Request
 ) -> GetAgentUsersResponse:
     """
     `GetAgentUsersResponse` is a response object that contains a list of `AgentUser` objects
