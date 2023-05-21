@@ -55,9 +55,9 @@ async def create_admin(user: AdminUserCreate, request: Request):
 
     """
     user.password = get_password_hash(user.password)
-    logger.info(f"Creating admin with email {user.phone}")
+    logger.info(f"Creating admin with email {user.email}")
     if admin := Admin.add_admin(**user.dict()):
-        logger.info(f"Admin created with phone {user.phone}")
+        logger.info(f"Admin created with email {user.email}")
         return AdminUserCreateResponse(success=True, response=admin)
     return AdminUserCreateResponse(error="Admin not created")
 

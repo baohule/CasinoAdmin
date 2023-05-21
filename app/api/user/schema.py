@@ -1,20 +1,18 @@
 """
 @author: Kuro
 """
-from datetime import date, datetime
-from typing import Optional, List, Union
+from datetime import datetime
+from typing import List, Union
+from typing import Optional
 from uuid import UUID
 
 from fastapi_camelcase import CamelModel
+from pydantic import BaseModel
 from pydantic import Field
 
 from app.api.auth.schema import TokenDetail, TokenResponse
 from app.shared.schemas.ResponseSchemas import BaseResponse, PagedBaseResponse
 from app.shared.schemas.orm_schema import ORMCamelModel
-
-from typing import Optional
-from pydantic import BaseModel
-
 from app.shared.schemas.page_schema import GetPages, PagedResponse
 
 
@@ -72,7 +70,6 @@ class AdminUserCreateResponse(TokenResponse):
     `AdminUserCreateResponse` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    success: bool = Field(default=False)
     response: Optional[Union[BaseUser, TokenDetail]]
 
 
@@ -81,7 +78,7 @@ class AdminUserCreate(CamelModel):
     `UserCreate` is a class that is used to validate the data that is being passed to the `/user` route.
     """
 
-    phone: str
+    email: str
     password: str
     username: str
 
