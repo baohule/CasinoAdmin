@@ -8,7 +8,7 @@ import pytz
 from sqlalchemy import Column, Integer, ForeignKey, DateTime, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy.sql.expression import null
+
 from app.shared.bases.base_model import ModelMixin
 
 
@@ -65,8 +65,6 @@ class RewardTypes(ModelMixin):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(Text)
-    game_id = Column(Integer, ForeignKey("Game.id"))
-    relationship("Game", back_populates="RewardTypes")
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
 
@@ -83,6 +81,11 @@ class Reward(ModelMixin):
     id = Column(Integer, primary_key=True, index=True)
     reward = Column(Integer)
     hit_times = Column(Integer)
-    type = Column(Integer)
+    type_id = Column(Integer, ForeignKey("RewardTypes.id"))
+    type = relationship(
+        "RewardTypes",
+        foreign_keys="RewardTypes.type_id",
+        backref=backref("type", single_parent=True, uselist=False)
+    )
     createdAt = Column(DateTime, default=lambda: datetime.now(pytz.utc))
     updatedAt = Column(DateTime)
